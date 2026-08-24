@@ -580,7 +580,9 @@
               "Belo": 0,
               "Lemon": 0
             },
-            "walletBoxes": {},
+            "walletBoxes": {
+              "Lemon": ""
+            },
             "verified": {},
             "notes": {}
           },
@@ -1565,7 +1567,9 @@
               "Belo": 0,
               "Lemon": 0
             },
-            "walletBoxes": {},
+            "walletBoxes": {
+              "Lemon": ""
+            },
             "verified": {},
             "notes": {}
           },
