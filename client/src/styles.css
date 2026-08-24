@@ -1378,12 +1378,22 @@ select:focus {
   align-items: center;
 }
 .history-item {
+  width: 100%;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 10px 18px;
   border-top: 1px solid var(--line);
 }
+.history-item:hover { background: rgba(114, 215, 202, .08); }
 .history-item b,
 .history-item span {
   display: block;
@@ -1399,6 +1409,12 @@ select:focus {
 .history-item strong {
   font-family: "DM Mono";
   font-size: 11px;
+  text-align: right;
+}
+.history-item strong em {
+  font-style: normal;
+  white-space: nowrap;
+  margin-left: 4px;
 }
 .history-item.current strong {
   color: var(--cyan);

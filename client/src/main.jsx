@@ -70,6 +70,20 @@ const formatNumberInput = (value) => {
     ? new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(parsed)
     : "";
 };
+const realDifferenceFor = (caja, config, activeBoxId) => {
+  const accounts = caja.accounts
+    .flatMap((row) => Object.entries(row.values).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
+    .reduce((sum, value) => sum + number(value), 0);
+  const bonuses = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
+  const ta = caja.ta.reduce((sum, row) => sum + number(row.amount), 0);
+  const expenses = caja.expenses.reduce((sum, row) => {
+    const category = config.expenses.find((item) => item.name === row.category);
+    return sum + number(row.amount) * (category?.inverted ? -1 : 1);
+  }, 0);
+  const cashDifference = expenses + ta + accounts - number(caja.cashInitial);
+  const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
+  return cashDifference - bonuses + transferAdjustment;
+};
   const formatMovementTime = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
 const walletBelongsToBox = (row, wallet, config, boxId) => {
   const setting = config.accounts.walletSettings[row.holder]?.[wallet];
@@ -1264,7 +1278,7 @@ function SummaryCard({ caja, calculations, update }) {
   );
 }
 
-function HistoryModal({ history, onClose }) {
+function HistoryModal({ history, onClose, onSelect, config, activeBoxId }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal history-modal" onClick={(event) => event.stopPropagation()}>
@@ -1274,13 +1288,13 @@ function HistoryModal({ history, onClose }) {
         <p>Consultá los últimos turnos y sus cierres.</p>
         <div className="history-modal-list">
           {history.map((item, index) => (
-            <div className={`history-item ${index === 0 ? "current" : ""}`} key={item.id}>
+            <button type="button" className={`history-item ${index === 0 ? "current" : ""}`} key={item.id} onClick={() => onSelect(index)}>
               <div>
                 <b>Turno {item.shift}</b>
                 <span>{new Date(item.date).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long" })} · {item.status === "ABIERTA" ? "Actual" : "Cerrada"}</span>
               </div>
-              <strong>{money(item.cashFinal ?? 0)}</strong>
-            </div>
+              <strong>{money(item.cashFinal ?? 0)} <em className={realDifferenceFor(item, config, activeBoxId) >= 0 ? "positive" : "negative"}>/ {realDifferenceFor(item, config, activeBoxId) >= 0 ? "+" : "-"}{money(Math.abs(realDifferenceFor(item, config, activeBoxId)))}</em></strong>
+            </button>
           ))}
         </div>
       </div>
@@ -1726,7 +1740,7 @@ function App() {
           </div>
         </div>
       )}
-      {historyOpen && <HistoryModal history={history} onClose={() => setHistoryOpen(false)} />}
+      {historyOpen && <HistoryModal history={history} onClose={() => setHistoryOpen(false)} onSelect={(index) => { setSelectedIndex(index); setCaja(history[index]); setHistoryOpen(false); }} config={config} activeBoxId={activeBoxId} />}
       {toast && <div className="app-toast" role="status">{toast}</div>}
     </div>
   );
