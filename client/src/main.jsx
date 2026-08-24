@@ -722,6 +722,19 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   }, [editorRequest]);
   const granted = caja.bonuses.reduce((s, x) => s + number(x.granted), 0);
   const recovered = caja.bonuses.reduce((s, x) => s + number(x.recovered), 0);
+  const shiftStart = { Noche: 0, Mañana: 8, Tarde: 16 }[caja.shift] ?? 0;
+  const bonusSlots = Array.from({ length: 4 }, (_, slot) => {
+    const start = (shiftStart + slot * 2) % 24;
+    const end = (start + 2) % 24;
+    const label = `${String(start).padStart(2, "0")}:00 - ${String(end).padStart(2, "0")}:00`;
+    const items = caja.bonuses.map((bonus, index) => ({ bonus, index })).filter(({ bonus }) => {
+      const hour = new Date(bonus.createdAt).getHours();
+      const minutes = new Date(bonus.createdAt).getMinutes();
+      const elapsed = (hour * 60 + minutes - shiftStart * 60 + 1440) % 1440;
+      return Math.floor(elapsed / 120) === slot;
+    });
+    return { label, items };
+  });
   const addBonus = (event) => {
     if (!["Enter", "+"].includes(event.key) || !parseNumberInput(quick)) return;
     event.preventDefault();
@@ -869,11 +882,13 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
             <h2>Bonos del turno</h2>
             <p>Revisá el monto, cambiá su tipo con el check y agregá una nota si hace falta.</p>
         <div className="bonus-list">
-          {caja.bonuses.length === 0 && (
-            <div className="empty-state">Todavía no hay bonos cargados.</div>
-          )}
-          {caja.bonuses.map((bonus, index) => (
-            <div className={`bonus-row ${bonus.recovered > 0 ? "recovered" : "granted"}`} key={bonus.id}>
+          {caja.bonuses.length === 0 && <div className="empty-state">Todavía no hay bonos cargados.</div>}
+          {bonusSlots.map((slot) => (
+            <section className="bonus-time-column" key={slot.label}>
+              <h3>{slot.label}</h3>
+              <div className="bonus-time-bonuses">
+                {slot.items.length === 0 && <span className="bonus-slot-empty">Sin bonos</span>}
+                {slot.items.map(({ bonus, index }) => <div className={`bonus-row ${bonus.recovered > 0 ? "recovered" : "granted"}`} key={bonus.id}>
               <time className="movement-time">{formatMovementTime(bonus.createdAt)}</time>
               <AmountInput
                 value={bonus.recovered || bonus.granted}
@@ -900,7 +915,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                   onChange={(e) => editBonus(index, { note: e.target.value })}
                 />
               )}
-            </div>
+                </div>)}
+              </div>
+            </section>
           ))}
         </div>
             <div className="modal-actions"><button className="close-button" onClick={() => setOpen(false)}>Listo <Check size={16} /></button></div>

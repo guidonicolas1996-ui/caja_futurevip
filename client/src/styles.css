@@ -2510,6 +2510,65 @@ select:focus {
 .bonus-modal .bonus-row .note-button { grid-column: 3; }
 .bonus-modal .bonus-row .delete-button { grid-column: 4; }
 .bonus-modal .bonus-row .note-input { grid-column: 1 / -1; }
+.bonus-modal {
+  width: min(960px, calc(100% - 32px)) !important;
+  max-width: 960px;
+  padding: 22px !important;
+}
+.bonus-modal .bonus-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  max-height: 58vh;
+  margin: 0;
+  padding: 4px 6px 6px 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+.bonus-modal .bonus-row {
+  display: grid;
+  grid-template-columns: minmax(68px, 1fr) minmax(92px, 1.35fr) repeat(3, 24px) !important;
+  align-content: start;
+  gap: 6px !important;
+  width: auto;
+  min-width: 0;
+  padding: 8px !important;
+  border: 1px solid rgba(82, 101, 103, .65);
+  border-radius: 8px;
+  background: #1b282a !important;
+}
+.bonus-modal .bonus-row .movement-time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  align-self: center;
+}
+.bonus-modal .bonus-row .amount-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 28px;
+}
+.bonus-modal .bonus-row .amount-input input {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  padding: 5px 7px !important;
+}
+.bonus-modal .bonus-row .bonus-toggle,
+.bonus-modal .bonus-row .note-button,
+.bonus-modal .bonus-row .delete-button {
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  align-self: center;
+}
+.bonus-modal .bonus-row .note-input {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+
 .quick-movement-input {
   display: flex;
   gap: 6px;
@@ -2681,3 +2740,151 @@ select:focus {
 .modal h2 { margin: 0 36px 8px 30px; line-height: 1.25; }
 .modal p { margin: 0 0 24px; line-height: 1.5; }
 .modal-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(82,101,103,.45); }
+.bonus-modal .bonus-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: stretch;
+}
+.bonus-time-column {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid rgba(82, 101, 103, .55);
+  border-radius: 8px;
+  background: rgba(27, 40, 42, .65);
+}
+.bonus-time-column h3 {
+  margin: 0 0 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgba(82, 101, 103, .45);
+  color: var(--cyan);
+  font: 10px "DM Mono";
+  text-align: center;
+  white-space: nowrap;
+}
+.bonus-time-bonuses {
+  display: grid;
+  gap: 6px;
+}
+.bonus-slot-empty {
+  padding: 10px 4px;
+  color: #657678;
+  font-size: 9px;
+  text-align: center;
+}
+.bonus-modal .bonus-time-column .bonus-row {
+  grid-template-columns: minmax(48px, .8fr) minmax(52px, 1fr) repeat(3, 20px) !important;
+  gap: 4px !important;
+  padding: 5px !important;
+  border-radius: 6px;
+  background: #202e30 !important;
+}
+.bonus-modal .bonus-time-column .bonus-row .movement-time {
+  font-size: 8px;
+}
+.bonus-modal .bonus-time-column .bonus-row .amount-input {
+  height: 25px;
+}
+.bonus-modal .bonus-time-column .bonus-row .amount-input input {
+  padding: 4px 3px !important;
+  font-size: 10px;
+}
+.bonus-modal .bonus-time-column .bonus-row .bonus-toggle,
+.bonus-modal .bonus-time-column .bonus-row .note-button,
+.bonus-modal .bonus-time-column .bonus-row .delete-button {
+  width: 20px !important;
+  min-width: 20px !important;
+  height: 22px !important;
+}
+@media (max-width: 900px) {
+  .bonus-modal .bonus-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 500px) {
+  .bonus-modal .bonus-list {
+    grid-template-columns: 1fr !important;
+  }
+}
+.bonus-modal {
+  width: min(960px, calc(100% - 32px)) !important;
+  max-width: 960px;
+  padding: 22px !important;
+}
+.bonus-modal .bonus-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  max-height: 58vh;
+  margin: 0;
+  padding: 4px 6px 6px 0;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+.bonus-modal .bonus-row {
+  display: grid;
+  grid-template-columns: minmax(68px, 1fr) minmax(92px, 1.35fr) repeat(3, 24px) !important;
+  align-content: start;
+  gap: 6px !important;
+  width: auto;
+  min-width: 0;
+  padding: 8px !important;
+  border: 1px solid rgba(82, 101, 103, .65);
+  border-radius: 8px;
+  background: #1b282a !important;
+}
+.bonus-modal .bonus-row .movement-time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  align-self: center;
+}
+.bonus-modal .bonus-row .amount-input {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 28px;
+}
+.bonus-modal .bonus-row .amount-input input {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  padding: 5px 7px !important;
+}
+.bonus-modal .bonus-row .bonus-toggle,
+.bonus-modal .bonus-row .note-button,
+.bonus-modal .bonus-row .delete-button {
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  align-self: center;
+}
+.bonus-modal .bonus-row .note-input {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+@media (max-width: 900px) {
+  .bonus-modal .bonus-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 700px) {
+  .bonus-modal {
+    width: calc(100% - 28px) !important;
+    padding: 16px !important;
+  }
+  .bonus-modal .bonus-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .bonus-modal .bonus-row {
+    grid-template-columns: minmax(58px, 1fr) minmax(0, 1.25fr) repeat(3, 22px) !important;
+    gap: 4px !important;
+    padding: 6px !important;
+  }
+  .bonus-modal .bonus-row .bonus-toggle,
+  .bonus-modal .bonus-row .note-button,
+  .bonus-modal .bonus-row .delete-button {
+    width: 22px !important;
+    min-width: 22px !important;
+  }
+}
