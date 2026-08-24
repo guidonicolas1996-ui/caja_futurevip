@@ -247,7 +247,7 @@ function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTran
   return (
     <section className="transfer-panel">
       <div className="transfer-form">
-        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><h3>Movimiento entre cajas</h3><span>Nuevo traspaso</span></div></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
+        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><h3>Movimiento entre cajas</h3></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
         <div className="transfer-fields">
           <TransferBoxPicker label="Desde" boxes={boxes} value={fromBoxId} onChange={changeFromBox} />
           <button type="button" className="transfer-invert" title="Invertir selección" aria-label="Invertir selección" onClick={invertSelection}><ArrowLeftRight size={16} /></button>
@@ -467,9 +467,11 @@ function SectionHead({ icon, title, meta, action }) {
     <div className="section-head">
       <div className="section-title">
         {icon}
-        <div>
-          <h2>{title}</h2>
-          {meta && <span>{meta}</span>}
+        <div className="section-title-copy">
+          <div className="section-title-line">
+            <h2>{title}</h2>
+            {meta && <span>{meta}</span>}
+          </div>
         </div>
       </div>
       {action}
@@ -1170,7 +1172,6 @@ function ChipsSection({ caja, update }) {
       <SectionHead
         icon={<Ticket size={18} />}
         title="Control de fichas"
-        meta="Plataformas / casino"
         action={<div className="chips-actions"><button className="icon-button" title="Agregar carga de fichas" onClick={() => setLoadOpen(true)}><Plus size={16} /></button><button className="icon-button" title="Ver y editar cargas de fichas" onClick={() => setLoadsEditorOpen(true)}><Eye size={16} /></button></div>}
       />
       <div className="chips-head">
