@@ -2845,10 +2845,10 @@
               "Prex": 0,
               "Astro Pay": 0,
               "Belo": 0,
-              "Lemon": 49500
+              "Lemon": 0
             },
             "walletBoxes": {
-              "Lemon": "caja-724f80bd-e20a-4e86-9656-4427a4dad9ea"
+              "Lemon": ""
             },
             "verified": {
               "Personal Pay": {
@@ -2914,7 +2914,7 @@
               "Personal Pay": 0,
               "Naranja X": 0,
               "Brubank": 0,
-              "Prex": 65890,
+              "Prex": 77890,
               "Astro Pay": 0,
               "Belo": 0,
               "Lemon": 0
@@ -2993,7 +2993,7 @@
             "values": {
               "Ualá": 0,
               "Mercado Pago": 0,
-              "Personal Pay": 300000,
+              "Personal Pay": 0,
               "Naranja X": 0,
               "Brubank": 0,
               "Prex": 0,
@@ -3002,7 +3002,7 @@
               "Lemon": 0
             },
             "walletBoxes": {
-              "Personal Pay": "caja-724f80bd-e20a-4e86-9656-4427a4dad9ea"
+              "Personal Pay": ""
             },
             "verified": {},
             "notes": {}
@@ -3800,6 +3800,30 @@
             "recovered": 1255,
             "verified": false,
             "createdAt": "2026-08-24T02:01:07.579Z"
+          },
+          {
+            "id": "f1f0a662-cc15-4ca3-9eae-418a1a165b03",
+            "label": "",
+            "granted": 2000,
+            "recovered": 0,
+            "verified": false,
+            "createdAt": "2026-08-24T03:17:47.097Z"
+          },
+          {
+            "id": "b878d27d-0f96-4cc5-a405-4be1f316daeb",
+            "label": "",
+            "granted": 2000,
+            "recovered": 0,
+            "verified": false,
+            "createdAt": "2026-08-24T03:17:48.729Z"
+          },
+          {
+            "id": "8a8f79ff-3bb4-4adb-8e81-1385208a381b",
+            "label": "",
+            "granted": 800,
+            "recovered": 0,
+            "verified": false,
+            "createdAt": "2026-08-24T03:17:49.953Z"
           }
         ],
         "ta": [
@@ -3853,7 +3877,7 @@
           {
             "platform": "Zeus",
             "initial": 676308,
-            "final": 480523
+            "final": 463723
           }
         ],
         "chipLoads": []
@@ -4808,10 +4832,10 @@
               "Prex": 0,
               "Astro Pay": 0,
               "Belo": 0,
-              "Lemon": 49500
+              "Lemon": 0
             },
             "walletBoxes": {
-              "Lemon": "caja-724f80bd-e20a-4e86-9656-4427a4dad9ea"
+              "Lemon": ""
             },
             "verified": {},
             "notes": {}
@@ -4840,7 +4864,7 @@
             "values": {
               "Ualá": 0,
               "Mercado Pago": 0,
-              "Personal Pay": 300000,
+              "Personal Pay": 0,
               "Naranja X": 0,
               "Brubank": 0,
               "Prex": 0,
@@ -4849,7 +4873,7 @@
               "Lemon": 0
             },
             "walletBoxes": {
-              "Personal Pay": "caja-724f80bd-e20a-4e86-9656-4427a4dad9ea"
+              "Personal Pay": ""
             },
             "verified": {},
             "notes": {}
