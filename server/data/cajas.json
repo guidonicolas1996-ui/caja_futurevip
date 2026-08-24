@@ -1,1083 +1,11 @@
 [
   {
     "id": 0,
-    "status": "CERRADA",
-    "shift": "Mañana",
-    "date": "2026-08-22T09:56:41.410Z",
-    "cashInitial": 0,
-    "nextNotes": "HOLA TURNO SIGUIENTE",
-    "notes": "HOLA DON PEPITO",
-    "accounts": [
-      {
-        "holder": "Fede Acuña",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Pablo Totaro",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": "0",
-          "Personal Pay": 0,
-          "Naranja X": "113924",
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {
-          "Mercado Pago": false
-        }
-      },
-      {
-        "holder": "Mateo Ferrer",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": "310752",
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Ever Lombardo",
-        "values": {
-          "Ualá": "285000",
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": "0",
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      }
-    ],
-    "bonuses": [
-      {
-        "id": "de6c1680-5d3c-4cd6-8c81-68485cca3091",
-        "label": "",
-        "granted": 316438,
-        "recovered": 35200,
-        "verified": false
-      },
-      {
-        "id": "d4773fcf-829e-4c46-b60d-7a17b29a387f",
-        "label": "Nuevo bono",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "9efb2c08-0f3a-4234-8a2e-8d6a4c71db20",
-        "label": "Nuevo bono",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "ebc7806f-94f3-430c-9114-3d2cd4dee94b",
-        "label": "Nuevo bono",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "d67f86f6-6b6c-4e7e-9597-2bab4d53e14a",
-        "label": "Nuevo bono",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      }
-    ],
-    "ta": [
-      {
-        "id": "bd5a74c5-cbd1-4495-bf46-b5064148190f",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "tips": [
-      {
-        "id": "078e6ca9-4ed9-4c89-bfcf-6b63906b7587",
-        "notes": "Rosa9674n",
-        "amount": 5000,
-        "user": "Cajero"
-      },
-      {
-        "id": "886beb48-81e3-4ac8-a755-957eb36b9218",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "expenses": [
-      {
-        "id": "158e35af-17ef-438f-b443-14f0020f1784",
-        "category": "Caja chica",
-        "amount": 0,
-        "notes": ""
-      }
-    ],
-    "found": 0,
-    "chips": [
-      {
-        "platform": "Ganamos",
-        "initial": 0,
-        "final": 1412916
-      },
-      {
-        "platform": "Zeus",
-        "initial": 0,
-        "final": 531961
-      },
-      {
-        "platform": "Apostamos",
-        "initial": 0,
-        "final": 0
-      }
-    ],
-    "cashFinal": 709676,
-    "closedAt": "2026-08-22T10:02:57.205Z"
-  },
-  {
-    "id": 1,
-    "status": "CERRADA",
-    "shift": "Tarde",
-    "date": "2026-08-22T10:02:57.205Z",
-    "cashInitial": 709676,
-    "nextNotes": "HOLA TURNO SIGUIENTE",
-    "notes": "",
-    "accounts": [
-      {
-        "holder": "Fede Acuña",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Pablo Totaro",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": "125593",
-          "Personal Pay": 0,
-          "Naranja X": "339352",
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Mateo Ferrer",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": "190752",
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Ever Lombardo",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": "87301",
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      }
-    ],
-    "bonuses": [
-      {
-        "id": "1a39b643-413b-4d51-acab-790c5cf7ab38",
-        "label": "",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      }
-    ],
-    "ta": [
-      {
-        "id": "43d5a7d2-bb6b-4dca-8bfd-556a510d127e",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "tips": [
-      {
-        "id": "3f56e105-163a-4eb0-9396-7563f621bed7",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "expenses": [
-      {
-        "id": "519161d4-173e-4931-a70c-f43001137a14",
-        "category": "Caja chica",
-        "amount": 0,
-        "notes": ""
-      }
-    ],
-    "found": 0,
-    "chips": [
-      {
-        "platform": "Ganamos",
-        "initial": 1412916,
-        "final": 1121030
-      },
-      {
-        "platform": "Zeus",
-        "initial": 531961,
-        "final": 589711
-      },
-      {
-        "platform": "Apostamos",
-        "initial": 0,
-        "final": 0
-      }
-    ],
-    "cashFinal": 742998,
-    "closedAt": "2026-08-22T10:15:13.059Z"
-  },
-  {
-    "id": 2,
-    "status": "CERRADA",
-    "shift": "Noche",
-    "date": "2026-08-22T10:15:13.059Z",
-    "cashInitial": 742998,
-    "nextNotes": "HOLA TURNO SIGUIENTE",
-    "notes": "",
-    "accounts": [
-      {
-        "holder": "Fede Acuña",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Pablo Totaro",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": "525212",
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Mateo Ferrer",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Ever Lombardo",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      }
-    ],
-    "bonuses": [
-      {
-        "id": "d7199518-bb80-4b28-8605-c284a0b0da7a",
-        "label": "Bono bienvenida",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      }
-    ],
-    "ta": [
-      {
-        "id": "370d4341-e8bf-4454-bc9c-1dd3ecac8988",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "tips": [
-      {
-        "id": "6dfc67e4-a260-4a55-b07c-625c8c7907b9",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "expenses": [
-      {
-        "id": "f3dd40cf-06a8-4e4b-a24d-e987d2755da6",
-        "category": "Caja chica",
-        "amount": 0,
-        "notes": ""
-      }
-    ],
-    "found": 0,
-    "chips": [
-      {
-        "platform": "Ganamos",
-        "initial": 1121030,
-        "final": 0
-      },
-      {
-        "platform": "Zeus",
-        "initial": 589711,
-        "final": 0
-      },
-      {
-        "platform": "Apostamos",
-        "initial": 0,
-        "final": 0
-      }
-    ],
-    "cashFinal": 525212,
-    "closedAt": "2026-08-22T11:16:35.059Z"
-  },
-  {
-    "id": 3,
-    "status": "CERRADA",
-    "shift": "Mañana",
-    "date": "2026-08-22T11:16:35.059Z",
-    "cashInitial": 525212,
-    "nextNotes": "HOLA TURNO SIGUIENTE",
-    "notes": "",
-    "accounts": [
-      {
-        "holder": "Fede Acuña",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Pablo Totaro",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Mateo Ferrer",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      },
-      {
-        "holder": "Ever Lombardo",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": 0,
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {}
-      }
-    ],
-    "bonuses": [
-      {
-        "id": "cda3190b-a0d4-44b7-8759-15b7a78ad7c8",
-        "label": "Bono bienvenida",
-        "granted": 0,
-        "recovered": 0,
-        "verified": false
-      }
-    ],
-    "ta": [
-      {
-        "id": "54b71cc0-6d3a-4ec6-bb9b-5808c20fd4f1",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "tips": [
-      {
-        "id": "d108684c-6cf1-4ff5-8ea8-6c3d79b09121",
-        "notes": "",
-        "amount": 0,
-        "user": "Cajero"
-      }
-    ],
-    "expenses": [
-      {
-        "id": "f778ddd3-db00-417a-841a-b0320f593fef",
-        "category": "Caja chica",
-        "amount": 0,
-        "notes": ""
-      }
-    ],
-    "found": 0,
-    "chips": [
-      {
-        "platform": "Ganamos",
-        "initial": 0,
-        "final": 0
-      },
-      {
-        "platform": "Zeus",
-        "initial": 0,
-        "final": 0
-      },
-      {
-        "platform": "Apostamos",
-        "initial": 0,
-        "final": 0
-      }
-    ],
-    "cashFinal": 0,
-    "closedAt": "2026-08-23T02:49:16.651Z"
-  },
-  {
-    "id": 4,
-    "status": "CERRADA",
-    "shift": "Tarde",
-    "date": "2026-08-23T02:49:16.651Z",
-    "cashInitial": 0,
-    "nextNotes": "HOLA TURNO SIGUIENTE",
-    "notes": "",
-    "accounts": [
-      {
-        "holder": "Fede Acuña",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": "222294",
-          "Naranja X": "0",
-          "Brubank": "0",
-          "Prex": 0,
-          "Astro Pay": 0,
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {
-          "Brubank": false,
-          "Ualá": {
-            "collections": false,
-            "withdrawals": false
-          },
-          "Personal Pay": {
-            "collections": false,
-            "withdrawals": false
-          }
-        }
-      },
-      {
-        "holder": "Pablo Totaro",
-        "values": {
-          "Ualá": "0",
-          "Mercado Pago": 0,
-          "Personal Pay": "0",
-          "Naranja X": "94601",
-          "Brubank": "0",
-          "Prex": "0",
-          "Astro Pay": "0",
-          "Belo": "0",
-          "Lemon": 0
-        },
-        "verified": {
-          "Personal Pay": {
-            "collections": false,
-            "withdrawals": false
-          },
-          "Ualá": {
-            "collections": false,
-            "withdrawals": false
-          },
-          "Naranja X": {
-            "collections": false,
-            "withdrawals": true
-          }
-        }
-      },
-      {
-        "holder": "Mateo Ferrer",
-        "values": {
-          "Ualá": 0,
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": "249500",
-          "Brubank": "0",
-          "Prex": 0,
-          "Astro Pay": "0",
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {
-          "Naranja X": {
-            "collections": true,
-            "withdrawals": false
-          }
-        }
-      },
-      {
-        "holder": "Ever Lombardo",
-        "values": {
-          "Ualá": "163000",
-          "Mercado Pago": 0,
-          "Personal Pay": 0,
-          "Naranja X": 0,
-          "Brubank": "0",
-          "Prex": 0,
-          "Astro Pay": "0",
-          "Belo": 0,
-          "Lemon": 0
-        },
-        "verified": {
-          "Astro Pay": false
-        }
-      }
-    ],
-    "bonuses": [
-      {
-        "id": "8968599a-d99a-472e-ae6c-21757d490a3b",
-        "label": "",
-        "granted": 600,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "2e7bd3d9-14fe-4801-85d9-e247a3afa149",
-        "label": "",
-        "granted": 900,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "5fa90e44-fa07-4279-9d48-ee8989dbc57a",
-        "label": "",
-        "granted": 900,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "5d8e89e2-486a-49a8-8fd8-eaaba34c48f5",
-        "label": "",
-        "granted": 900,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "242212b2-5452-446d-a061-de9fe913ee7a",
-        "label": "",
-        "granted": 900,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "b1fe3d4a-c1c1-4226-9f8b-7a86b4fe51ee",
-        "label": "",
-        "granted": 2400,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "898bf69c-d508-4be6-9759-ee5a7c482ddd",
-        "label": "",
-        "granted": 0,
-        "recovered": 4562,
-        "verified": false
-      },
-      {
-        "id": "3106725d-f30a-4122-920d-485dd3207d18",
-        "label": "",
-        "granted": 500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "0b81f409-9012-491c-a3af-189bd9f0a747",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "82546d1a-6715-4c63-9eaf-a50887c533ae",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "4471b922-d967-4e67-a1a6-ae392617e7d4",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "a994edd7-9abd-4c0b-bb84-538e9206af44",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "e17c0e99-f017-4f41-a4d7-f47ae585e445",
-        "label": "",
-        "granted": 6,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "1f482993-43a5-40a8-b861-ac54154cd6ef",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false,
-        "note": "Lele"
-      },
-      {
-        "id": "ad4b90f9-84e1-4bd7-abad-5dbcdcbe8c60",
-        "label": "",
-        "granted": 3,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "b263a260-f29b-470f-acfc-e98c4a5e35a3",
-        "label": "",
-        "granted": 1,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "a90d5866-f297-4c44-8119-17099fd41935",
-        "label": "",
-        "granted": 2341520,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "1dfdc784-e9f0-4653-ae9c-ead0fc1883a2",
-        "label": "",
-        "granted": 0,
-        "recovered": 565,
-        "verified": false
-      },
-      {
-        "id": "d699c7c4-242a-4864-9163-4dd3317c2a1a",
-        "label": "",
-        "granted": 0,
-        "recovered": 56,
-        "verified": false
-      },
-      {
-        "id": "7cee6c1b-c981-4fc5-8ebd-945c80ccea00",
-        "label": "",
-        "granted": 0,
-        "recovered": 56,
-        "verified": false
-      },
-      {
-        "id": "7780147f-f458-412f-93e6-20f60ee9cef6",
-        "label": "",
-        "granted": 0,
-        "recovered": 2,
-        "verified": false
-      },
-      {
-        "id": "6da5bb4c-0c15-4abe-b066-a583c4f4d90a",
-        "label": "",
-        "granted": 0,
-        "recovered": 32,
-        "verified": false
-      },
-      {
-        "id": "edf71806-d046-4ea1-a635-f34fd8faffd7",
-        "label": "",
-        "granted": 0,
-        "recovered": 3,
-        "verified": false
-      },
-      {
-        "id": "dd86802c-97de-4ce8-a893-6efdf72623f5",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "21e748ac-e344-4f80-a0ff-28aa1f21ff96",
-        "label": "",
-        "granted": 6,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "fe955ab5-756b-44cc-8e4a-ad43071ef890",
-        "label": "",
-        "granted": 0,
-        "recovered": 87,
-        "verified": false
-      },
-      {
-        "id": "ca3e9e9b-5e88-4f0b-b120-f0f371a1353f",
-        "label": "",
-        "granted": 0,
-        "recovered": 87,
-        "verified": false
-      },
-      {
-        "id": "407a5ec4-8313-466c-bb8b-a14c21f28029",
-        "label": "",
-        "granted": 0,
-        "recovered": 25,
-        "verified": false
-      },
-      {
-        "id": "9beb3df5-177c-4932-83c4-7ea6894d8c1f",
-        "label": "",
-        "granted": 9,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "ef6467b4-b942-4b56-9a6e-56adf224bd62",
-        "label": "",
-        "granted": 6,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "bcfa88b5-cf8f-4a5b-b9c3-237e065ab76d",
-        "label": "",
-        "granted": 6,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "a858d7b6-16a7-4b62-95be-de963f2839b6",
-        "label": "",
-        "granted": 2,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "893205d9-d916-40c7-9d1b-7ef265087887",
-        "label": "",
-        "granted": 3,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "67eb7c34-5aba-41b6-814e-dc2102422844",
-        "label": "",
-        "granted": 21,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "b725370b-12c0-4110-8677-c09ae80172a2",
-        "label": "",
-        "granted": 651,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "3acda696-f9ef-4bdc-b312-ff170dc23f90",
-        "label": "",
-        "granted": 32,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "e384f4c1-9b1d-4a3e-8673-f4c87e4ab22f",
-        "label": "",
-        "granted": 3,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "8a27c14e-f9d6-4d5b-a8d8-a2c738308be1",
-        "label": "",
-        "granted": 2,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "605a2191-0797-46eb-a271-fee648676dc3",
-        "label": "",
-        "granted": 0,
-        "recovered": 500,
-        "verified": false
-      },
-      {
-        "id": "22016f9a-f229-4bbc-8fc0-2c74a4a2c2d8",
-        "label": "",
-        "granted": 0,
-        "recovered": 5,
-        "verified": false
-      },
-      {
-        "id": "d7c87b6f-0141-498c-99ab-648c06f91cef",
-        "label": "",
-        "granted": 0,
-        "recovered": 3,
-        "verified": false
-      },
-      {
-        "id": "4e632627-fa04-4d5f-9d28-f567c1e6b4d1",
-        "label": "",
-        "granted": 0,
-        "recovered": 2,
-        "verified": false
-      },
-      {
-        "id": "a65a3ed0-2607-4fde-bd8d-8931a868a10b",
-        "label": "",
-        "granted": 0,
-        "recovered": 1,
-        "verified": false
-      },
-      {
-        "id": "edeb4c5d-0bcd-4fe5-a342-13a7c1be544c",
-        "label": "",
-        "granted": 0,
-        "recovered": 5,
-        "verified": false
-      },
-      {
-        "id": "08693f4e-dd30-4398-bd91-560e6bb6b263",
-        "label": "",
-        "granted": 0,
-        "recovered": 63,
-        "verified": false
-      },
-      {
-        "id": "6903eef4-b40a-43c2-867c-a78511724c42",
-        "label": "",
-        "granted": 0,
-        "recovered": 12,
-        "verified": false
-      },
-      {
-        "id": "c68537d4-ffe6-4b43-87b3-f64347cacf87",
-        "label": "",
-        "granted": 0,
-        "recovered": 31,
-        "verified": false
-      },
-      {
-        "id": "0d76e1e4-9925-43ef-b947-425acd0384cf",
-        "label": "",
-        "granted": 0,
-        "recovered": 21,
-        "verified": false
-      },
-      {
-        "id": "6eaa4c58-00ec-4a9f-b5a4-9ae5dd728bf8",
-        "label": "",
-        "granted": 0,
-        "recovered": 532,
-        "verified": false
-      },
-      {
-        "id": "c4a0f410-027a-4f85-9314-e76a89759e04",
-        "label": "",
-        "granted": 0,
-        "recovered": 32,
-        "verified": false
-      },
-      {
-        "id": "255fe39b-e3be-47d0-bef8-050f82637adf",
-        "label": "",
-        "granted": 0,
-        "recovered": 232,
-        "verified": false
-      },
-      {
-        "id": "8e604e62-8d50-4e67-a525-37877baa5a58",
-        "label": "",
-        "granted": 0,
-        "recovered": 3,
-        "verified": false
-      },
-      {
-        "id": "bf281439-1578-4ee3-a0dd-2092c4cd8082",
-        "label": "",
-        "granted": 5,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "cb66beaa-b1ff-40b2-a7f3-e0d2f4c396fa",
-        "label": "",
-        "granted": 64,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "66a8a4a4-1d5f-4b46-8a89-fd9f60cf7646",
-        "label": "",
-        "granted": 0,
-        "recovered": 56,
-        "verified": false
-      },
-      {
-        "id": "06c22cff-d586-4e67-a7d9-1483350e2e7f",
-        "label": "",
-        "granted": 56,
-        "recovered": 0,
-        "verified": false
-      }
-    ],
-    "ta": [
-      {
-        "id": "4368cbf8-b662-4928-883b-9244c2dae75c",
-        "notes": "",
-        "amount": 6564,
-        "user": "Cajero"
-      }
-    ],
-    "tips": [
-      {
-        "id": "ad696b06-c024-41df-8930-eaaffaf2349e",
-        "notes": "",
-        "amount": 500,
-        "user": "Cajero"
-      }
-    ],
-    "expenses": [
-      {
-        "id": "d67e63ce-1995-4eb9-ae39-0e0fc5150af2",
-        "category": "Caja chica",
-        "amount": 250,
-        "notes": ""
-      }
-    ],
-    "found": 0,
-    "chips": [
-      {
-        "platform": "Ganamos",
-        "initial": 0,
-        "final": 0
-      },
-      {
-        "platform": "Zeus",
-        "initial": 0,
-        "final": 0
-      },
-      {
-        "platform": "Apostamos",
-        "initial": 0,
-        "final": 0
-      }
-    ],
-    "cashFinal": 729395,
-    "closedAt": "2026-08-23T04:58:32.254Z"
-  },
-  {
-    "id": 5,
     "status": "ABIERTA",
-    "shift": "Noche",
-    "date": "2026-08-23T04:58:32.254Z",
-    "cashInitial": 729395,
-    "nextNotes": "HOLA TURNO SIGUIENTE",
+    "shift": "Tarde",
+    "date": "2026-08-24T04:17:12.318Z",
+    "cashInitial": 0,
+    "nextNotes": "",
     "notes": "",
     "accounts": [
       {
@@ -1085,7 +13,7 @@
         "values": {
           "Ualá": 0,
           "Mercado Pago": 0,
-          "Personal Pay": 222294,
+          "Personal Pay": 0,
           "Naranja X": 0,
           "Brubank": 0,
           "Prex": 0,
@@ -1093,12 +21,8 @@
           "Belo": 0,
           "Lemon": 0
         },
-        "verified": {
-          "Naranja X": {
-            "collections": false,
-            "withdrawals": false
-          }
-        },
+        "walletBoxes": {},
+        "verified": {},
         "notes": {}
       },
       {
@@ -1107,13 +31,14 @@
           "Ualá": 0,
           "Mercado Pago": 0,
           "Personal Pay": 0,
-          "Naranja X": "94601",
+          "Naranja X": 0,
           "Brubank": 0,
           "Prex": 0,
           "Astro Pay": 0,
           "Belo": 0,
           "Lemon": 0
         },
+        "walletBoxes": {},
         "verified": {},
         "notes": {}
       },
@@ -1123,26 +48,22 @@
           "Ualá": 0,
           "Mercado Pago": 0,
           "Personal Pay": 0,
-          "Naranja X": 3006,
+          "Naranja X": 0,
           "Brubank": 0,
           "Prex": 0,
           "Astro Pay": 0,
           "Belo": 0,
           "Lemon": 0
         },
-        "verified": {
-          "Naranja X": {
-            "collections": true,
-            "withdrawals": false
-          }
-        },
+        "walletBoxes": {},
+        "verified": {},
         "notes": {}
       },
       {
         "holder": "Ever Lombardo",
         "values": {
           "Ualá": 0,
-          "Mercado Pago": 200608,
+          "Mercado Pago": 0,
           "Personal Pay": 0,
           "Naranja X": 0,
           "Brubank": 0,
@@ -1151,396 +72,112 @@
           "Belo": 0,
           "Lemon": 0
         },
-        "verified": {
-          "Mercado Pago": {
-            "collections": false,
-            "withdrawals": true
-          }
+        "walletBoxes": {},
+        "verified": {},
+        "notes": {}
+      },
+      {
+        "holder": "Escocia",
+        "values": {
+          "Ualá": 0,
+          "Mercado Pago": 0,
+          "Personal Pay": 0,
+          "Naranja X": 0,
+          "Brubank": 0,
+          "Prex": 0,
+          "Astro Pay": 0,
+          "Belo": 0,
+          "Lemon": 0
         },
+        "walletBoxes": {},
+        "verified": {},
+        "notes": {}
+      },
+      {
+        "holder": "Suiza",
+        "values": {
+          "Ualá": 0,
+          "Mercado Pago": 0,
+          "Personal Pay": 0,
+          "Naranja X": 0,
+          "Brubank": 0,
+          "Prex": 0,
+          "Astro Pay": 0,
+          "Belo": 0,
+          "Lemon": 0
+        },
+        "walletBoxes": {},
+        "verified": {},
+        "notes": {}
+      },
+      {
+        "holder": "Guillermo Bibbo",
+        "values": {
+          "Ualá": 0,
+          "Mercado Pago": 0,
+          "Personal Pay": 0,
+          "Naranja X": 0,
+          "Brubank": 0,
+          "Prex": 0,
+          "Astro Pay": 0,
+          "Belo": 0,
+          "Lemon": 0
+        },
+        "walletBoxes": {},
+        "verified": {},
+        "notes": {}
+      },
+      {
+        "holder": "Carlos Almonacid",
+        "values": {
+          "Ualá": 0,
+          "Mercado Pago": 0,
+          "Personal Pay": 0,
+          "Naranja X": 0,
+          "Brubank": 0,
+          "Prex": 0,
+          "Astro Pay": 0,
+          "Belo": 0,
+          "Lemon": 0
+        },
+        "walletBoxes": {},
+        "verified": {},
         "notes": {}
       }
     ],
-    "bonuses": [
-      {
-        "id": "284eb49c-41d5-4b43-81fd-5884699a61d4",
-        "label": "",
-        "granted": 1500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "86250bab-e008-4e6b-8291-45a155d57dab",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "9168749f-b96b-4d46-8316-26d6c4b170c7",
-        "label": "",
-        "granted": 1000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "1c629e33-f2fe-45b3-8484-920f1069dcaa",
-        "label": "",
-        "granted": 1250,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "4f5f09cf-d265-498a-959f-4ca2aaac27ff",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "ca1dff28-434d-436d-a016-a24f4e66acf7",
-        "label": "",
-        "granted": 2000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "ec4f8084-1f2c-411a-9780-667ed8e80316",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "319ee623-d0ba-49ef-9e5b-56cdec9fdf1e",
-        "label": "",
-        "granted": 2000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "edfe5c2f-e89d-4eac-9172-ec8e74ef89a2",
-        "label": "",
-        "granted": 1500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "52b96ceb-4a32-46c7-bd75-5bc57d15fb52",
-        "label": "",
-        "granted": 4500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "00f1fcb4-d783-4193-bcec-fbfd3127e5ab",
-        "label": "",
-        "granted": 1000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "ab1e979b-c774-4a5c-a624-d4472b3903d3",
-        "label": "",
-        "granted": 5000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "093e4e1e-5989-4ea3-9c48-b205a4863d8d",
-        "label": "",
-        "granted": 1000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "01653945-f88c-4a08-8927-0ccfb1ad09b1",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "d5360995-ec86-4d03-9526-f4e2da722f22",
-        "label": "",
-        "granted": 0,
-        "recovered": 2500,
-        "verified": false
-      },
-      {
-        "id": "e74d2c9d-c412-43a8-aec9-c9e7cf3319c7",
-        "label": "",
-        "granted": 3500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "34564af6-03dc-4308-877b-83f4b05e012c",
-        "label": "",
-        "granted": 1200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "bd671054-4ae2-4313-898e-848b4b77df95",
-        "label": "",
-        "granted": 1000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "677f4d89-bd01-4074-9e71-071b877ede7e",
-        "label": "",
-        "granted": 5000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "5acbf332-56f2-43c7-8dc6-e3826d3bc6e2",
-        "label": "",
-        "granted": 0,
-        "recovered": 5000,
-        "verified": false
-      },
-      {
-        "id": "0bd28fa3-c9bb-4820-9fb3-3ec3b1cc12ee",
-        "label": "",
-        "granted": 2000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "e28287ef-2278-4dd6-9185-2d7f943ca39e",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "0d2e5365-9d15-4340-a1da-e1539b1bd1b9",
-        "label": "",
-        "granted": 1000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "fdb0c1a2-e8bb-44ac-957f-c4de9ce72856",
-        "label": "",
-        "granted": 2000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "48bb7249-a731-46a2-97c3-622b6877393f",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "31f98f40-d34f-4ee0-ae52-3053732e9dda",
-        "label": "",
-        "granted": 2000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "7d6cc629-2e1f-464a-b548-8e86dc023856",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "da53e0bd-ce8d-40f1-bec8-c73170fece80",
-        "label": "",
-        "granted": 1000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "2802f4ef-7f11-47f8-93bf-993fd6e8e6c6",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "8444d0a3-4b4e-4ded-8afb-35e61f170792",
-        "label": "",
-        "granted": 2500,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "52c2e41f-fa59-4447-927f-1cd154b50da4",
-        "label": "",
-        "granted": 0,
-        "recovered": 2500,
-        "verified": false
-      },
-      {
-        "id": "adc8f295-8054-4b60-b45f-4d73387c19ea",
-        "label": "",
-        "granted": 6000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "b191f687-a954-4982-a789-859a3de1bfb4",
-        "label": "",
-        "granted": 2000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "9dcdeef5-af55-497b-aa63-843306142c34",
-        "label": "",
-        "granted": 1200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "e8edb647-8325-4060-a01c-fb2a147e1c7f",
-        "label": "",
-        "granted": 0,
-        "recovered": 4900,
-        "verified": false
-      },
-      {
-        "id": "9127861d-a086-4945-8728-e984a61342e4",
-        "label": "",
-        "granted": 0,
-        "recovered": 1300,
-        "verified": false
-      },
-      {
-        "id": "df7403fb-23d6-49df-b1fa-2bcbb2efb76c",
-        "label": "",
-        "granted": 800,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "41ffedb9-bd8e-4026-af91-ba1a87c44ce8",
-        "label": "",
-        "granted": 1200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "05fb65c3-1ec9-4868-8863-c9ef46c62eb2",
-        "label": "",
-        "granted": 800,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "55a22234-6209-4ee4-8ea6-4e2d59948f96",
-        "label": "",
-        "granted": 2800,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "f7f7409a-cc10-4dc3-b3d6-6717481d0607",
-        "label": "",
-        "granted": 1200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "70de78e0-4a39-440c-9a59-c92a63d025c4",
-        "label": "",
-        "granted": 1200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "02f9ac02-f828-4946-8040-d4a803641cb9",
-        "label": "",
-        "granted": 3200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "b573aff7-b725-4256-9dbb-0367ac417a9e",
-        "label": "",
-        "granted": 8000,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "ecbab15b-970e-4032-98b2-8939f0e2ac67",
-        "label": "",
-        "granted": 1560,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "77e42698-a86e-4fe0-b128-016d3ba57e11",
-        "label": "",
-        "granted": 0,
-        "recovered": 5000,
-        "verified": false
-      },
-      {
-        "id": "b04b35df-ec7c-4334-b4c1-e029abe22806",
-        "label": "",
-        "granted": 800,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "07fd9551-7bbb-4ea6-85ca-b58ad3a36ff6",
-        "label": "",
-        "granted": 1200,
-        "recovered": 0,
-        "verified": false
-      },
-      {
-        "id": "9f7acabd-302d-46b9-b3a2-d00eae37fff9",
-        "label": "",
-        "granted": 0,
-        "recovered": 3200,
-        "verified": false
-      },
-      {
-        "id": "dffc7a72-a511-4756-a7a4-13c54eec793a",
-        "label": "",
-        "granted": 3600,
-        "recovered": 0,
-        "verified": false
-      }
-    ],
+    "bonuses": [],
     "ta": [],
-    "tips": [
-      {
-        "id": "a7ac06ef-050b-47b8-8981-02ae6939bf38",
-        "notes": "PC",
-        "amount": 2000,
-        "user": "Isabel2149n"
+    "tips": [],
+    "expenses": [],
+    "transfers": [],
+    "found": 0,
+    "foundMoney": [],
+    "advertising": {
+      "Publicidad A": {
+        "total": 0,
+        "new": 0,
+        "repeated": 0,
+        "derived": {}
+      },
+      "Publicidad B": {
+        "total": 0,
+        "new": 0,
+        "repeated": 0,
+        "derived": {}
       }
-    ],
-    "expenses": [
-      {
-        "id": "0ff9dbcc-6f90-499e-a355-1833596f075d",
-        "category": "Adelanto",
-        "amount": 0,
-        "notes": ""
-      }
-    ],
-    "found": -9,
+    },
     "chips": [
       {
         "platform": "Ganamos",
-        "initial": 387210,
-        "final": 429360
+        "initial": 0,
+        "final": 0
       },
       {
         "platform": "Zeus",
-        "initial": 550368,
-        "final": 652908
+        "initial": 0,
+        "final": 0
       }
-    ]
+    ],
+    "chipLoads": []
   }
 ]

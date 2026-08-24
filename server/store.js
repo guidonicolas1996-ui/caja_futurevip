@@ -15,6 +15,7 @@ const billeteras = ['Ualá', 'Mercado Pago', 'Personal Pay', 'Naranja X', 'Bruba
 const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
+const nextShift = { Noche: 'Mañana', Mañana: 'Tarde', Tarde: 'Noche' };
 
 const blankAdvertising = () => ({ 'Publicidad A': { total: 0, new: 0, repeated: 0, derived: {} }, 'Publicidad B': { total: 0, new: 0, repeated: 0, derived: {} } });
 function normalizeAdvertising(advertising) {
@@ -47,7 +48,7 @@ const defaultConfig = () => ({
 });
 const readLegacyConfig = () => fs.existsSync(legacyConfigFile) ? JSON.parse(fs.readFileSync(legacyConfigFile, 'utf8')) : defaultConfig();
 const blankCaja = (id, previous = null, config = defaultConfig()) => ({
-  id, status: 'ABIERTA', shift: ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
+  id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
   cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
   accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
   bonuses: [], ta: [], tips: [], expenses: [], transfers: [], found: 0, foundMoney: [],
@@ -144,6 +145,26 @@ export async function updateCurrent(patch, boxId) {
   space.cajas[space.cajas.length - 1] = current;
   await writeSpaces(spaces);
   return current;
+}
+export async function updateCaja(id, patch, boxId) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  const index = space.cajas.findIndex((caja) => String(caja.id) === String(id));
+  if (index === -1) throw new Error('Caja no encontrada');
+  space.cajas[index] = { ...space.cajas[index], ...patch, id: space.cajas[index].id };
+  await writeSpaces(spaces);
+  return space.cajas[index];
+}
+export async function resetAllData() {
+  const spaces = await readSpaces();
+  const resetDate = '2026-08-23T19:00:00.000Z';
+  spaces.forEach((space) => {
+    const config = normalizeConfig(space.config);
+    space.config = config;
+    space.cajas = [{ ...blankCaja(0, null, config), shift: 'Tarde', date: resetDate }];
+  });
+  await writeSpaces(spaces);
+  return spaces;
 }
 export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) {

@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { getBoxes, createBox, updateBox, deleteBox, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
+import { getBoxes, createBox, updateBox, deleteBox, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent, resetAllData } from './store.js';
 
 const app = express();
 app.use(cors());
@@ -18,11 +18,13 @@ app.get('/api/caja/historial', handle((req) => getHistory(req.query.boxId)));
 app.get('/api/configuracion', handle((req) => getConfig(req.query.boxId)));
 app.put('/api/configuracion', handle((req) => updateConfig(req.body, req.query.boxId)));
 app.put('/api/caja/actualizar', handle((req) => updateCurrent(req.body, req.query.boxId)));
+app.put('/api/caja/:id', handle((req) => updateCaja(req.params.id, req.body, req.query.boxId)));
 app.put('/api/caja/asignacion-billetera', handle((req) => setWalletAssignment(req.body)));
 app.post('/api/traspasos', handle((req) => createTransfer(req.body)));
 app.put('/api/traspasos/:id', handle((req) => updateTransfer(req.params.id, req.body)));
 app.delete('/api/traspasos/:id', handle((req) => deleteTransfer(req.params.id)));
 app.post('/api/caja/cerrar', handle((req) => closeCurrent(req.body, req.query.boxId)));
+app.post('/api/admin/formatear-bdd', handle(() => resetAllData()));
 
 const port = Number(process.env.PORT) || 3001;
 app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port}`));
