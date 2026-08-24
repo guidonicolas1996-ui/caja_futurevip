@@ -1690,10 +1690,10 @@ function App() {
   const downloadSnapshot = async () => {
     if (capturing) return;
     setCapturing(true);
-    setSnapshotOpen(true);
     try {
       await document.fonts.ready;
-      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (!snapshotRef.current) throw new Error("No se encontró el reporte para capturar.");
       const canvas = await html2canvas(snapshotRef.current, {
         backgroundColor: "#11121d",
         logging: false,
@@ -1717,10 +1717,15 @@ function App() {
         .replaceAll("/", "-");
       link.download = `Caja ${snapshotDate} Turno ${caja.shift}.png`;
       link.href = canvas.toDataURL("image/png");
+      link.style.display = "none";
+      document.body.appendChild(link);
       link.click();
+      link.remove();
       notify("Captura de caja descargada");
+    } catch (error) {
+      console.error("No se pudo generar la captura de caja", error);
+      notify("No se pudo generar la captura de caja");
     } finally {
-      setSnapshotOpen(false);
       setCapturing(false);
     }
   };
@@ -1840,7 +1845,7 @@ function App() {
           </div>
         </div>
       </main>
-      {snapshotOpen && <SnapshotView caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />}
+      <SnapshotView caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />
       {confirm && (
         <div className="modal-backdrop">
           <div className="modal">
