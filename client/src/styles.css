@@ -857,7 +857,10 @@ main {
   display: block;
   width: 100%;
   min-height: 42px;
+  field-sizing: content;
+  max-height: 50vh;
   resize: vertical;
+  overflow-y: auto;
   padding: 5px;
   background: rgba(25, 33, 35, .95);
   border: 1px solid #3e5454;
