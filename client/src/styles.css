@@ -1823,6 +1823,26 @@ select:focus {
 .cell-control.both input {
   border-color: var(--red);
 }
+.cell-control.collections .account-amount,
+.cell-control.collections .account-amount input {
+  border-color: var(--green);
+  color: var(--green);
+}
+.cell-control.withdrawals .account-amount,
+.cell-control.withdrawals .account-amount input {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+.cell-control.both .account-amount,
+.cell-control.both .account-amount input {
+  border-color: var(--red);
+  color: var(--red);
+}
+.cell-control.wallet-category-assigned:not(.collections):not(.withdrawals):not(.both) .account-amount,
+.cell-control.wallet-category-assigned:not(.collections):not(.withdrawals):not(.both) .account-amount input {
+  border-color: var(--box-accent, var(--cyan));
+  color: var(--box-accent, var(--cyan));
+}
 .cell-control button.checked:first-child {
   color: #102322;
   background: var(--green);
