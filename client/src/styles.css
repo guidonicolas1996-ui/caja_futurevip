@@ -826,8 +826,9 @@ main {
   color: #d8e0e0;
   font-size: 10px;
 }
-.wallet-cell:hover .wallet-note-popover,
-.wallet-cell:focus-within .wallet-note-popover {
+.wallet-cell:has(.account-amount input:hover) .wallet-note-popover,
+.wallet-cell:has(.wallet-note-popover:hover) .wallet-note-popover,
+.wallet-cell:has(.wallet-note-popover:focus-within) .wallet-note-popover {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
@@ -838,10 +839,10 @@ main {
   pointer-events: none;
   transform: translateY(-4px);
 }
-.wallet-cell:hover .wallet-note-popover {
+.wallet-cell:has(.account-amount input:hover) .wallet-note-popover {
   transition-delay: 0.65s;
 }
-.wallet-cell:focus-within .wallet-note-popover {
+.wallet-cell:has(.wallet-note-popover:focus-within) .wallet-note-popover {
   transition-delay: 0s;
 }
 .wallet-cell:has(.account-amount input:focus) .wallet-note-popover {

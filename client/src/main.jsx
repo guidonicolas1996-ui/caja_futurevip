@@ -684,6 +684,11 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
       ? state
       : { collections: Boolean(state), withdrawals: false };
   };
+  const showNote = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const height = 110;
+    setNotePosition({ left: Math.min(rect.left, window.innerWidth - 198), top: rect.bottom + height > window.innerHeight ? Math.max(8, rect.top - height) : rect.bottom });
+  };
   const renderCell = (row, index, wallet, category, rowPosition, walletIndex) => {
     const state = cellState(row, wallet);
     const stateClass = state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : "";
@@ -693,7 +698,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const cellColorStyle = assignedBox ? boxColorStyle(assignedBox.color) : { "--box-accent": "#758689", "--box-line": "#536976", "--assignment-dot": "transparent" };
     const assignmentSelector = category !== "Normal" && <WalletAssignmentSelector boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
     const checks = <div className="cell-checks"><button tabIndex={-1} className={state.collections ? "checked" : ""} onClick={() => toggle(index, wallet, "collections")} title="Cobros e ingresos"><Check size={11} /></button><button tabIndex={-1} className={state.withdrawals ? "checked" : ""} onClick={() => toggle(index, wallet, "withdrawals")} title="Retiros y egresos"><Check size={11} /></button></div>;
-    return <td key={wallet}><div className="wallet-cell" onMouseEnter={(event) => { const rect = event.currentTarget.querySelector(".account-amount").getBoundingClientRect(); const height = 110; setNotePosition({ left: Math.min(rect.left, window.innerWidth - 198), top: rect.bottom + height > window.innerHeight ? Math.max(8, rect.top - height) : rect.bottom }); }}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><textarea tabIndex={-1} value={row.notes?.[wallet] || ""} placeholder="Escribí una nota..." onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
+    return <td key={wallet}><div className="wallet-cell"><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: showNote }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><textarea tabIndex={-1} value={row.notes?.[wallet] || ""} placeholder="Escribí una nota..." onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
   };
   return (
     <section className="panel accounts-panel">
@@ -1354,6 +1359,18 @@ function App() {
   const [activeBoxId, setActiveBoxId] = useState(null);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = false;
+  useEffect(() => {
+    const submitModalOnEnter = (event) => {
+      if (event.key !== "Enter" || event.isComposing) return;
+      const modal = event.target.closest?.(".modal") || document.querySelector(".modal:last-of-type");
+      const action = modal?.querySelector(".modal-actions button:not(.ghost-button):not([disabled])");
+      if (!action || event.target instanceof HTMLTextAreaElement) return;
+      event.preventDefault();
+      action.click();
+    };
+    document.addEventListener("keydown", submitModalOnEnter);
+    return () => document.removeEventListener("keydown", submitModalOnEnter);
+  }, []);
   const notify = (message) => {
     setToast(message);
     clearTimeout(window.toastTimer);
