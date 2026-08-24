@@ -1354,7 +1354,69 @@ function HistoryModal({ history, onClose, onSelect, config, activeBoxId }) {
   );
 }
 
+function CajaReportCard({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
+  const wallets = config.accounts.wallets;
+  const totalRows = (rows, kind) => rows.reduce((sum, row) => {
+    const expense = kind === "expenses" && config.expenses.find((item) => item.name === row.category);
+    return sum + number(row.amount) * (expense?.inverted ? -1 : 1);
+  }, 0);
+  const accountGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => {
+    const categoryWallets = wallets.filter((wallet) => caja.accounts.some((row) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false && number(row.values[wallet]) !== 0));
+    const rows = caja.accounts.filter((row) => categoryWallets.some((wallet) => number(row.values[wallet]) !== 0));
+    return { category, wallets: categoryWallets, rows };
+  });
+  const movements = [
+    ["Gastos", caja.expenses, "expenses"],
+    ["Propinas", caja.tips, "tips"],
+    ["Cargas T.A.", caja.ta, "ta"],
+  ];
+  const detailFor = (row, kind) => kind === "expenses" ? [row.category, row.notes, row.user] : [row.user, row.notes].filter(Boolean);
+  const generatedAt = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date());
+  const signedMoney = (value) => `${value >= 0 ? "+" : "-"}${money(Math.abs(value))}`;
+  const grantedTotal = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0);
+  const recoveredTotal = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0);
+  const foundRecords = Array.isArray(caja.foundMoney) ? caja.foundMoney : number(caja.found) ? [{ id: "legacy-found", amount: caja.found }] : [];
+  const metric = (label, value, highlight = false) => <div className={`report-metric ${highlight ? "highlight" : ""}`}><span>{label}</span><b className={value > 0 ? "positive" : value < 0 ? "negative" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
+  return (
+    <div ref={snapshotRef} className="snapshot-export report-card" style={boxColorStyle(activeBox?.color)}>
+      <header className="report-header">
+        <div className="report-brand"><span className="report-brand-mark"><Banknote size={22} /></span><div><strong>CAJA<span>flow</span></strong><small>Reporte de cierre de caja</small></div></div>
+        <div className="report-period"><b>Turno {caja.shift}</b><span>{caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</span><small>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</small></div>
+      </header>
+      <section className="report-kpis">
+        {metric("Caja inicial", calculations.cashInitial)}
+        {metric("Caja final", calculations.cashFinal, true)}
+        {metric("Pre-diferencia", calculations.preDifference)}
+        {metric("Sobrante / Faltante", calculations.shortage, true)}
+        {metric("Diferencia caja", calculations.cashDifference)}
+        {metric("Diferencia real", calculations.realDifference, true)}
+        {metric("Redondeo", caja.found)}
+      </section>
+      <main className="report-body">
+        <div className="report-main-column">
+          <section className="report-block report-accounts"><div className="report-block-head"><h2><WalletCards size={17} /> Matriz de cuentas</h2><span>{accountGroups.reduce((sum, group) => sum + group.rows.length, 0)} titulares con saldo</span></div>
+            {accountGroups.map((group) => <div className="report-account-group" key={group.category}><h3>{group.category === "Normal" ? "Cuentas base" : `Billeteras ${group.category}`}</h3>{group.rows.length === 0 ? <p className="report-empty">Sin saldos en este grupo</p> : <table><thead><tr><th>Titular</th>{group.wallets.map((wallet) => <th key={wallet}>{wallet}</th>)}<th>Total</th></tr></thead><tbody>{group.rows.map((row) => <tr key={`${group.category}-${row.holder}`}><th>{row.holder}</th>{group.wallets.map((wallet) => { const value = number(row.values[wallet]); const state = row.verified?.[wallet]; const stateClass = typeof state === "object" ? (state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : "") : state ? "collections" : ""; return <td className={stateClass} key={wallet}>{money(value)}</td>; })}<td>{money(group.wallets.reduce((sum, wallet) => sum + number(row.values[wallet]), 0))}</td></tr>)}</tbody></table>}</div>)}
+          </section>
+          <section className="report-block report-chips"><div className="report-block-head"><h2><Ticket size={17} /> Control de fichas</h2><span>{caja.chips.length} plataformas</span></div><div className="report-chip-grid"><div>Plataforma</div><div>Inicial</div><div>Final</div><div>Saldo</div>{caja.chips.map((chip) => { const balance = number(chip.initial) - number(chip.final); return <React.Fragment key={chip.platform}><b>{chip.platform}</b><span>{money(chip.initial)}</span><span>{money(chip.final)}</span><strong className={balance >= 0 ? "positive" : "negative"}>{signedMoney(balance)}</strong></React.Fragment>; })}</div></section>
+        </div>
+        <aside className="report-side-column">
+          {movements.map(([title, rows, kind]) => <section className="report-block report-operation" key={title}><div className="report-block-head"><h2>{kind === "expenses" ? <ReceiptText size={16} /> : kind === "tips" ? <Coins size={16} /> : <ArrowDownToLine size={16} />} {title}</h2><span>{rows.length} registros</span></div><div className="report-list">{rows.length === 0 ? <p className="report-empty">Sin registros</p> : rows.map((row) => <div className="report-list-row" key={row.id}><span>{detailFor(row, kind).filter(Boolean).join(" · ") || "Sin detalle"}</span><b>{money(row.amount)}</b></div>)}</div><strong className="report-total">Total <b>{money(totalRows(rows, kind))}</b></strong></section>)}
+          <section className="report-block report-operation"><div className="report-block-head"><h2><Gift size={16} /> Bonos</h2><span>{caja.bonuses.length} movimientos</span></div><div className="report-bonus-summary"><span>Otorgados <b>{money(grantedTotal)}</b></span><span>Recuperados <b>{money(recoveredTotal)}</b></span><strong>Neto <b>{money(calculations.bonuses)}</b></strong></div><div className="report-bonus-chips">{caja.bonuses.length === 0 ? <p className="report-empty">Sin bonos</p> : caja.bonuses.map((bonus) => <span className={number(bonus.recovered) > 0 ? "recovered" : "granted"} key={bonus.id}>{number(bonus.recovered) > 0 ? "Recuperado" : "Otorgado"} {money(number(bonus.recovered) || number(bonus.granted))}</span>)}</div></section>
+          <section className="report-block report-operation"><div className="report-block-head"><h2><Banknote size={16} /> Dinero encontrado</h2><span>{foundRecords.length} registros</span></div>{foundRecords.length === 0 ? <p className="report-empty">Sin registros</p> : <div className="report-list">{foundRecords.map((record) => <div className="report-list-row" key={record.id}><span>{[record.holder, record.wallet, record.note].filter(Boolean).join(" · ") || "Sin detalle"}</span><b>{money(record.amount)}</b></div>)}</div>}</section>
+          <section className="report-block report-operation"><div className="report-block-head"><h2><ArrowLeftRight size={16} /> Traspasos</h2><span>{(caja.transfers || []).length} registros</span></div>{(caja.transfers || []).length === 0 ? <p className="report-empty">Sin registros</p> : <div className="report-list">{caja.transfers.map((transfer) => <div className="report-list-row" key={transfer.id}><span>{boxes.find((box) => box.id === transfer.fromBoxId)?.title || "Caja"} → {boxes.find((box) => box.id === transfer.toBoxId)?.title || "Caja"}{transfer.note ? ` · ${transfer.note}` : ""}</span><b>{money(transfer.amount)}</b></div>)}</div>}</section>
+        </aside>
+      </main>
+      {(caja.notes?.trim() || caja.nextNotes?.trim()) && <footer className="report-footer"><div><h2><FileText size={16} /> Notas del turno</h2>{caja.notes?.trim() && <p><strong>Turno actual</strong>{caja.notes}</p>}{caja.nextNotes?.trim() && <p><strong>Turno siguiente</strong>{caja.nextNotes}</p>}</div><small>Generado el {generatedAt} hs</small></footer>}
+      {!caja.notes?.trim() && !caja.nextNotes?.trim() && <footer className="report-footer report-footer-minimal"><small>Generado el {generatedAt} hs</small></footer>}
+    </div>
+  );
+}
+
 function SnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
+  return <CajaReportCard caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />;
+}
+
+function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
   const wallets = config.accounts.wallets;
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
     category,

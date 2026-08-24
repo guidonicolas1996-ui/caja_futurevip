@@ -2861,6 +2861,75 @@ select:focus {
 .snapshot-note-block > strong { display: block; margin-bottom: 5px; color: #a8bfbc; font: 9px "DM Mono"; text-transform: uppercase; letter-spacing: .08em; }
 .snapshot-notes p { min-height: 34px; margin: 0; padding: 9px; background: #202a2c; color: #aebbbd; font-size: 10px; }
 .snapshot-transfers .snapshot-line { padding: 8px 0; }
+.report-card {
+  width: 1200px;
+  box-sizing: border-box;
+  padding: 32px;
+  background: #11121d;
+  border: 1px solid rgba(167, 139, 250, .35);
+  border-radius: 12px;
+  color: #e7edf1;
+  font-family: Manrope, sans-serif;
+}
+.report-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(167, 139, 250, .2); }
+.report-brand, .report-period, .report-block-head, .report-block-head h2 { display: flex; align-items: center; }
+.report-brand { gap: 10px; }
+.report-brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: var(--box-accent, #72d7ca); color: #11121d; }
+.report-brand strong { display: block; font-size: 20px; letter-spacing: .04em; }
+.report-brand strong span { color: var(--box-accent, #72d7ca); }
+.report-brand small, .report-period small { display: block; color: #8996a2; font-size: 10px; }
+.report-period { flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; }
+.report-period b { color: #f4f8f8; font-size: 16px; }
+.report-period span { color: var(--box-accent, #72d7ca); font: 12px "DM Mono"; }
+.report-kpis { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin: 20px 0; }
+.report-metric { min-height: 58px; padding: 10px 11px; border: 1px solid rgba(82, 101, 103, .65); border-radius: 6px; background: #1a1c2a; }
+.report-metric.highlight { border-color: var(--box-accent, #72d7ca); background: rgba(114, 215, 202, .08); }
+.report-metric span { display: block; color: #9ba7b1; font-size: 9px; }
+.report-metric b { display: block; margin-top: 8px; color: #dce5e8; font: 11px "DM Mono"; white-space: nowrap; }
+.report-body { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; }
+.report-main-column, .report-side-column { display: grid; align-content: start; gap: 14px; min-width: 0; }
+.report-block { min-width: 0; padding: 14px; border: 1px solid rgba(82, 101, 103, .65); border-radius: 7px; background: rgba(25, 27, 39, .9); }
+.report-block-head { justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.report-block-head h2 { gap: 7px; margin: 0; color: #f0f4f5; font-size: 13px; }
+.report-block-head h2 svg { color: var(--box-accent, #72d7ca); }
+.report-block-head > span { color: #8996a2; font: 9px "DM Mono"; white-space: nowrap; }
+.report-account-group + .report-account-group { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(82, 101, 103, .45); }
+.report-account-group h3 { margin: 0 0 7px; color: var(--box-accent, #72d7ca); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.report-card table { width: 100%; border-collapse: collapse; font-size: 9px; }
+.report-card th, .report-card td { padding: 6px 5px; border-bottom: 1px solid rgba(82, 101, 103, .35); text-align: right; white-space: nowrap; }
+.report-card th:first-child, .report-card td:first-child { text-align: left; }
+.report-card th { color: #9ba7b1; font-weight: 600; }
+.report-card td { color: #dce5e8; font: 9px "DM Mono"; }
+.report-card td.collections { color: var(--green); }
+.report-card td.withdrawals { color: var(--orange); }
+.report-card td.both { color: var(--red); }
+.report-empty { margin: 0; color: #68777d; font-size: 9px; }
+.report-chip-grid { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); gap: 0; font-size: 9px; }
+.report-chip-grid > div { padding-bottom: 6px; color: #8996a2; text-transform: uppercase; }
+.report-chip-grid > * { padding: 6px 4px; border-bottom: 1px solid rgba(82, 101, 103, .35); text-align: right; }
+.report-chip-grid > :nth-child(4n + 1) { text-align: left; }
+.report-chip-grid b { color: #e6edf0; }
+.report-chip-grid span { color: #c4d0d3; font: 9px "DM Mono"; }
+.report-chip-grid strong { font: 9px "DM Mono"; }
+.report-list { display: grid; gap: 0; }
+.report-list-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(82, 101, 103, .35); font-size: 9px; }
+.report-list-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.report-list-row b, .report-total b, .report-bonus-summary b { font: 9px "DM Mono"; white-space: nowrap; }
+.report-total { display: flex; justify-content: space-between; margin-top: 9px; color: #9ba7b1; font-size: 9px; }
+.report-total b { color: #f0f4f5; }
+.report-bonus-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; color: #9ba7b1; font-size: 9px; }
+.report-bonus-summary span, .report-bonus-summary strong { display: flex; justify-content: space-between; gap: 5px; }
+.report-bonus-summary strong { color: var(--box-accent, #72d7ca); }
+.report-bonus-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.report-bonus-chips span { padding: 4px 6px; border-radius: 4px; font: 8px "DM Mono"; }
+.report-bonus-chips .granted { background: rgba(245, 173, 105, .14); color: var(--orange); }
+.report-bonus-chips .recovered { background: rgba(131, 213, 162, .14); color: var(--green); }
+.report-footer { display: flex; justify-content: space-between; gap: 24px; margin-top: 18px; padding-top: 18px; border-top: 1px solid rgba(167, 139, 250, .2); }
+.report-footer h2 { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; color: #f0f4f5; font-size: 12px; }
+.report-footer h2 svg { color: var(--box-accent, #72d7ca); }
+.report-footer p { max-width: 720px; margin: 0 0 8px; color: #c0cbd0; font-size: 10px; white-space: pre-wrap; }
+.report-footer p strong { display: block; margin-bottom: 3px; color: #8996a2; font: 8px "DM Mono"; text-transform: uppercase; }
+.report-footer > small, .report-footer-minimal small { align-self: flex-end; color: #8996a2; font: 9px "DM Mono"; white-space: nowrap; }
 .movement-edit-row .amount-input { min-width: 0; }
 .movement-edit-row .amount-input input { min-width: 0; }
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}
