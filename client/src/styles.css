@@ -2730,6 +2730,12 @@ select:focus {
   place-items: center;
 }
 .send-button:hover { background: #35504f; }
+.movement-section .send-button { color: var(--box-accent, var(--cyan)); }
+.found-money-section .movement-total b { color: #f4f8f8; }
+.chips-total b.positive { color: var(--green); }
+.chips-total b.negative { color: var(--red); }
+.quick-bonus-access .bonus-toggle.granted { border-color: var(--orange); color: var(--orange); }
+.quick-bonus-access .bonus-toggle.recovered { border-color: var(--green); color: var(--green); }
 .recent-movements { padding: 0 12px 6px; }
 .movement-section .recent-movements,
 .bonus-modal + .recent-bonuses,
