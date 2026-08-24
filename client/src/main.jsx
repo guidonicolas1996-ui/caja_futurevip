@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createPortal, createRoot } from "react-dom/client";
 import {
   ArrowLeft,
   ArrowRight,
@@ -109,12 +109,33 @@ function BoxSelector({ boxes, activeBoxId, onChange, label = "CAJA" }) {
 
 function WalletAssignmentSelector({ boxes, value, onChange }) {
   const [open, setOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState(null);
   const selectorRef = React.useRef(null);
+  const menuRef = React.useRef(null);
+  const buttonRef = React.useRef(null);
   const selected = boxes.find((box) => box.id === value);
+  const assignmentStyle = (box) => {
+    if (!box) return undefined;
+    const palette = boxColorStyle(box.color);
+    return { "--assignment-accent": palette["--box-accent"], "--assignment-line": palette["--box-line"] };
+  };
+  const toggleMenu = () => {
+    if (open) {
+      setOpen(false);
+      setMenuPosition(null);
+      return;
+    }
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) setMenuPosition({ top: rect.bottom + 4, left: rect.left });
+    setOpen(true);
+  };
   useEffect(() => {
     if (!open) return undefined;
     const closeOnOutside = (event) => {
-      if (!selectorRef.current?.contains(event.target)) setOpen(false);
+      if (!selectorRef.current?.contains(event.target) && !menuRef.current?.contains(event.target)) {
+        setOpen(false);
+        setMenuPosition(null);
+      }
     };
     const closeOnEscape = (event) => {
       if (event.key === "Escape") setOpen(false);
@@ -127,18 +148,19 @@ function WalletAssignmentSelector({ boxes, value, onChange }) {
     };
   }, [open]);
   return (
-    <div ref={selectorRef} className="wallet-assignment-control" style={selected ? boxColorStyle(selected.color) : undefined}>
-      <button type="button" tabIndex={-1} className={`wallet-assignment ${selected ? "" : "unassigned"}`} aria-label="Caja a la que pertenece" title="Caja a la que pertenece" onClick={() => setOpen(!open)}>
+    <div ref={selectorRef} className="wallet-assignment-control" style={assignmentStyle(selected)}>
+      <button ref={buttonRef} type="button" tabIndex={-1} className={`wallet-assignment ${selected ? "" : "unassigned"}`} aria-label="Caja a la que pertenece" title="Caja a la que pertenece" onClick={toggleMenu}>
         {selected ? <i className="wallet-assignment-dot" /> : "-"}
       </button>
-      {open && (
-        <div className="wallet-assignment-options">
+      {open && menuPosition && createPortal(
+        <div ref={menuRef} className="wallet-assignment-options" style={{ top: menuPosition.top, left: menuPosition.left }}>
           {[null, ...boxes].map((box) => (
-            <button type="button" tabIndex={-1} className={!box ? "unassigned" : ""} key={box?.id || "none"} style={box ? boxColorStyle(box.color) : undefined} onClick={() => { onChange(box?.id || ""); setOpen(false); }}>
+            <button type="button" className={!box ? "unassigned" : ""} key={box?.id || "none"} style={assignmentStyle(box)} onClick={() => { onChange(box?.id || ""); setOpen(false); setMenuPosition(null); }}>
               {box ? <><i className="wallet-assignment-dot" />{box.title}</> : "-"}
             </button>
           ))}
         </div>
+        , document.body,
       )}
     </div>
   );

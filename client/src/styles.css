@@ -788,15 +788,15 @@ main {
   width: 100%;
 }
 .wallet-assignment-control { position: relative; z-index: 4; }
-.wallet-assignment { width: 14px; height: 14px; padding: 0; border: 1px solid var(--box-accent, var(--cyan)); border-radius: 3px; background: var(--box-soft, #202a2c); color: var(--box-accent, var(--cyan)); display: grid; place-items: center; font-size: 7px; }
+.wallet-assignment { width: 14px; height: 14px; padding: 0; border: 1px solid var(--assignment-accent, var(--cyan)); border-radius: 3px; background: #202a2c; color: var(--assignment-accent, var(--cyan)); display: grid; place-items: center; font-size: 7px; }
 .wallet-assignment.unassigned { border-color: #758689; background: #293234; color: #758689; }
-.wallet-assignment-options { position: absolute; top: 18px; left: 0; min-width: 150px; padding: 3px; border: 1px solid var(--box-line, #315552); border-radius: 4px; background: #202a2c; box-shadow: 0 6px 16px #0009; z-index: 20; }
-.wallet-assignment-options button { width: 100% !important; min-width: 0; height: 28px !important; min-height: 28px; padding: 4px 7px; border: 0; border-radius: 2px; background: transparent; color: var(--box-accent, var(--cyan)); display: flex !important; align-items: center; gap: 7px; font-size: 10px; line-height: 1.2; text-align: left; white-space: nowrap; overflow: visible; }
-.wallet-assignment-options button:hover { background: var(--box-soft, #293638); }
+.wallet-assignment-options { position: fixed; min-width: 150px; padding: 4px; border: 1px solid #526567; border-radius: 6px; background: #1b2426; box-shadow: 0 12px 28px #000b; z-index: 10000; }
+.wallet-assignment-options button { width: 100% !important; min-width: 0; height: 28px !important; min-height: 28px; padding: 4px 7px; border: 0; border-radius: 3px; background: transparent; color: var(--assignment-accent, var(--cyan)); display: flex !important; align-items: center; gap: 7px; font-size: 10px; line-height: 1.2; text-align: left; white-space: nowrap; overflow: visible; }
+.wallet-assignment-options button:hover { background: #293638; }
 .wallet-assignment-options button.unassigned { color: #758689; }
 .wallet-assignment-options .wallet-assignment-dot { display: block; flex: 0 0 7px; }
 .wallet-assignment-wrap { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
-.wallet-assignment-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--box-accent, var(--cyan)); box-shadow: 0 0 0 1px var(--box-line, #315552); }
+.wallet-assignment-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--assignment-accent, var(--cyan)); box-shadow: 0 0 0 1px var(--assignment-line, #315552); }
 .wallet-cell {
   position: relative;
   display: inline-block;
