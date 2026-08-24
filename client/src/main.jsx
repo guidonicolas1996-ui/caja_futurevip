@@ -1,0 +1,1579 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowLeftRight,
+  ArrowUpDown,
+  ArrowDownToLine,
+  Banknote,
+  Camera,
+  Check,
+  Copy,
+  Clock3,
+  Coins,
+  Eye,
+  FileText,
+  GripVertical,
+  Gift,
+  LockKeyhole,
+  Plus,
+  RefreshCw,
+  Send,
+  Settings2,
+  Trash2,
+  ReceiptText,
+  Ticket,
+  WalletCards,
+  X,
+} from "lucide-react";
+import "./styles.css";
+import html2canvas from "html2canvas";
+
+const money = (value) =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 2,
+  }).format(Number(value) || 0);
+const number = (value) => Number(value) || 0;
+const parseNumberInput = (value) =>
+  Number(String(value).replace(/\./g, "").replace(",", ".")) || 0;
+const formatNumberInput = (value) => {
+  const parsed = parseNumberInput(value);
+  return parsed
+    ? new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(parsed)
+    : "";
+};
+  const formatMovementTime = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
+const walletBelongsToBox = (row, wallet, config, boxId) => {
+  const setting = config.accounts.walletSettings[row.holder]?.[wallet];
+  return config.accounts.availability[row.holder]?.[wallet] !== false && (setting?.category === "Normal" || !setting?.category ? true : row.walletBoxes?.[wallet] === boxId);
+};
+const walletModeClass = (config, wallet) => ({
+  "Cobros + Retiros": "wallet-mode-all",
+  "Solo Cobros": "wallet-mode-collections",
+  "Solo Depósito": "wallet-mode-deposit",
+}[config.accounts.walletModes?.[wallet] || "Cobros + Retiros"]);
+const api = (url, options) =>
+  fetch(url, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  }).then((r) => r.json());
+
+const boxColorStyle = (color) => {
+  const palette = {
+    teal: { accent: "#72d7ca", glow: "#244344", soft: "#1d302f", line: "#315552" },
+    blue: { accent: "#82b8ff", glow: "#263b58", soft: "#202d40", line: "#3d5b7d" },
+    green: { accent: "#83d5a2", glow: "#244635", soft: "#20372b", line: "#3c6850" },
+    orange: { accent: "#f5ad69", glow: "#4c3423", soft: "#3b2b20", line: "#765336" },
+    pink: { accent: "#ed9fc1", glow: "#4b2f3e", soft: "#382730", line: "#70465d" },
+    red: { accent: "#ef8888", glow: "#4b292d", soft: "#382326", line: "#704246" },
+    yellow: { accent: "#e8d477", glow: "#484224", soft: "#37331f", line: "#706833" },
+    violet: { accent: "#c2a0ed", glow: "#3c2d50", soft: "#302640", line: "#604b7c" },
+    slate: { accent: "#aebdca", glow: "#303c45", soft: "#29343b", line: "#536976" },
+  }[color] || { accent: "#72d7ca", glow: "#244344", soft: "#1d302f", line: "#315552" };
+  return { "--box-accent": palette.accent, "--box-glow": palette.glow, "--box-soft": palette.soft, "--box-line": palette.line };
+};
+
+function BoxSelector({ boxes, activeBoxId, onChange, label = "CAJA" }) {
+  const [open, setOpen] = useState(false);
+  const activeBox = boxes.find((box) => box.id === activeBoxId) || boxes[0];
+  return <div className={`box-selector ${open ? "open" : ""}`} style={boxColorStyle(activeBox?.color)}>
+    <span>{label}</span>
+    <button className="box-selector-trigger" onClick={() => setOpen(!open)} aria-expanded={open}><b>{activeBox?.title}</b><i /></button>
+    {open && <div className="box-options">{boxes.map((box) => <button className={box.id === activeBox?.id ? "selected" : ""} key={box.id} onClick={() => { onChange(box.id); setOpen(false); }}><i className={box.color} />{box.title}</button>)}</div>}
+  </div>;
+}
+
+function WalletAssignmentSelector({ boxes, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const selectorRef = React.useRef(null);
+  const selected = boxes.find((box) => box.id === value);
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnOutside = (event) => {
+      if (!selectorRef.current?.contains(event.target)) setOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+  return (
+    <div ref={selectorRef} className="wallet-assignment-control" style={selected ? boxColorStyle(selected.color) : undefined}>
+      <button type="button" tabIndex={-1} className={`wallet-assignment ${selected ? "" : "unassigned"}`} aria-label="Caja a la que pertenece" title="Caja a la que pertenece" onClick={() => setOpen(!open)}>
+        {selected ? <i className="wallet-assignment-dot" /> : "-"}
+      </button>
+      {open && (
+        <div className="wallet-assignment-options">
+          {[null, ...boxes].map((box) => (
+            <button type="button" tabIndex={-1} className={!box ? "unassigned" : ""} key={box?.id || "none"} style={box ? boxColorStyle(box.color) : undefined} onClick={() => { onChange(box?.id || ""); setOpen(false); }}>
+              {box ? <><i className="wallet-assignment-dot" />{box.title}</> : "-"}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TransferBoxPicker({ label, boxes, value, excludeId, onChange }) {
+  const [open, setOpen] = useState(false);
+  const selected = boxes.find((box) => box.id === value);
+  const options = boxes.filter((box) => box.id !== excludeId);
+  return <div className="transfer-picker">
+    <span>{label}</span>
+    <div className={`transfer-picker-control ${open ? "open" : ""}`} style={boxColorStyle(selected?.color)}>
+      <button type="button" onClick={() => setOpen(!open)}><i className="transfer-box-dot" /><b>{selected?.title || "Seleccionar caja"}</b><em /></button>
+      {open && <div className="transfer-picker-options">{options.map((box) => <button type="button" className={box.id === value ? "selected" : ""} key={box.id} onClick={() => { onChange(box.id); setOpen(false); }} style={boxColorStyle(box.color)}><i className="transfer-box-dot" />{box.title}</button>)}</div>}
+    </div>
+  </div>;
+}
+
+function ConfirmDialog({ message, onConfirm, onCancel }) {
+  return (
+    <div className="modal-backdrop confirm-backdrop" onClick={onCancel}>
+          <div className="modal confirm-dialog" onClick={(event) => event.stopPropagation()}>
+              <div className="modal-icon"><Trash2 size={21} /></div>
+            <h2>¿Eliminar registro?</h2>
+        <p>{message}</p>
+        <div className="modal-actions">
+          <button className="ghost-button" onClick={onCancel}>Cancelar</button>
+          <button className="danger-button" onClick={onConfirm}>Eliminar <Trash2 size={15} /></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTransfer, onDeleteTransfer }) {
+  const [fromBoxId, setFromBoxId] = useState(activeBoxId);
+  const [toBoxId, setToBoxId] = useState(boxes.find((box) => box.id !== activeBoxId)?.id || "");
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingTransfer, setEditingTransfer] = useState(null);
+  const [deleteTransferId, setDeleteTransferId] = useState(null);
+  useEffect(() => {
+    setFromBoxId(activeBoxId);
+    setToBoxId(boxes.find((box) => box.id !== activeBoxId)?.id || "");
+  }, [activeBoxId, boxes]);
+  const changeFromBox = (boxId) => {
+    setFromBoxId(boxId);
+    if (boxId && boxId === toBoxId) setToBoxId("");
+  };
+  const invertSelection = () => {
+    setFromBoxId(toBoxId);
+    setToBoxId(fromBoxId);
+  };
+  const submit = async () => {
+    setError("");
+    try { await onCreate({ fromBoxId, toBoxId, amount: parseNumberInput(amount), note }); setAmount(""); setNote(""); }
+    catch (requestError) { setError(requestError.message); }
+  };
+  const saveTransfer = async () => {
+    try { await onUpdateTransfer(editingTransfer); setEditingTransfer(null); }
+    catch (requestError) { setError(requestError.message); }
+  };
+  return (
+    <section className="transfer-panel">
+      <div className="transfer-form">
+        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><span className="eyebrow">Movimiento entre cajas</span><h3>Nuevo traspaso</h3></div></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
+        <div className="transfer-fields">
+          <TransferBoxPicker label="Desde" boxes={boxes} value={fromBoxId} onChange={changeFromBox} />
+          <button type="button" className="transfer-invert" title="Invertir selección" aria-label="Invertir selección" onClick={invertSelection}><ArrowLeftRight size={16} /></button>
+          <TransferBoxPicker label="Hasta" boxes={boxes} value={toBoxId} excludeId={fromBoxId} onChange={setToBoxId} />
+          <label><span>Monto</span><AmountInput value={amount} onChange={(value) => setAmount(value)} /></label>
+          <button type="button" className="send-button transfer-send" title="Enviar traspaso" aria-label="Enviar traspaso" onClick={submit} disabled={boxes.length < 2}><Send size={15} /></button>
+        </div>
+        {error && <small className="transfer-error">{error}</small>}
+      </div>
+      <div className="transfer-history"><div className="recent-movements"><span>Últimos traspasos</span>{transfers.slice().reverse().map((transfer) => { const outgoing = transfer.fromBoxId === activeBoxId; const otherBox = boxes.find((box) => box.id === (outgoing ? transfer.toBoxId : transfer.fromBoxId)); return <div className="recent-movement transfer-row" key={transfer.id}><span>{outgoing ? "Salida a" : "Entrada de"} {otherBox?.title || "otra caja"}{transfer.note ? ` · ${transfer.note}` : ""}</span><b className={outgoing ? "transfer-out" : "transfer-in"}>{outgoing ? "+" : "-"}{money(transfer.amount)}</b></div>; })}{transfers.length === 0 && <small>Sin traspasos todavía</small>}</div></div>
+      {editorOpen && <div className="modal-backdrop" onClick={() => setEditorOpen(false)}><div className="modal transfer-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setEditorOpen(false)}><X size={18} /></button><div className="modal-icon"><ArrowLeftRight size={20} /></div><h2>Traspasos del turno</h2><p>Editá el origen, destino, monto o nota de cada movimiento.</p><div className="transfer-edit-list">{transfers.length === 0 && <div className="empty-state">Todavía no hay traspasos.</div>}{transfers.map((transfer) => <div className="transfer-edit-row" key={transfer.id}><time className="movement-time">{formatMovementTime(transfer.createdAt)}</time><div><b>{boxes.find((box) => box.id === transfer.fromBoxId)?.title}</b><span>hacia {boxes.find((box) => box.id === transfer.toBoxId)?.title}</span></div><strong>{money(transfer.amount)}</strong><button className="icon-button" title="Editar traspaso" onClick={() => setEditingTransfer({ ...transfer })}><Settings2 size={14} /></button><button className="delete-button" title="Eliminar traspaso" onClick={() => setDeleteTransferId(transfer.id)}><Trash2 size={14} /></button></div>)}</div><div className="modal-actions"><button className="close-button" onClick={() => setEditorOpen(false)}>Listo <Check size={16} /></button></div></div></div>}
+      {editingTransfer && <div className="modal-backdrop" onClick={() => setEditingTransfer(null)}><div className="modal transfer-edit-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setEditingTransfer(null)}><X size={18} /></button><div className="modal-icon"><Settings2 size={20} /></div><h2>Editar traspaso</h2><div className="transfer-edit-fields"><TransferBoxPicker label="Desde" boxes={boxes} value={editingTransfer.fromBoxId} onChange={(value) => setEditingTransfer({ ...editingTransfer, fromBoxId: value })} /><TransferBoxPicker label="Hasta" boxes={boxes} value={editingTransfer.toBoxId} excludeId={editingTransfer.fromBoxId} onChange={(value) => setEditingTransfer({ ...editingTransfer, toBoxId: value })} /><label><span>Monto</span><AmountInput value={editingTransfer.amount} onChange={(value) => setEditingTransfer({ ...editingTransfer, amount: value })} /></label><label><span>Nota</span><input value={editingTransfer.note || ""} onChange={(event) => setEditingTransfer({ ...editingTransfer, note: event.target.value })} /></label></div><div className="modal-actions"><button className="ghost-button" onClick={() => setEditingTransfer(null)}>Cancelar</button><button className="close-button" onClick={saveTransfer}>Guardar <Check size={16} /></button></div></div></div>}
+      {deleteTransferId && <ConfirmDialog message="¿Seguro que querés eliminar este traspaso de ambas cajas?" onCancel={() => setDeleteTransferId(null)} onConfirm={async () => { await onDeleteTransfer(deleteTransferId); setDeleteTransferId(null); }} />}
+    </section>
+  );
+}
+
+function ConfigList({ title, items, onChange, placeholder, sortable = false, onItemChange }) {
+  const [dragIndex, setDragIndex] = useState(null);
+  const reorder = (targetIndex) => {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const next = [...items];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, moved);
+    onChange(next);
+    setDragIndex(null);
+  };
+  return (
+    <div className="config-list">
+      <div className="config-list-head"><h3>{title}</h3><span>{items.length} elementos</span></div>
+      {items.map((item, index) => (
+        <div className={`config-list-row ${sortable ? "sortable" : ""}`} key={index} draggable={sortable} onDragStart={() => setDragIndex(index)} onDragOver={(event) => { if (sortable) event.preventDefault(); }} onDrop={() => sortable && reorder(index)} onDragEnd={() => setDragIndex(null)}>
+          {sortable && <span className="drag-handle" title="Arrastrar para reordenar"><GripVertical size={15} /></span>}
+          <input value={item} placeholder={placeholder} onChange={(event) => { const next = [...items]; next[index] = event.target.value; onItemChange ? onItemChange(index, event.target.value) : onChange(next); }} />
+          <button className="delete-button" title={`Eliminar ${title.toLowerCase()}`} onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button>
+        </div>
+      ))}
+      <button className="config-add" onClick={() => onChange([...items, ""])}><Plus size={15} /> Agregar</button>
+    </div>
+  );
+}
+
+function WalletConfigList({ wallets, modes, onChange, onModeChange }) {
+  const [dragIndex, setDragIndex] = useState(null);
+  const reorder = (targetIndex) => { if (dragIndex === null || dragIndex === targetIndex) return; const next = [...wallets]; const [moved] = next.splice(dragIndex, 1); next.splice(targetIndex, 0, moved); onChange(next); setDragIndex(null); };
+  return <div className="config-list wallet-config-list"><div className="config-list-head"><h3>Billeteras</h3><span>{wallets.length} elementos</span></div>{wallets.map((wallet, index) => <div className="wallet-config-row" key={index} draggable onDragStart={() => setDragIndex(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(index)} onDragEnd={() => setDragIndex(null)}><span className="drag-handle" title="Arrastrar para reordenar"><GripVertical size={15} /></span><input value={wallet} placeholder="Nombre de billetera" onChange={(event) => { const next = [...wallets]; const previous = next[index]; next[index] = event.target.value; onChange(next); if (previous !== event.target.value) onModeChange(event.target.value, modes[previous] || "Cobros + Retiros"); }} /><select aria-label={`Tipo de ${wallet}`} value={modes[wallet] || "Cobros + Retiros"} onChange={(event) => onModeChange(wallet, event.target.value)}><option>Cobros + Retiros</option><option>Solo Cobros</option><option>Solo Depósito</option></select><button className="delete-button" title="Eliminar billetera" onClick={() => onChange(wallets.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onChange([...wallets, ""])}><Plus size={15} /> Agregar billetera</button></div>;
+}
+
+function AccountsConfig({ draft, boxes, updateAccounts }) {
+  const availability = draft.accounts.availability || {};
+  const walletSettings = draft.accounts.walletSettings || {};
+  const updateWallets = (wallets) => updateAccounts({ wallets });
+  const walletModes = draft.accounts.walletModes || {};
+  const updateWalletSetting = (holder, wallet, patch) => updateAccounts({ walletSettings: { ...walletSettings, [holder]: { ...(walletSettings[holder] || {}), [wallet]: { ...(walletSettings[holder]?.[wallet] || { category: "Normal", boxId: null }), ...patch } } } });
+  const renameHolder = (index, value) => {
+    const previousHolder = draft.accounts.holders[index];
+    const holders = [...draft.accounts.holders];
+    holders[index] = value;
+    const availability = { ...draft.accounts.availability };
+    const walletSettings = { ...(draft.accounts.walletSettings || {}) };
+    if (previousHolder !== value) {
+      availability[value] = availability[previousHolder] || {};
+      delete availability[previousHolder];
+      walletSettings[value] = walletSettings[previousHolder] || {};
+      delete walletSettings[previousHolder];
+    }
+    updateAccounts({ holders, availability, walletSettings });
+  };
+  return <>
+    <div className="config-two-columns">
+      <ConfigList title="Titulares" items={draft.accounts.holders} placeholder="Nombre del titular" sortable onChange={(holders) => updateAccounts({ holders })} onItemChange={renameHolder} />
+      <WalletConfigList wallets={draft.accounts.wallets} modes={walletModes} onChange={updateWallets} onModeChange={(wallet, mode) => updateAccounts({ walletModes: { ...walletModes, [wallet]: mode } })} />
+    </div>
+    <section className="config-card"><div className="config-list-head"><h3>Billeteras utilizables por titular</h3><span>Activá y configurá cada cuenta</span></div><div className="availability-table"><div className="availability-row availability-head" style={{ "--wallet-count": draft.accounts.wallets.length }}><b>Titular</b>{draft.accounts.wallets.map((wallet) => <span key={wallet}>{wallet}</span>)}</div>{draft.accounts.holders.map((holder, index) => <div className="availability-row" style={{ "--wallet-count": draft.accounts.wallets.length }} key={index}><b>{holder || "Sin nombre"}</b>{draft.accounts.wallets.map((wallet) => { const setting = walletSettings[holder]?.[wallet] || { category: "Normal", boxId: null }; const enabled = availability[holder]?.[wallet] !== false; return <div className="account-config-cell" key={wallet}><label className="toggle-cell"><input type="checkbox" checked={enabled} onChange={() => { const nextAvailability = structuredClone(availability); nextAvailability[holder] = { ...(nextAvailability[holder] || {}), [wallet]: !enabled }; updateAccounts({ availability: nextAvailability }); }} /><span /></label>{enabled && <select value={setting.category} onChange={(event) => updateWalletSetting(holder, wallet, { category: event.target.value })}><option>Normal</option><option>Depósitos</option><option>Compartidas</option></select>}</div>; })}</div>)}</div></section>
+  </>;
+}
+
+function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged }) {
+  const [tab, setTab] = useState("accounts");
+  const [configBoxId, setConfigBoxId] = useState(activeBoxId);
+  const [draft, setDraft] = useState(structuredClone(config));
+  const [saving, setSaving] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(false);
+  const updateAccounts = (patch) => setDraft((current) => ({ ...current, accounts: { ...current.accounts, ...patch } }));
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingConfig(true);
+    setDraft(null);
+    api(`/api/configuracion?boxId=${configBoxId}`).then((nextConfig) => {
+      if (cancelled) return;
+      setDraft(nextConfig);
+      setLoadingConfig(false);
+    });
+    return () => { cancelled = true; };
+  }, [configBoxId]);
+  const save = async () => { setSaving(true); await onSave(draft, configBoxId); setSaving(false); };
+  const configTarget = boxes.find((box) => box.id === configBoxId) || boxes[0];
+  return (
+    <div className="configuration-page">
+      <header className="configuration-header">
+        <button className="icon-button" title="Volver a la caja" onClick={onBack}><ArrowLeft size={18} /></button>
+        <div><span className="eyebrow">Configuración exclusiva</span><h1>Preferencias de la caja</h1></div>
+        {tab !== "boxes" && <BoxSelector label="EDITAR" boxes={boxes} activeBoxId={configBoxId} onChange={setConfigBoxId} />}
+        <button className="close-button" onClick={save} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"} <Check size={16} /></button>
+      </header>
+      <div className="configuration-layout">
+        <nav className="configuration-tabs">
+          <button className={tab === "boxes" ? "active" : ""} onClick={() => setTab("boxes")}><Banknote size={17} /> Cajas</button>
+          <button className={tab === "accounts" ? "active" : ""} onClick={() => setTab("accounts")}><WalletCards size={17} /> Matriz de cuentas</button>
+          <button className={tab === "expenses" ? "active" : ""} onClick={() => setTab("expenses")}><ReceiptText size={17} /> Gastos</button>
+          <button className={tab === "platforms" ? "active" : ""} onClick={() => setTab("platforms")}><Ticket size={17} /> Control de fichas</button>
+        </nav>
+        <main className="configuration-content">
+          {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
+          {!loadingConfig && draft && <>
+          {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section></>}
+          {tab === "accounts" && <>
+            <div className="config-intro"><span className="eyebrow">Matriz de cuentas</span><h2>Titulares y billeteras</h2><p>Creá las listas y definí qué billeteras puede usar cada titular.</p></div>
+            <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
+          </>}
+          {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
+          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas que aparecen en la matriz y en el control de fichas.</p></div><ConfigList title="Plataformas" items={draft.platforms} placeholder="Nombre de plataforma" onChange={(platforms) => setDraft({ ...draft, platforms })} /></>}
+          </>}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function SummaryHeader({
+  caja,
+  onClose,
+  saving,
+  onPrevious,
+  onNext,
+  readOnly,
+  onSnapshot,
+  capturing,
+  onConfigure,
+  boxes,
+  activeBoxId,
+  onBoxChange,
+}) {
+  return (
+    <header className="topbar">
+      <div className="brand">
+        <div className="brand-mark">
+          <Banknote size={20} />
+        </div>
+        <div>
+          <strong>
+            CAJA<span>flow</span>
+          </strong>
+          <small>Control operativo</small>
+        </div>
+      </div>
+      <div className="shift-nav">
+        <button
+          className="icon-button"
+          title="Caja anterior"
+          onClick={onPrevious}
+        >
+          <ArrowLeft size={17} />
+        </button>
+        <div className="shift-title">
+          <span>
+            <Clock3 size={15} /> Turno {caja.shift}{" "}
+            {readOnly && "· Solo lectura"}
+          </span>
+          <b>
+            {new Date(caja.date).toLocaleDateString("es-AR", {
+              day: "2-digit",
+              month: "2-digit",
+            })}{" "}
+            <em>/</em>{" "}
+            {caja.shift === "Noche"
+              ? "00:00 - 08:00"
+              : caja.shift === "Mañana"
+                ? "08:00 - 16:00"
+                : "16:00 - 00:00"}
+          </b>
+        </div>
+        <button className="icon-button" title="Caja siguiente" onClick={onNext}>
+          <ArrowRight size={17} />
+        </button>
+      </div>
+      <div className="top-actions">
+        <BoxSelector boxes={boxes} activeBoxId={activeBoxId} onChange={onBoxChange} />
+        <span className={`save-state ${saving ? "saving" : ""}`}>
+          <span className="dot" />{" "}
+          {readOnly ? "Consulta" : saving ? "Guardando..." : "Guardado"}
+        </span>
+        <button className="ghost-button" onClick={onConfigure}>
+          <Settings2 size={17} /> Configurar
+        </button>
+        <button
+          className="icon-button snapshot-button"
+          title="Descargar caja como PNG"
+          onClick={onSnapshot}
+          disabled={capturing}
+        >
+          <Camera size={17} />
+        </button>
+        <button
+          className="close-button"
+          onClick={onClose}
+          disabled={readOnly || caja.status === "CERRADA"}
+        >
+          <LockKeyhole size={16} /> Cerrar caja
+        </button>
+      </div>
+    </header>
+  );
+}
+function SectionHead({ icon, title, meta, action }) {
+  return (
+    <div className="section-head">
+      <div className="section-title">
+        {icon}
+        <div>
+          <h2>{title}</h2>
+          {meta && <span>{meta}</span>}
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+}
+function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "", onKeyDown, inputProps = {}, numericOnly = false }) {
+  const normalizedValue = numericOnly ? Math.max(0, Math.trunc(number(value))) : number(value);
+  const [inputValue, setInputValue] = useState(
+    normalizedValue ? (numericOnly ? String(normalizedValue) : formatNumberInput(value)) : "",
+  );
+  const focused = React.useRef(false);
+  const inputRef = React.useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused.current) {
+      setInputValue(normalizedValue ? (numericOnly ? (isFocused ? String(normalizedValue) : formatNumberInput(normalizedValue)) : formatNumberInput(value)) : "");
+    }
+  }, [value, numericOnly, normalizedValue, isFocused]);
+  useEffect(() => {
+    if (!isFocused || !numericOnly) return undefined;
+    const frame = requestAnimationFrame(() => inputRef.current?.select());
+    return () => cancelAnimationFrame(frame);
+  }, [isFocused, numericOnly]);
+
+  return (
+    <input
+      ref={inputRef}
+      value={inputValue}
+      {...inputProps}
+      placeholder={placeholder || zeroPlaceholder}
+      type={numericOnly ? (isFocused ? "number" : "text") : undefined}
+      min={numericOnly ? 0 : undefined}
+      step={numericOnly ? 1 : undefined}
+      inputMode={numericOnly ? "numeric" : "decimal"}
+      onKeyDown={onKeyDown}
+      onFocus={(event) => {
+        focused.current = true;
+        setIsFocused(true);
+        if (numericOnly) setInputValue(normalizedValue ? String(normalizedValue) : "");
+        event.target.select();
+      }}
+      onChange={(event) => {
+        const nextValue = numericOnly ? event.target.value.replace(/\D/g, "") : event.target.value;
+        setInputValue(nextValue);
+        onChange(numericOnly ? Number(nextValue) || 0 : parseNumberInput(nextValue));
+      }}
+      onBlur={() => {
+        focused.current = false;
+        setIsFocused(false);
+        setInputValue(numericOnly ? formatNumberInput(inputValue) : formatNumberInput(inputValue));
+      }}
+    />
+  );
+}
+function AmountInput({ value, onChange, placeholder = "0,00", className = "" }) {
+  return (
+    <div className={`amount-input ${className}`}>
+      <span>$</span>
+      <NumericInput
+        value={value || ""}
+        placeholder={placeholder}
+        onChange={onChange}
+      />
+    </div>
+  );
+}
+
+function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
+  const [quick, setQuick] = useState("");
+  const [recoveredMode, setRecoveredMode] = useState(false);
+  const granted = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0);
+  const recovered = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0);
+  const recentBonuses = caja.bonuses.slice(-3).reverse();
+  const editRecentBonus = (bonusId, value) => {
+    const bonuses = caja.bonuses.map((bonus) => bonus.id === bonusId ? { ...bonus, granted: bonus.recovered > 0 ? 0 : value, recovered: bonus.recovered > 0 ? value : 0 } : bonus);
+    update({ bonuses: value ? bonuses : bonuses.filter((bonus) => bonus.id !== bonusId) });
+  };
+  const addBonus = (event) => {
+    if (!["Enter", "+"].includes(event.key) || !parseNumberInput(quick)) return;
+    event.preventDefault();
+    const amount = parseNumberInput(quick);
+    const recovered = event.key === "+" || recoveredMode;
+    update({ bonuses: [...caja.bonuses, { id: crypto.randomUUID(), label: "", granted: recovered ? 0 : amount, recovered: recovered ? amount : 0, verified: false, createdAt: new Date().toISOString() }] });
+    setQuick("");
+    setRecoveredMode(false);
+  };
+  return <div className="quick-bonus-access">
+    <div className={`quick-amount ${recoveredMode ? "recovered" : "granted"}`}>
+      <span>$</span>
+      <input value={quick} placeholder="Bono Rapido" inputMode="decimal" aria-label="Insertar bono" onChange={(event) => setQuick(event.target.value)} onBlur={() => setQuick(formatNumberInput(quick))} onKeyDown={addBonus} />
+    </div>
+    <button className={`bonus-toggle ${recoveredMode ? "checked recovered" : "granted"}`} title="Cambiar entre otorgado y recuperado" onClick={() => setRecoveredMode(!recoveredMode)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBonus(event); } }}><ArrowUpDown size={12} /></button>
+    <button className="icon-button" title="Agregar bono manual" onClick={onAddManualBonus}><Plus size={14} /></button>
+    <button className="icon-button" title="Ver y editar bonos" onClick={onViewBonuses}><Eye size={14} /></button>
+    <span className="quick-bonus-net">Bonos Netos: <b>{money(granted - recovered)}</b></span>
+    <div className="quick-recent-bonuses"><span className="quick-recent-title">Últimos 3 bonos</span>{recentBonuses.map((bonus) => { const isRecovered = number(bonus.recovered) > 0; return <div className={`quick-recent-bonus ${isRecovered ? "recovered" : "granted"}`} key={bonus.id}><span>{isRecovered ? "Recuperado" : "Otorgado"}</span><input defaultValue={money(isRecovered ? bonus.recovered : bonus.granted)} aria-label="Editar bono reciente" onFocus={(event) => { event.currentTarget.value = formatNumberInput(isRecovered ? bonus.recovered : bonus.granted); event.currentTarget.select(); }} onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); event.currentTarget.value = value ? money(value) : "-"; editRecentBonus(bonus.id, value); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>; })}</div>
+  </div>;
+}
+
+function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBonus, onNotify }) {
+  const advertising = caja.advertising || { "Publicidad A": { total: 0, new: 0, repeated: 0, derived: {} }, "Publicidad B": { total: 0, new: 0, repeated: 0, derived: {} } };
+  const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...advertising[name], ...patch } } });
+  const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
+    const copySummary = async () => {
+    const text = ["*Conteo de Publi:*", "", ...["Publicidad A", "Publicidad B"].flatMap((name) => {
+      const item = advertising[name] || {};
+      const total = number(item.total);
+      const newCount = number(item.new);
+      const repeated = number(item.repeated);
+      const response = newCount + repeated - total;
+      const derivedTotal = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0);
+      return [`*${name}*`, `*Efectividad: ${total ? Math.round((derivedTotal / total) * 100) : 0}%*`, "", `Llegados: ${total}`, `- Nuevos: ${newCount}`, `- Repetidos: ${repeated}`, `- S/Respuesta: ${response}`, `Derivados: ${derivedTotal}`, ...boxes.map((box) => `- ${box.title}: ${number(item.derived?.[box.id])}`), ""];
+    })].join("\n");
+    await navigator.clipboard?.writeText(text);
+    onNotify("Copiado al portapapeles");
+  };
+  useEffect(() => {
+    document.querySelectorAll(".advertising-effectiveness").forEach((element) => {
+      const percentage = element.textContent.match(/\d+%/)?.[0];
+      if (percentage) element.textContent = percentage;
+    });
+  }, [advertising]);
+  return <section className="advertising-panel">
+    <div className="advertising-card"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button advertising-copy" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="advertising-content">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const response = number(item.new) + number(item.repeated) - number(item.total); const derivedTotal = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const effectiveness = item.total ? Math.round((derivedTotal / number(item.total)) * 100) : 0; return <div className="advertising-row" key={name}><strong>{name}</strong><div className="advertising-subgroup"><span>Llegados</span><div className="advertising-fields"><label><small>Lleg. Total</small><input maxLength={3} inputMode="numeric" value={item.total || ""} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><small>Nuevos</small><input maxLength={3} inputMode="numeric" value={item.new || ""} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><small>Repetidos</small><input maxLength={3} inputMode="numeric" value={item.repeated || ""} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><small>S/Resp</small><b>{response}</b></label></div></div><div className="advertising-subgroup"><span>Derivados <b>{derivedTotal}</b></span><div className="advertising-derived">{boxes.map((box) => <label key={box.id}><small style={{ color: boxColorStyle(box.color)["--box-accent"] }}>{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] || ""} onChange={(event) => updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: Math.max(0, Number(String(event.target.value).replace(/\D/g, "").slice(0, 3)) || 0) } })} /></label>)}</div></div><strong className="advertising-effectiveness">Efectividad: {effectiveness}%</strong></div>; })}</div></div>
+    <div className="bonus-card"><QuickBonusAccess caja={caja} update={update} onViewBonuses={onViewBonuses} onAddManualBonus={onAddManualBonus} /></div>
+    <div className="chips-card"><SectionHead icon={<Ticket size={16} />} title="Fichas Finales" /><div className="final-chip-fields">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); return <label className={`final-chip-field ${number(chip.final) !== 0 ? "has-value" : ""}`} key={chip.platform}><span>Ficha Final {chip.platform === "Ganamos" ? "Gan." : chip.platform === "Apostamos" ? "Apos." : "Zeus"}</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>Saldo {money(balance)}</small></label>; })}</div></div>
+  </section>;
+}
+
+function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet, onViewBonuses }) {
+  const [notePosition, setNotePosition] = useState(null);
+  const wallets = config.accounts.wallets;
+  const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
+    category,
+    rows: caja.accounts.map((row, index) => ({ row, index })).filter(({ row }) => wallets.some((wallet) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false)),
+  })).filter((group) => group.rows.length);
+  const rowOffsets = walletGroups.map((group, groupIndex) => walletGroups.slice(0, groupIndex).reduce((total, previousGroup) => total + previousGroup.rows.length, 0));
+  const focusAdjacentAmount = (event, rowPosition, walletIndex) => {
+    const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const direction = directions[event.key];
+    if (!direction) return;
+    const [columnStep, rowStep] = direction;
+    const input = event.currentTarget;
+    const selectionStart = input.selectionStart ?? 0;
+    const selectionEnd = input.selectionEnd ?? 0;
+    const hasSelection = selectionStart !== selectionEnd;
+    const selectedAll = hasSelection && selectionStart === 0 && selectionEnd === input.value.length;
+    if (columnStep && !selectedAll && hasSelection) return;
+    if (columnStep && !selectedAll && (columnStep < 0 ? selectionStart > 0 : selectionEnd < input.value.length)) return;
+    const candidates = [...document.querySelectorAll(".account-grid input[data-matrix-row]")].filter((input) => {
+      const candidateRow = Number(input.dataset.matrixRow);
+      const candidateColumn = Number(input.dataset.matrixColumn);
+      return columnStep ? candidateRow === rowPosition && (candidateColumn - walletIndex) * columnStep > 0 : candidateColumn === walletIndex && (candidateRow - rowPosition) * rowStep > 0;
+    });
+    candidates.sort((first, second) => {
+      const firstDistance = columnStep ? Math.abs(Number(first.dataset.matrixColumn) - walletIndex) : Math.abs(Number(first.dataset.matrixRow) - rowPosition);
+      const secondDistance = columnStep ? Math.abs(Number(second.dataset.matrixColumn) - walletIndex) : Math.abs(Number(second.dataset.matrixRow) - rowPosition);
+      return firstDistance - secondDistance;
+    });
+    if (!candidates[0]) return;
+    event.preventDefault();
+    candidates[0].focus();
+  };
+  const totals = useMemo(
+    () => ({
+      rows: walletGroups.map((group) => group.rows.map(({ row }) => wallets.reduce((sum, wallet) => sum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && walletBelongsToBox(row, wallet, config, activeBoxId) ? number(row.values[wallet]) : 0), 0))),
+      columns: wallets.map((wallet) => walletGroups.reduce((sum, group) => sum + group.rows.reduce((groupSum, { row }) => groupSum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && walletBelongsToBox(row, wallet, config, activeBoxId) ? number(row.values[wallet]) : 0), 0), 0)),
+    }),
+    [caja.accounts, wallets, walletGroups, config.accounts.availability, config.accounts.walletSettings, activeBoxId],
+  );
+  const edit = (rowIndex, wallet, value) => {
+    const accounts = structuredClone(caja.accounts);
+    accounts[rowIndex].values[wallet] = value;
+    update({ accounts });
+  };
+  const editNote = (rowIndex, wallet, value) => {
+    const accounts = structuredClone(caja.accounts);
+    accounts[rowIndex].notes = { ...(accounts[rowIndex].notes || {}), [wallet]: value };
+    update({ accounts });
+  };
+  const toggle = (rowIndex, wallet, flag) => {
+    const accounts = structuredClone(caja.accounts);
+    const current = accounts[rowIndex].verified?.[wallet];
+    const state =
+      typeof current === "object"
+        ? current
+        : { collections: Boolean(current), withdrawals: false };
+    state[flag] = !state[flag];
+    accounts[rowIndex].verified[wallet] = state;
+    update({ accounts });
+  };
+  const cellState = (row, wallet) => {
+    const state = row.verified?.[wallet];
+    return typeof state === "object"
+      ? state
+      : { collections: Boolean(state), withdrawals: false };
+  };
+  const renderCell = (row, index, wallet, category, rowPosition, walletIndex) => {
+    const state = cellState(row, wallet);
+    const stateClass = state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : "";
+    const walletCategory = config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal";
+    if (walletCategory !== category || config.accounts.availability[row.holder]?.[wallet] === false) return <td key={wallet}><div className="disabled-wallet" /></td>;
+    const assignedBox = boxes.find((box) => box.id === row.walletBoxes?.[wallet]);
+    const cellColorStyle = assignedBox ? boxColorStyle(assignedBox.color) : { "--box-accent": "#758689", "--box-line": "#536976", "--assignment-dot": "transparent" };
+    const assignmentSelector = category !== "Normal" && <WalletAssignmentSelector boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
+    const checks = <div className="cell-checks"><button tabIndex={-1} className={state.collections ? "checked" : ""} onClick={() => toggle(index, wallet, "collections")} title="Cobros e ingresos"><Check size={11} /></button><button tabIndex={-1} className={state.withdrawals ? "checked" : ""} onClick={() => toggle(index, wallet, "withdrawals")} title="Retiros y egresos"><Check size={11} /></button></div>;
+    return <td key={wallet}><div className="wallet-cell" onMouseEnter={(event) => { const rect = event.currentTarget.querySelector(".account-amount").getBoundingClientRect(); const height = 110; setNotePosition({ left: Math.min(rect.left, window.innerWidth - 198), top: rect.bottom + height > window.innerHeight ? Math.max(8, rect.top - height) : rect.bottom }); }}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><textarea tabIndex={-1} value={row.notes?.[wallet] || ""} placeholder="Escribí una nota..." onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
+  };
+  return (
+    <section className="panel accounts-panel">
+      <div className="table-scroll">
+        <table className="account-grid">
+          <thead>
+            <tr>
+              <th className="sticky-col"><span className="section-icon cyan"><WalletCards size={16} /></span><b>Caja</b></th>
+              {wallets.map((wallet) => (
+                <th className={walletModeClass(config, wallet)} key={wallet}>{wallet}</th>
+              ))}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {walletGroups.flatMap((group, groupIndex) => [group.category !== "Normal" && <tr className="wallet-section-row" key={`${group.category}-title`}><th colSpan={wallets.length + 2}>{`Billeteras ${group.category}`}</th></tr>, ...group.rows.map(({ row, index }, rowIndex) => <tr key={`${group.category}-${row.holder}-${index}`}><th className="sticky-col holder">{row.holder}</th>{wallets.map((wallet, walletIndex) => renderCell(row, index, wallet, group.category, rowOffsets[groupIndex] + rowIndex, walletIndex))}<td className="total-cell">{money(totals.rows[groupIndex][rowIndex])}</td></tr>)])}
+          </tbody>
+          <tfoot>
+            <tr>
+              <th className="sticky-col">Total billetera</th>
+              {totals.columns.map((total, index) => (
+                <th key={wallets[index]}>{money(total)}</th>
+              ))}
+              <th className="grand-total">
+                {money(totals.columns.reduce((a, b) => a + b, 0))}
+              </th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function BonusesSection({ caja, update, viewRequest, editorRequest }) {
+  const [quick, setQuick] = useState("");
+  const [recoveredMode, setRecoveredMode] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorAmount, setEditorAmount] = useState(0);
+  const [editorPercent, setEditorPercent] = useState(0);
+  const [noteId, setNoteId] = useState(null);
+  const [deleteIndex, setDeleteIndex] = useState(null);
+  useEffect(() => {
+    if (viewRequest) setOpen(true);
+  }, [viewRequest]);
+  useEffect(() => {
+    if (editorRequest) openBonusEditor();
+  }, [editorRequest]);
+  const granted = caja.bonuses.reduce((s, x) => s + number(x.granted), 0);
+  const recovered = caja.bonuses.reduce((s, x) => s + number(x.recovered), 0);
+  const addBonus = (event) => {
+    if (!["Enter", "+"].includes(event.key) || !parseNumberInput(quick)) return;
+    event.preventDefault();
+    const recovered = event.key === "+" || recoveredMode;
+    update({
+      bonuses: [
+        ...caja.bonuses,
+        {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          label: "",
+          granted: recovered ? 0 : parseNumberInput(quick),
+          recovered: recovered ? parseNumberInput(quick) : 0,
+          verified: false,
+        },
+      ],
+    });
+    setQuick("");
+    setRecoveredMode(false);
+  };
+  const editBonus = (index, patch) => {
+    const bonuses = structuredClone(caja.bonuses);
+    bonuses[index] = { ...bonuses[index], ...patch };
+    update({ bonuses });
+  };
+  const removeBonus = (index) => {
+    update({ bonuses: caja.bonuses.filter((_, itemIndex) => itemIndex !== index) });
+    setNoteId(null);
+    setDeleteIndex(null);
+  };
+  const openBonusEditor = () => {
+    setEditorAmount(0);
+    setEditorPercent(0);
+    setRecoveredMode(false);
+    setEditorOpen(true);
+  };
+  const addEditedBonus = () => {
+    if (!editorAmount) return;
+    const amount = Math.round(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1) * 100) / 100;
+    if (!amount) return;
+    update({
+      bonuses: [
+        ...caja.bonuses,
+        {
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString(),
+          label: "",
+          granted: recoveredMode ? 0 : amount,
+          recovered: recoveredMode ? amount : 0,
+          verified: false,
+        },
+      ],
+    });
+    setEditorOpen(false);
+  };
+  return (
+    <section className="panel">
+      <SectionHead
+        icon={<Gift size={18} />}
+        title="Bonos"
+        meta={`${caja.bonuses.length} movimientos`}
+        action={
+          <div className="bonus-actions">
+            <button className="icon-button" title="Agregar bono" onClick={openBonusEditor}>
+              <Plus size={16} />
+            </button>
+            <button className="icon-button" title="Ver y editar bonos" onClick={() => setOpen(true)}>
+              <Eye size={16} />
+            </button>
+          </div>
+        }
+      />
+      <div className="bonus-quick">
+        <div className={`quick-amount ${recoveredMode ? "recovered" : "granted"}`}>
+          <span>$</span>
+          <input
+            value={quick}
+            placeholder={`Insertar Bono ${recoveredMode ? "Recuperado" : "Otorgado"}`}
+            inputMode="decimal"
+            onChange={(e) => setQuick(e.target.value)}
+            onBlur={() => setQuick(formatNumberInput(quick))}
+            onKeyDown={addBonus}
+          />
+        </div>
+        <button
+          className={`bonus-toggle ${recoveredMode ? "checked" : ""}`}
+          title="Cambiar entre otorgado y recuperado"
+          onClick={() => setRecoveredMode(!recoveredMode)}
+          onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBonus(event); } }}
+        >
+          <ArrowUpDown size={13} />
+        </button>
+      </div>
+      {editorOpen && (
+        <div className="modal-backdrop" onClick={() => setEditorOpen(false)}>
+          <div className="modal bonus-editor-modal" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setEditorOpen(false)} title="Cancelar"><X size={18} /></button>
+            <div className={`modal-icon ${recoveredMode ? "green" : "orange"}`}><Gift size={22} /></div>
+            <h2>Agregar bono</h2>
+            <p>Ingresá un valor, aplicá un porcentaje (opcional)
+
+ y confirmá el bono.</p>
+            <div className="bonus-editor-fields">
+              <label>
+                <span>Valor</span>
+                <AmountInput value={editorAmount} onChange={setEditorAmount} />
+              </label>
+              <label>
+                <span>Porcentaje (opcional)
+</span>
+                <div className="percent-input">
+                  <NumericInput value={editorPercent} onChange={setEditorPercent} zeroPlaceholder="0" />
+                  <b>%</b>
+                </div>
+              </label>
+            </div>
+            <div className={`bonus-editor-type ${recoveredMode ? "recovered" : "granted"}`}>
+              <span>{recoveredMode ? "Bono recuperado" : "Bono otorgado"}</span>
+              <button className={`bonus-toggle ${recoveredMode ? "checked" : ""}`} title="Cambiar tipo" onClick={() => setRecoveredMode(!recoveredMode)}>
+                <ArrowUpDown size={13} />
+              </button>
+            </div>
+            <span className="bonus-editor-label">Sumar al valor</span>
+            <div className="bonus-shortcuts">
+              {[100, 500, 1000, 2500, 5000, 10000].map((value) => (
+                <button key={value} onClick={() => setEditorAmount((current) => current + value)}>{formatNumberInput(value)}</button>
+              ))}
+            </div>
+            <div className="bonus-editor-preview">
+              <span>Bono a agregar</span>
+              <b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b>
+            </div>
+            <div className="modal-actions">
+              <button className="ghost-button" onClick={() => setEditorOpen(false)}>Cancelar</button>
+              <button className="close-button" onClick={addEditedBonus}>Listo <Check size={16} /></button>
+            </div>
+          </div>
+        </div>
+      )}
+      {open && (
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
+          <div className="modal bonus-modal" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setOpen(false)}><X size={18} /></button>
+            <div className="modal-icon"><Gift size={22} /></div>
+            <h2>Bonos del turno</h2>
+            <p>Revisá el monto, cambiá su tipo con el check y agregá una nota si hace falta.</p>
+        <div className="bonus-list">
+          {caja.bonuses.length === 0 && (
+            <div className="empty-state">Todavía no hay bonos cargados.</div>
+          )}
+          {caja.bonuses.map((bonus, index) => (
+            <div className={`bonus-row ${bonus.recovered > 0 ? "recovered" : "granted"}`} key={bonus.id}>
+              <time className="movement-time">{formatMovementTime(bonus.createdAt)}</time>
+              <AmountInput
+                value={bonus.recovered || bonus.granted}
+                onChange={(value) => editBonus(index, bonus.recovered > 0 ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 })}
+              />
+              <button
+                className={`bonus-toggle ${bonus.recovered > 0 ? "checked" : ""}`}
+                title="Cambiar entre otorgado y recuperado"
+                onClick={() => editBonus(index, bonus.recovered > 0 ? { recovered: 0, granted: bonus.recovered } : { granted: 0, recovered: bonus.granted })}
+              >
+                <ArrowUpDown size={13} />
+              </button>
+              <button className={`note-button ${bonus.note ? "has-note" : ""}`} title="Agregar nota" onClick={() => setNoteId(noteId === bonus.id ? null : bonus.id)}>
+                <FileText size={14} />
+              </button>
+              <button className="delete-button" title="Eliminar bono" onClick={() => setDeleteIndex(index)}>
+                <Trash2 size={14} />
+              </button>
+              {noteId === bonus.id && (
+                <input
+                  className="note-input"
+                  placeholder="Nota del bono"
+                  value={bonus.note}
+                  onChange={(e) => editBonus(index, { note: e.target.value })}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+            <div className="modal-actions"><button className="close-button" onClick={() => setOpen(false)}>Listo <Check size={16} /></button></div>
+          </div>
+        </div>
+      )}
+      <div className="recent-bonuses">
+        <span className="recent-bonuses-title">Últimos bonos</span>
+        {caja.bonuses.slice().reverse().map((bonus, reverseIndex) => {
+          const isRecovered = number(bonus.recovered) > 0;
+          const bonusIndex = caja.bonuses.length - 1 - reverseIndex;
+          const amount = isRecovered ? bonus.recovered : bonus.granted;
+          return (
+            <div className={`recent-bonus ${isRecovered ? "recovered" : "granted"}`} key={bonus.id}>
+              <span>{isRecovered ? "Recuperado" : "Otorgado"}</span>
+              <input
+                className="recent-bonus-amount"
+                defaultValue={money(amount)}
+                aria-label={`Valor del bono ${isRecovered ? "recuperado" : "otorgado"}`}
+                inputMode="decimal"
+                onFocus={(event) => { event.currentTarget.value = formatNumberInput(amount); event.currentTarget.select(); }}
+                onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); if (!value) { removeBonus(bonusIndex); return; } event.currentTarget.value = money(value); editBonus(bonusIndex, isRecovered ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 }); }}
+                onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+              />
+            </div>
+          );
+        })}
+        {caja.bonuses.length === 0 && <span className="recent-empty">Sin movimientos todavía</span>}
+      </div>
+      <div className="totals-line bonus-total">
+        <span>
+          Otorgados <b>{money(granted)}</b>
+        </span>
+        <span>
+          Recuperados <b>{money(recovered)}</b>
+        </span>
+        <strong>
+          Neto <b>{money(granted - recovered)}</b>
+        </strong>
+      </div>
+      {deleteIndex !== null && <ConfirmDialog message="¿Seguro que querés eliminar este bono?" onCancel={() => setDeleteIndex(null)} onConfirm={() => removeBonus(deleteIndex)} />}
+    </section>
+  );
+}
+
+function QuickMovementSection({ title, tone, rows, update, kind, config }) {
+  const [quick, setQuick] = useState("");
+  const [quickNotes, setQuickNotes] = useState("");
+  const [quickUser, setQuickUser] = useState("");
+  const [quickCategory, setQuickCategory] = useState(config.expenses[0]?.name || "Gasto");
+  const [open, setOpen] = useState(false);
+  const [deleteIndex, setDeleteIndex] = useState(null);
+  const isExpense = kind === "expenses";
+  const expenseOptions = config.expenses.filter((expense) => expense.name.trim());
+  const movementDetail = (row) => (isExpense ? [row.category, row.notes] : [row.user, row.notes]).filter(Boolean).join(" · ");
+  const movementIcon = kind === "expenses" ? <ReceiptText size={20} /> : kind === "tips" ? <Coins size={20} /> : <ArrowDownToLine size={20} />;
+  const total = rows.reduce((sum, row) => {
+    const expense = isExpense && config.expenses.find((item) => item.name === row.category);
+    return sum + number(row.amount) * (expense?.inverted ? -1 : 1);
+  }, 0);
+  const add = () => {
+    if (!parseNumberInput(quick)) return;
+    const row = isExpense
+      ? { id: crypto.randomUUID(), category: quickCategory, amount: parseNumberInput(quick), notes: quickNotes, createdAt: new Date().toISOString() }
+      : { id: crypto.randomUUID(), notes: quickNotes, amount: parseNumberInput(quick), user: quickUser || "Cajero", createdAt: new Date().toISOString() };
+    update({ [kind]: [...rows, row] });
+    setQuick("");
+    setQuickNotes("");
+    setQuickUser("");
+  };
+  const submitOnEnter = (event) => {
+    if (event.key === "Enter" && parseNumberInput(quick)) {
+      event.preventDefault();
+      add();
+    }
+  };
+  const editRow = (index, patch) => {
+    const next = structuredClone(rows);
+    next[index] = { ...next[index], ...patch };
+    update({ [kind]: next });
+  };
+  const removeRow = (index) => {
+    update({ [kind]: rows.filter((_, itemIndex) => itemIndex !== index) });
+    setDeleteIndex(null);
+  };
+  return (
+    <section className={`panel compact movement-section ${isExpense ? "expense-movement" : "income-movement"}`}>
+      <SectionHead
+        icon={
+          kind === "expenses" ? <ReceiptText size={18} /> : kind === "tips" ? <Coins size={18} /> : <ArrowDownToLine size={18} />
+        }
+        title={title}
+        meta={`${rows.length} registros`}
+        action={
+          <button
+            className="icon-button"
+            title="Ver y editar registros"
+            onClick={() => setOpen(true)}
+          >
+            <Eye size={16} />
+          </button>
+        }
+      />
+      <div className="quick-movement-input">
+        {isExpense ? <select value={quickCategory} onChange={(e) => setQuickCategory(e.target.value)} onKeyDown={submitOnEnter}>{expenseOptions.map((expense) => <option key={expense.name}>{expense.name}</option>)}</select> : null}
+        {!isExpense ? <input className="quick-user" value={quickUser} placeholder="Usuario" onChange={(e) => setQuickUser(e.target.value)} onKeyDown={submitOnEnter} /> : null}
+        <div className={`quick-amount ${tone}`}><span>$</span><input value={quick} placeholder="Monto" inputMode="decimal" onChange={(e) => setQuick(e.target.value)} onBlur={() => setQuick(formatNumberInput(quick))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); add(); } }} /></div>
+        <input className="quick-detail" value={quickNotes} placeholder="Notas" onChange={(e) => setQuickNotes(e.target.value)} onKeyDown={submitOnEnter} />
+        <button className="send-button" title="Enviar" onClick={add}><Send size={15} /></button>
+      </div>
+      <div className="recent-movements"><span>Últimos {title.toLowerCase()}</span>{rows.slice().reverse().map((row) => <div className="recent-movement" key={row.id}><span>{movementDetail(row)}</span><b>{money(row.amount)}</b></div>)}{rows.length === 0 && <small>Sin movimientos todavía</small>}</div>
+      <div className="movement-total">
+        <span>Total</span>
+        <b className={tone === "red" ? "negative" : ""}>{money(total)}</b>
+      </div>
+        {open && <div className="modal-backdrop" onClick={() => setOpen(false)}><div className="modal movement-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setOpen(false)}><X size={18} /></button><div className={`modal-icon ${tone}`}>{movementIcon}</div><h2>{title} del turno</h2><p>Editá los datos completos de cada movimiento.</p><div className="movement-edit-list">{rows.length === 0 && <div className="empty-state">Todavía no hay movimientos.</div>}{rows.map((row, index) => <div className="movement-edit-row" key={row.id}><time className="movement-time">{formatMovementTime(row.createdAt)}</time>{isExpense && <select value={row.category} onChange={(e) => editRow(index, { category: e.target.value })}>{expenseOptions.map((expense) => <option key={expense.name}>{expense.name}</option>)}</select>}{!isExpense && <input placeholder="Usuario" value={row.user} onChange={(e) => editRow(index, { user: e.target.value })}/>}<AmountInput value={row.amount} onChange={(value) => editRow(index, { amount: value })} /><input placeholder="Notas" value={row.notes} onChange={(e) => editRow(index, { notes: e.target.value })} /><button className="delete-button" title={`Eliminar ${title.toLowerCase()}`} onClick={() => setDeleteIndex(index)}><Trash2 size={14}/></button></div>)}</div><div className="modal-actions"><button className="close-button" onClick={() => setOpen(false)}>Listo <Check size={16} /></button></div></div></div>}
+      {deleteIndex !== null && <ConfirmDialog message={`¿Seguro que querés eliminar este registro de ${title}?`} onCancel={() => setDeleteIndex(null)} onConfirm={() => removeRow(deleteIndex)} />}
+    </section>
+  );
+}
+
+function FoundMoneySection({ caja, update, config }) {
+  const [amount, setAmount] = useState("");
+  const [holder, setHolder] = useState("");
+  const [wallet, setWallet] = useState("");
+  const [note, setNote] = useState("");
+  const [error, setError] = useState("");
+  const [open, setOpen] = useState(false);
+  const records = Array.isArray(caja.foundMoney) ? caja.foundMoney : (number(caja.found) ? [{ id: "legacy-found", amount: caja.found }] : []);
+  const availableWallets = holder ? config.accounts.wallets.filter((item) => config.accounts.availability[holder]?.[item] !== false) : [];
+  const add = () => {
+    if (!parseNumberInput(amount) || (!holder && !wallet && !note.trim())) { setError("Completá el monto y al menos un dato."); return; }
+    update({ foundMoney: [...records, { id: crypto.randomUUID(), amount: parseNumberInput(amount), holder, wallet, note: note.trim(), createdAt: new Date().toISOString() }] });
+    setAmount(""); setHolder(""); setWallet(""); setNote(""); setError("");
+  };
+  const remove = (index) => update({ foundMoney: records.filter((_, itemIndex) => itemIndex !== index) });
+  const editRecord = (index, patch) => { const next = structuredClone(records); next[index] = { ...next[index], ...patch }; update({ foundMoney: next }); };
+  const detail = (record) => [record.holder, record.wallet, record.note].filter(Boolean).join(" · ") || "Sin detalle";
+  return <section className="panel compact found-money-section">
+    <SectionHead icon={<Banknote size={18} />} title="Dinero encontrado" meta={`${records.length} registros`} action={<button className="icon-button" title="Ver y editar dinero encontrado" onClick={() => setOpen(true)}><Eye size={16} /></button>} />
+    <div className="found-money-input">
+      <select value={holder} onChange={(event) => { const nextHolder = event.target.value; const nextWallets = nextHolder ? config.accounts.wallets.filter((item) => config.accounts.availability[nextHolder]?.[item] !== false) : []; setHolder(nextHolder); if (!nextWallets.includes(wallet)) setWallet(""); }}><option value="">Titular</option>{config.accounts.holders.map((item) => <option key={item}>{item}</option>)}</select>
+      <select value={wallet} disabled={!holder} onChange={(event) => setWallet(event.target.value)}><option value="">Billetera</option>{availableWallets.map((item) => <option key={item}>{item}</option>)}</select>
+      <AmountInput value={amount} onChange={setAmount} />
+      <input value={note} placeholder="Nota" onChange={(event) => setNote(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") add(); }} />
+      <button className="send-button" title="Agregar dinero encontrado" onClick={add}><Send size={15} /></button>
+    </div>
+    {error && <small className="transfer-error found-money-error">{error}</small>}
+    <div className="recent-movements"><span>Últimos registros</span>{records.slice().reverse().map((record) => <div className="recent-movement" key={record.id}><span>{detail(record)}</span><b>{money(record.amount)}</b></div>)}{records.length === 0 && <small>Sin movimientos todavía</small>}</div>
+    <div className="movement-total"><span>Total</span><b>{money(records.reduce((sum, record) => sum + number(record.amount), 0))}</b></div>
+    {open && <div className="modal-backdrop" onClick={() => setOpen(false)}><div className="modal movement-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setOpen(false)}><X size={18} /></button><div className="modal-icon"><Banknote size={22} /></div><h2>Dinero encontrado del turno</h2><p>Revisá o editá los registros encontrados.</p><div className="movement-edit-list">{records.length === 0 && <div className="empty-state">Todavía no hay registros.</div>}{records.map((record, index) => { const recordWallets = record.holder ? config.accounts.wallets.filter((item) => config.accounts.availability[record.holder]?.[item] !== false) : []; return <div className="movement-edit-row found-money-edit-row" key={record.id}><time className="movement-time">{formatMovementTime(record.createdAt)}</time><select value={record.holder || ""} onChange={(event) => { const nextHolder = event.target.value; const nextWallets = nextHolder ? config.accounts.wallets.filter((item) => config.accounts.availability[nextHolder]?.[item] !== false) : []; editRecord(index, { holder: nextHolder, wallet: nextWallets.includes(record.wallet) ? record.wallet : "" }); }}><option value="">Titular</option>{config.accounts.holders.map((item) => <option key={item}>{item}</option>)}</select><select value={record.wallet || ""} disabled={!record.holder} onChange={(event) => editRecord(index, { wallet: event.target.value })}><option value="">Billetera</option>{recordWallets.map((item) => <option key={item}>{item}</option>)}</select><input value={record.note || ""} placeholder="Nota" onChange={(event) => editRecord(index, { note: event.target.value })} /><AmountInput value={record.amount} onChange={(value) => editRecord(index, { amount: value })} /><button className="delete-button" title="Eliminar dinero encontrado" onClick={() => remove(index)}><Trash2 size={14} /></button></div>; })}</div><div className="modal-actions"><button className="close-button" onClick={() => setOpen(false)}>Listo <Check size={16} /></button></div></div></div>}
+  </section>;
+}
+
+function ChipsSection({ caja, update }) {
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [loadsEditorOpen, setLoadsEditorOpen] = useState(false);
+  const [loadAmount, setLoadAmount] = useState("");
+  const [loadPlatform, setLoadPlatform] = useState(caja.chips[0]?.platform || "");
+  const chipLoads = caja.chipLoads || [];
+  const totalBalance = caja.chips.reduce(
+    (sum, chip) => sum + number(chip.initial) - number(chip.final),
+    0,
+  );
+  const addChipLoad = () => {
+    const amount = parseNumberInput(loadAmount);
+    if (!amount || !loadPlatform) return;
+    const chips = structuredClone(caja.chips);
+    const chip = chips.find((item) => item.platform === loadPlatform);
+    if (!chip) return;
+    chip.initial = number(chip.initial) + amount;
+    update({ chips, chipLoads: [...chipLoads, { id: crypto.randomUUID(), platform: loadPlatform, amount, createdAt: new Date().toISOString() }] });
+    setLoadAmount("");
+    setLoadOpen(false);
+  };
+  const updateChipLoads = (nextLoads) => {
+    const chips = structuredClone(caja.chips);
+    chips.forEach((chip) => {
+      const previousLoads = chipLoads.filter((load) => load.platform === chip.platform).reduce((sum, load) => sum + number(load.amount), 0);
+      const nextPlatformLoads = nextLoads.filter((load) => load.platform === chip.platform).reduce((sum, load) => sum + number(load.amount), 0);
+      chip.initial = number(chip.initial) - previousLoads + nextPlatformLoads;
+    });
+    update({ chips, chipLoads: nextLoads });
+  };
+  return (
+    <section className="panel compact">
+      <SectionHead
+        icon={<Ticket size={18} />}
+        title="Control de fichas"
+        meta="Plataformas / casino"
+        action={<div className="chips-actions"><button className="icon-button" title="Agregar carga de fichas" onClick={() => setLoadOpen(true)}><Plus size={16} /></button><button className="icon-button" title="Ver y editar cargas de fichas" onClick={() => setLoadsEditorOpen(true)}><Eye size={16} /></button></div>}
+      />
+      <div className="chips-head">
+        <span>Plataforma</span>
+        <span>Inicial</span>
+        <span>Final</span>
+        <span>Saldo</span>
+      </div>
+      <div className="chips-list">
+        {caja.chips.map((chip, index) => (
+          <div className="chip-row" key={chip.platform}>
+            <b>{chip.platform}</b>
+            <div className="chip-initial-value">{money(chip.initial)}</div>
+            <AmountInput
+              value={chip.final}
+              onChange={(value) => {
+                const chips = structuredClone(caja.chips);
+                chips[index].final = value;
+                update({ chips });
+              }}
+            />
+            <strong
+              className={chip.initial - chip.final < 0 ? "negative" : "positive"}
+            >
+              {money(number(chip.initial) - number(chip.final))}
+            </strong>
+          </div>
+        ))}
+      </div>
+      {chipLoads.length > 0 && <div className="chip-loads"><span className="chip-loads-title">Cargas de fichas</span>{chipLoads.slice().reverse().map((load) => <div className="chip-load-row" key={load.id}><span>{load.platform}</span><b>+{money(load.amount)}</b></div>)}</div>}
+      <div className="movement-total chips-total">
+        <span>Total saldo</span>
+        <b className={totalBalance < 0 ? "negative" : "positive"}>{money(totalBalance)}</b>
+      </div>
+      {loadOpen && <div className="modal-backdrop" onClick={() => setLoadOpen(false)}><div className="modal chip-load-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" title="Cerrar" onClick={() => setLoadOpen(false)}><X size={18} /></button><div className="modal-icon"><Ticket size={22} /></div><h2>Carga de fichas</h2><p>Sumá fichas al inicio de este turno.</p><div className="chip-load-fields"><label><span>Monto</span><AmountInput value={loadAmount} onChange={setLoadAmount} /></label><label><span>Plataforma</span><select value={loadPlatform} onChange={(event) => setLoadPlatform(event.target.value)}>{caja.chips.map((chip) => <option key={chip.platform}>{chip.platform}</option>)}</select></label></div><div className="modal-actions"><button className="ghost-button" onClick={() => setLoadOpen(false)}>Cancelar</button><button className="close-button" onClick={addChipLoad}>Cargar <Check size={16} /></button></div></div></div>}
+      {loadsEditorOpen && <div className="modal-backdrop" onClick={() => setLoadsEditorOpen(false)}><div className="modal chip-load-editor-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" title="Cerrar" onClick={() => setLoadsEditorOpen(false)}><X size={18} /></button><div className="modal-icon"><Ticket size={22} /></div><h2>Cargas de fichas</h2><p>Modificá o eliminá las cargas de este turno.</p><div className="chip-load-edit-list">{chipLoads.length === 0 && <div className="empty-state">Todavía no hay cargas.</div>}{chipLoads.map((load, index) => <div className="chip-load-edit-row" key={load.id}><time className="movement-time">{formatMovementTime(load.createdAt)}</time><b>{load.platform}</b><AmountInput value={load.amount} onChange={(value) => updateChipLoads(chipLoads.map((item, itemIndex) => itemIndex === index ? { ...item, amount: value } : item))} /><button className="delete-button" title="Eliminar carga" onClick={() => updateChipLoads(chipLoads.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={14} /></button></div>)}</div><div className="modal-actions"><button className="close-button" onClick={() => setLoadsEditorOpen(false)}>Listo <Check size={16} /></button></div></div></div>}
+    </section>
+  );
+}
+
+function SummaryCard({ caja, calculations, update }) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const metric = (label, value, className = "") => (
+    <div className={className}>
+      <span>{label}</span>
+      <b>{money(value)}</b>
+    </div>
+  );
+  return (
+    <aside className="summary-card">
+      <div className="summary-head">
+        <div>
+          <span className="eyebrow">Resumen</span>
+        </div>
+        <div className="summary-actions">
+          <button className="icon-button" title="Ver resumen avanzado" onClick={() => setAdvancedOpen(true)}>
+            <Eye size={16} />
+          </button>
+          <span className={`status-badge ${caja.status === "CERRADA" ? "closed" : "open"}`}>
+            <span /> {caja.status}
+          </span>
+        </div>
+      </div>
+      <div className="main-result">
+        <span>Sobrante / Faltante</span>
+        <strong className={calculations.shortage < 0 ? "negative" : calculations.shortage > 0 ? "positive" : "neutral"}>
+          {calculations.shortage >= 0 ? "+" : ""}{money(calculations.shortage)}
+        </strong>
+      </div>
+      <div className="metric-list">
+        {metric("Caja inicial", calculations.cashInitial)}
+        {metric("Caja final", calculations.cashFinal)}
+        {metric("Diferencia caja", calculations.cashDifference)}
+        {metric("Diferencia real", calculations.realDifference)}
+      </div>
+      <div className="found-money">
+        <label>Redondeo</label>
+        <AmountInput
+          value={caja.found}
+          className={number(caja.found) !== 0 ? "has-value" : ""}
+          onChange={(value) => update({ found: value })}
+        />
+      </div>
+      {advancedOpen && (
+        <div className="modal-backdrop" onClick={() => setAdvancedOpen(false)}>
+          <div className="modal advanced-summary-modal" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setAdvancedOpen(false)} title="Cerrar resumen avanzado"><X size={18} /></button>
+            <div className="modal-icon"><Banknote size={22} /></div>
+            <h2>Resumen Avanzado</h2>
+            <p>Detalle completo de los valores calculados para este turno.</p>
+            <div className="advanced-summary-list">
+              {metric("Sobrante / Faltante", calculations.shortage, "highlight")}
+              {metric("Caja inicial", calculations.cashInitial)}
+              {metric("Caja final", calculations.cashFinal)}
+              {metric("Pre diferencia", calculations.preDifference)}
+              {metric("Diferencia", calculations.difference)}
+              {metric("Saldo", calculations.balance)}
+              {metric("Redondeo", caja.found)}
+              {metric("Diferencia caja", calculations.cashDifference)}
+              {metric("Diferencia real", calculations.realDifference)}
+            </div>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
+
+function HistoryModal({ history, onClose }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal history-modal" onClick={(event) => event.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} title="Cerrar historial"><X size={18} /></button>
+        <div className="modal-icon"><Clock3 size={22} /></div>
+        <h2>Cajas recientes</h2>
+        <p>Consultá los últimos turnos y sus cierres.</p>
+        <div className="history-modal-list">
+          {history.map((item, index) => (
+            <div className={`history-item ${index === 0 ? "current" : ""}`} key={item.id}>
+              <div>
+                <b>Turno {item.shift}</b>
+                <span>{new Date(item.date).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long" })} · {item.status === "ABIERTA" ? "Actual" : "Cerrada"}</span>
+              </div>
+              <strong>{money(item.cashFinal ?? 0)}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
+  const wallets = config.accounts.wallets;
+  const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
+    category,
+    rows: caja.accounts.filter((row) => wallets.some((wallet) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false)),
+  })).filter((group) => group.rows.length);
+  const totalRows = (rows, kind) => rows.reduce((sum, row) => {
+    const expense = kind === "expenses" && config.expenses.find((item) => item.name === row.category);
+    return sum + number(row.amount) * (expense?.inverted ? -1 : 1);
+  }, 0);
+  const shortDate = new Date(caja.date).toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+  const capitalizedDate = shortDate.charAt(0).toUpperCase() + shortDate.slice(1);
+  const movementRows = [
+    ["Gastos", "ReceiptText", caja.expenses, "expenses"],
+    ["Propinas", "Coins", caja.tips, "tips"],
+    ["Cargas T.A.", "ArrowDownToLine", caja.ta, "ta"],
+  ];
+  const stateFor = (row, wallet) => {
+    const state = row.verified?.[wallet];
+    return typeof state === "object"
+      ? state
+      : { collections: Boolean(state), withdrawals: false };
+  };
+  const isWalletAvailable = (row, wallet) => config.accounts.availability[row.holder]?.[wallet] !== false;
+  const rowWalletTotal = (row, category) => wallets.reduce((sum, wallet) => sum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === category && walletBelongsToBox(row, wallet, config, activeBox?.id) ? number(row.values[wallet]) : 0), 0);
+  const walletTotal = (wallet) => caja.accounts.reduce((sum, row) => sum + (walletBelongsToBox(row, wallet, config, activeBox?.id) ? number(row.values[wallet]) : 0), 0);
+  return (
+    <div ref={snapshotRef} className="snapshot-export" style={boxColorStyle(activeBox?.color)}>
+      <div className="snapshot-title">
+        <h1><strong>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</strong></h1>
+        <p>{capitalizedDate}</p>
+      </div>
+      <div className="snapshot-summary">
+        {[
+          ["Sobrante / Faltante", calculations.shortage, "primary"],
+          ["Caja inicial", calculations.cashInitial],
+          ["Caja final", calculations.cashFinal],
+          ["Pre diferencia", calculations.preDifference],
+          ["Diferencia", calculations.difference],
+          ["Saldo", calculations.balance],
+          ["Redondeo", caja.found],
+          ["Diferencia caja", calculations.cashDifference],
+          ["Diferencia real", calculations.realDifference],
+        ].map(([label, value, className = ""]) => (
+          <div className={`${className} ${value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}`} key={label}>
+            <small>{label}</small>
+            <b>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b>
+          </div>
+        ))}
+      </div>
+      <section className="snapshot-panel">
+        <h2><WalletCards size={16} /> Matriz de cuentas <small>{caja.accounts.length} titulares · {wallets.length} billeteras</small></h2>
+        <table><thead><tr><th>Caja</th>{wallets.map((wallet) => <th className={walletModeClass(config, wallet)} key={wallet}>{wallet}</th>)}<th>Total</th></tr></thead><tbody>
+          {walletGroups.flatMap((group) => [group.category !== "Normal" && <tr className="wallet-section-row" key={`${group.category}-title`}><th colSpan={wallets.length + 2}>{`Billeteras ${group.category}`}</th></tr>, ...group.rows.map((row) => <tr key={`${group.category}-${row.holder}`}><th>{row.holder}</th>{wallets.map((wallet) => { const state = stateFor(row, wallet); const stateClass = state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : ""; const available = config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && isWalletAvailable(row, wallet); const valueClass = !available ? "zero-value" : number(row.values[wallet]) !== 0 ? "has-money" : "zero-value"; return <td className={`${valueClass} ${stateClass}`} key={wallet}>{available && <><span>{money(row.values[wallet])}</span><i>{state.collections ? "✓" : ""}{state.withdrawals ? "✓" : ""}</i></>}</td>; })}<td>{money(rowWalletTotal(row, group.category))}</td></tr>)])}
+          <tr className="snapshot-wallet-total"><th>Total billetera</th>{wallets.map((wallet) => <th key={wallet}>{money(walletTotal(wallet))}</th>)}<th>{money(wallets.reduce((sum, wallet) => sum + walletTotal(wallet), 0))}</th></tr>
+        </tbody></table>
+      </section>
+      <div className="snapshot-grid">
+        {movementRows.map(([title, icon, rows, kind]) => <section className="snapshot-panel" key={title}><h2>{icon === "ReceiptText" ? <ReceiptText size={16} /> : icon === "Coins" ? <Coins size={16} /> : <ArrowDownToLine size={16} />} {title} <small>{rows.length} registros</small></h2><div className="snapshot-list">{rows.map((row) => <div className="snapshot-line" key={row.id}><span>{(kind === "expenses" ? [row.category, row.notes] : [row.user, row.notes]).filter(Boolean).join(" · ")}</span><b>{money(row.amount)}</b></div>)}</div><div className="snapshot-total"><span>Total</span><b>{money(totalRows(rows, kind))}</b></div></section>)}
+        <section className="snapshot-panel snapshot-bonuses"><h2><Gift size={16} /> Bonos <small>{caja.bonuses.length} movimientos</small></h2><div className="snapshot-subtitle">Últimos bonos</div><div className="snapshot-list">{caja.bonuses.map((bonus) => <div className={`snapshot-line ${bonus.recovered > 0 ? "recovered" : "granted"}`} key={bonus.id}><span>{bonus.recovered > 0 ? "Recuperado" : "Otorgado"}</span><b>{money(bonus.recovered || bonus.granted)}</b></div>)}</div><div className="snapshot-bonus-total"><span>Otorgados <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0))}</b></span><span>Recuperados <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0))}</b></span><strong>Neto <b>{money(calculations.bonuses)}</b></strong></div></section>
+        <section className="snapshot-panel"><h2><Ticket size={16} /> Control de fichas <small>Plataformas / casino</small></h2><div className="snapshot-chip-head"><span>Plataforma</span><span>Inicial</span><span>Final</span><span>Saldo</span></div><div className="snapshot-list">{caja.chips.map((chip) => <div className="snapshot-chip-row" key={chip.platform}><span>{chip.platform}</span><b>{money(chip.initial)}</b><b>{money(chip.final)}</b><b className={number(chip.initial) - number(chip.final) < 0 ? "negative" : "positive"}>{money(number(chip.initial) - number(chip.final))}</b></div>)}</div><div className="snapshot-total"><span>Total saldo</span><b className={calculations.balance < 0 ? "negative" : "positive"}>{money(calculations.balance)}</b></div></section>
+      </div>
+      <div className="snapshot-notes-transfer"><section className="snapshot-panel snapshot-notes"><h2>Notas del turno</h2><div className="snapshot-note-block"><strong>Turno actual</strong><p>{caja.notes || ""}</p></div><div className="snapshot-note-block"><strong>Turno siguiente</strong><p>{caja.nextNotes || ""}</p></div></section><section className="snapshot-panel snapshot-transfers"><h2><ArrowLeftRight size={16} /> Traspasos <small>{(caja.transfers || []).length} movimientos</small></h2><div className="snapshot-list">{(caja.transfers || []).map((transfer) => { const outgoing = transfer.fromBoxId === activeBox?.id; const otherBox = boxes.find((box) => box.id === (outgoing ? transfer.toBoxId : transfer.fromBoxId)); return <div className="snapshot-line" key={transfer.id}><span>{outgoing ? "Salida a" : "Entrada de"} {otherBox?.title || "otra caja"}{transfer.note ? ` · ${transfer.note}` : ""}</span><b>{money(transfer.amount)}</b></div>; })}{!(caja.transfers || []).length && <div className="snapshot-line"><span>Sin traspasos todavía</span></div>}</div></section></div>
+    </div>
+  );
+}
+
+function App() {
+  const captureRef = React.useRef(null);
+  const snapshotRef = React.useRef(null);
+  const [caja, setCaja] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [confirm, setConfirm] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [configurationOpen, setConfigurationOpen] = useState(false);
+  const [bonusViewRequest, setBonusViewRequest] = useState(0);
+  const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
+  const [toast, setToast] = useState("");
+  const [config, setConfig] = useState(null);
+  const [boxes, setBoxes] = useState(null);
+  const [activeBoxId, setActiveBoxId] = useState(null);
+  const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
+  const readOnly = selectedIndex !== 0;
+  const notify = (message) => {
+    setToast(message);
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => setToast(""), 3000);
+  };
+  useEffect(() => {
+    if (!activeBox) return undefined;
+    const colors = boxColorStyle(activeBox.color);
+    Object.entries(colors).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
+    return undefined;
+  }, [activeBox?.color]);
+  useEffect(() => {
+    api("/api/cajas").then((availableBoxes) => {
+      const boxId = availableBoxes[0]?.id;
+      setBoxes(availableBoxes);
+      setActiveBoxId(boxId);
+      return Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(
+      ([current, past, settings]) => {
+        setCaja(current);
+        setHistory(past);
+        setConfig(settings);
+      },
+      );
+    });
+  }, []);
+  const changeBox = (boxId) => {
+    setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setCaja(null); setConfig(null);
+    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setConfig(settings); });
+  };
+  const assignWallet = async (holder, wallet, boxId) => {
+    const result = await api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId }) });
+    if (result.error) return;
+    setCaja(result.currents[activeBoxId]);
+  };
+  const update = (patch) => {
+    if (readOnly) return;
+    setCaja((current) => ({ ...current, ...patch }));
+    setSaving(true);
+    clearTimeout(window.saveTimer);
+    window.saveTimer = setTimeout(
+      () =>
+        api(`/api/caja/actualizar?boxId=${activeBoxId}`, {
+          method: "PUT",
+          body: JSON.stringify(patch),
+        }).then(() => setSaving(false)),
+      350,
+    );
+  };
+  const saveConfig = async (nextConfig, boxId) => {
+    const result = await api(`/api/configuracion?boxId=${boxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    if (boxId === activeBoxId) {
+      setConfig(result.config);
+      setCaja(result.current);
+    }
+  };
+  const manageBoxes = async ({ type, id, patch }) => {
+    if (type === "create") { const created = await api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue" }) }); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
+    if (type === "delete") { const next = await api(`/api/cajas/${id}`, { method: "DELETE" }); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
+    const updated = await api(`/api/cajas/${id}`, { method: "PUT", body: JSON.stringify(patch) }); setBoxes(boxes.map((box) => box.id === id ? updated : box));
+  };
+  const navigate = (direction) => {
+    const nextIndex = Math.max(
+      0,
+      Math.min(history.length - 1, selectedIndex + direction),
+    );
+    setSelectedIndex(nextIndex);
+    setCaja(history[nextIndex]);
+  };
+  const calculations = useMemo(() => {
+    if (!caja || !config) return {};
+    const accounts = caja.accounts
+      .flatMap((r) => Object.entries(r.values).filter(([wallet]) => walletBelongsToBox(r, wallet, config, activeBoxId)).map(([, value]) => value))
+      .reduce((s, x) => s + number(x), 0);
+    const bonuses = caja.bonuses.reduce(
+      (s, x) => s + number(x.granted) - number(x.recovered),
+      0,
+    );
+    const ta = caja.ta.reduce((s, x) => s + number(x.amount), 0);
+    const tips = caja.tips.reduce((s, x) => s + number(x.amount), 0);
+    const expenses = caja.expenses.reduce((s, x) => {
+      const category = config.expenses.find((item) => item.name === x.category);
+      return s + number(x.amount) * (category?.inverted ? -1 : 1);
+    }, 0);
+    const balance = caja.chips.reduce(
+      (s, x) => s + number(x.initial) - number(x.final),
+      0,
+    );
+    const cashInitial = number(caja.cashInitial);
+    const cashFinal = accounts;
+    const preDifference = expenses + ta + cashFinal + bonuses;
+    const difference = preDifference - cashInitial;
+    const cashDifference = cashFinal - cashInitial;
+    const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
+    const realDifference = difference - bonuses + transferAdjustment;
+    const foundTotal = Array.isArray(caja.foundMoney) ? caja.foundMoney.reduce((sum, record) => sum + number(record.amount), 0) : number(caja.found);
+    const shortage = difference - balance - tips + foundTotal + number(caja.found) + transferAdjustment;
+    return {
+      accounts,
+      cashInitial,
+      cashFinal,
+      bonuses,
+      ta,
+      tips,
+      expenses,
+      foundTotal,
+      preDifference,
+      difference,
+      balance,
+      cashDifference,
+      realDifference,
+      transferAdjustment,
+      shortage,
+    };
+  }, [caja, config, activeBoxId]);
+  if (!caja || !boxes)
+    return (
+      <div className="loading">
+        <RefreshCw className="spin" /> Cargando caja...
+      </div>
+    );
+  if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
+  if (configurationOpen) return <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} />;
+  const close = () =>
+    api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
+      method: "POST",
+      body: JSON.stringify(caja),
+    }).then((next) => {
+      setCaja(next);
+      setHistory([next, ...history]);
+      setSelectedIndex(0);
+      setConfirm(false);
+      notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
+    });
+  const downloadSnapshot = async () => {
+    if (capturing) return;
+    setCapturing(true);
+    setSnapshotOpen(true);
+    try {
+      await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const canvas = await html2canvas(snapshotRef.current, {
+        backgroundColor: "#111719",
+        logging: false,
+        scale: 2,
+        useCORS: true,
+        windowWidth: document.documentElement.scrollWidth,
+        windowHeight: document.documentElement.scrollHeight,
+      });
+      const link = document.createElement("a");
+      const snapshotDate = new Intl.DateTimeFormat("es-AR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+      })
+        .format(new Date(caja.date))
+        .replace(/^./, (letter) => letter.toUpperCase())
+        .replace(",", "")
+        .replaceAll("/", "-");
+      link.download = `Caja ${snapshotDate} Turno ${caja.shift}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      notify("Captura de caja descargada");
+    } finally {
+      setSnapshotOpen(false);
+      setCapturing(false);
+    }
+  };
+  return (
+    <div ref={captureRef} className={`app-shell box-theme-${activeBox.color}`} style={boxColorStyle(activeBox.color)}>
+      <SummaryHeader
+        caja={caja}
+        saving={saving}
+        readOnly={readOnly}
+        onPrevious={() => navigate(1)}
+        onNext={() => navigate(-1)}
+        onClose={() => setConfirm(true)}
+        onSnapshot={downloadSnapshot}
+        capturing={capturing}
+        onConfigure={() => setConfigurationOpen(true)}
+        boxes={boxes}
+        activeBoxId={activeBoxId}
+        onBoxChange={changeBox}
+      />
+      <main>
+        <div className="page-title">
+          <div className="current-shift-heading">
+            <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</h1>
+            <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
+          </div>
+          <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
+        </div>
+        <SummaryCard
+          caja={caja}
+          calculations={calculations}
+          update={update}
+        />
+        <div className="dashboard-grid">
+          <div className="content-column">
+            <AdvertisingSection caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} />
+            <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} />
+            <div className="operations-grid">
+              <QuickMovementSection
+                title="Gastos"
+                tone="red"
+                rows={caja.expenses}
+                update={update}
+                kind="expenses"
+                              config={config}
+              />
+              <QuickMovementSection
+                title="Propinas"
+                tone="red"
+                rows={caja.tips}
+                update={update}
+                kind="tips"
+                              config={config}
+              />
+              <BonusesSection caja={caja} update={update} viewRequest={bonusViewRequest} editorRequest={bonusEditorRequest} />
+              <QuickMovementSection
+                title="Cargas T.A."
+                tone="green"
+                rows={caja.ta}
+                update={update}
+                kind="ta"
+                              config={config}
+              />
+              <FoundMoneySection caja={caja} update={update} config={config} />
+            </div>
+            <div className="notes-transfer-layout">
+            <section className="panel notes">
+              <SectionHead
+                icon={<FileText size={18} />}
+                title="Notas del turno"
+              />
+              <div className="notes-grid">
+                <div className="notes-column">
+                  <label>
+                    Turno actual
+                    <textarea
+                      value={caja.notes}
+                      placeholder="Escribí una nota para el equipo..."
+                      onChange={(e) => update({ notes: e.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Turno siguiente
+                    <textarea
+                      value={caja.nextNotes}
+                      placeholder="Información para quien toma la próxima caja..."
+                      onChange={(e) => update({ nextNotes: e.target.value })}
+                    />
+                  </label>
+                </div>
+              </div>
+            </section>
+              <TransferSection
+                boxes={boxes}
+                activeBoxId={activeBoxId}
+                transfers={caja.transfers || []}
+                onCreate={async (transfer) => {
+                  const result = await api("/api/traspasos", { method: "POST", body: JSON.stringify(transfer) });
+                  if (result.error) throw new Error(result.error);
+                  setCaja(result[activeBoxId === transfer.fromBoxId ? "from" : "to"]);
+                }}
+                onUpdateTransfer={async (transfer) => {
+                  const result = await api(`/api/traspasos/${transfer.id}`, { method: "PUT", body: JSON.stringify(transfer) });
+                  if (result.error) throw new Error(result.error);
+                  setCaja(result.currents[activeBoxId]);
+                }}
+                onDeleteTransfer={async (transferId) => {
+                  const result = await api(`/api/traspasos/${transferId}`, { method: "DELETE" });
+                  if (result.error) throw new Error(result.error);
+                  setCaja(result.currents[activeBoxId]);
+                }}
+              />
+              <ChipsSection caja={caja} update={update} />
+            </div>
+          </div>
+        </div>
+      </main>
+      {snapshotOpen && <SnapshotView caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />}
+      {confirm && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <button className="modal-close" onClick={() => setConfirm(false)}>
+              <X size={18} />
+            </button>
+            <div className="modal-icon">
+              <LockKeyhole size={22} />
+            </div>
+            <h2>¿Cerrar esta caja?</h2>
+            <p>
+              La caja quedará congelada y se abrirá automáticamente el turno
+              siguiente con los saldos heredados.
+            </p>
+            <div className="modal-actions">
+              <button
+                className="ghost-button"
+                onClick={() => setConfirm(false)}
+              >
+                Cancelar
+              </button>
+              <button className="close-button" onClick={close}>
+                Confirmar cierre <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {historyOpen && <HistoryModal history={history} onClose={() => setHistoryOpen(false)} />}
+      {toast && <div className="app-toast" role="status">{toast}</div>}
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);

@@ -1,0 +1,121 @@
+{
+  "accounts": {
+    "holders": [
+      "Fede Acuña",
+      "Pablo Totaro",
+      "Mateo Ferrer",
+      "Ever Lombardo"
+    ],
+    "wallets": [
+      "Ualá",
+      "Mercado Pago",
+      "Personal Pay",
+      "Naranja X",
+      "Brubank",
+      "Prex",
+      "Astro Pay",
+      "Belo",
+      "Lemon"
+    ],
+    "availability": {
+      "Fede Acuña": {
+        "Ualá": true,
+        "Mercado Pago": false,
+        "Personal Pay": true,
+        "Naranja X": false,
+        "Brubank": false,
+        "Prex": false,
+        "Astro Pay": false,
+        "Belo": false,
+        "Lemon": false
+      },
+      "Pablo Totaro": {
+        "Ualá": true,
+        "Mercado Pago": true,
+        "Personal Pay": true,
+        "Naranja X": true,
+        "Brubank": false,
+        "Prex": false,
+        "Astro Pay": false,
+        "Belo": false,
+        "Lemon": false
+      },
+      "Mateo Ferrer": {
+        "Ualá": false,
+        "Mercado Pago": false,
+        "Personal Pay": true,
+        "Naranja X": true,
+        "Brubank": false,
+        "Prex": false,
+        "Astro Pay": false,
+        "Belo": false,
+        "Lemon": false
+      },
+      "Ever Lombardo": {
+        "Ualá": true,
+        "Mercado Pago": true,
+        "Personal Pay": true,
+        "Naranja X": true,
+        "Brubank": false,
+        "Prex": true,
+        "Astro Pay": true,
+        "Belo": true,
+        "Lemon": true
+      }
+    }
+  },
+  "expenses": [
+    {
+      "name": "Adelanto",
+      "inverted": false
+    },
+    {
+      "name": "Sueldos",
+      "inverted": false
+    },
+    {
+      "name": "Propinas",
+      "inverted": false
+    },
+    {
+      "name": "Publi",
+      "inverted": false
+    },
+    {
+      "name": "Fichas",
+      "inverted": false
+    },
+    {
+      "name": "Impuestos",
+      "inverted": false
+    },
+    {
+      "name": "Finan",
+      "inverted": false
+    },
+    {
+      "name": "Datos",
+      "inverted": false
+    },
+    {
+      "name": "Chips",
+      "inverted": false
+    },
+    {
+      "name": "Sorteo",
+      "inverted": false
+    },
+    {
+      "name": "Otros",
+      "inverted": false
+    },
+    {
+      "name": "Perdida (-)",
+      "inverted": false
+    }
+  ],
+  "platforms": [
+    "Ganamos",
+    "Zeus"
+  ]
+}
