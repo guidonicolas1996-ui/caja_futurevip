@@ -484,6 +484,8 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
   );
   const focused = React.useRef(false);
   const inputRef = React.useRef(null);
+  const selectAllPending = React.useRef(false);
+  const selectAllHandled = React.useRef(false);
   const [isFocused, setIsFocused] = useState(false);
   const selectionRef = React.useRef(null);
 
@@ -531,10 +533,17 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       onKeyDown={onKeyDown}
       onMouseDown={() => {
         selectionRef.current = null;
+        if (selectAllOnFirstClick && !selectAllHandled.current) selectAllPending.current = true;
       }}
       onFocus={(event) => {
         focused.current = true;
         setIsFocused(true);
+        if (selectAllOnFirstClick && selectAllPending.current) {
+          selectAllPending.current = false;
+          selectAllHandled.current = true;
+          requestAnimationFrame(() => inputRef.current?.select());
+          return;
+        }
         if (numericOnly) {
           const start = event.target.selectionStart ?? event.target.value.length;
           const end = event.target.selectionEnd ?? start;
@@ -547,7 +556,11 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       }}
       onClick={(event) => {
         inputProps.onClick?.(event);
-        if (selectAllOnFirstClick) requestAnimationFrame(() => event.currentTarget.select());
+        if (selectAllOnFirstClick && selectAllPending.current) {
+          selectAllPending.current = false;
+          selectAllHandled.current = true;
+          requestAnimationFrame(() => event.currentTarget.select());
+        }
       }}
       onChange={(event) => {
         const nextValue = numericOnly ? event.target.value.replace(/\D/g, "") : event.target.value;
@@ -563,6 +576,8 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
           };
         }
         focused.current = false;
+        selectAllPending.current = false;
+        selectAllHandled.current = false;
         setIsFocused(false);
         setInputValue(numericOnly ? formatNumberInput(inputValue) : formatNumberInput(inputValue));
       }}
@@ -644,6 +659,7 @@ function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBon
 function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet, onViewBonuses, notesEnabled }) {
   const [notePosition, setNotePosition] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
+  const [activeNoteKey, setActiveNoteKey] = useState(null);
   const wallets = config.accounts.wallets;
   const accountSections = caja.accountSections || {};
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
@@ -711,12 +727,14 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
       ? state
       : { collections: Boolean(state), withdrawals: false };
   };
-  const showNote = (event) => {
+  const noteKey = (rowIndex, wallet) => `${rowIndex}-${wallet}`;
+  const showNote = (event, currentNoteKey) => {
     const focusedNote = document.activeElement;
     if (focusedNote?.closest(".wallet-note-popover")) {
       focusedNote.blur();
       setEditingNote(null);
     }
+    setActiveNoteKey(currentNoteKey);
     const rect = event.currentTarget.getBoundingClientRect();
     const height = 110;
     setNotePosition({ left: Math.min(rect.left, window.innerWidth - 198), top: rect.bottom + height > window.innerHeight ? Math.max(8, rect.top - height) : rect.bottom });
@@ -727,7 +745,6 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const key = sectionKey(category);
     update({ accountSections: { ...accountSections, [key]: !isSectionCollapsed(category) } });
   };
-  const noteKey = (rowIndex, wallet) => `${rowIndex}-${wallet}`;
   const renderCell = (row, index, wallet, category, rowPosition, walletIndex) => {
     const state = cellState(row, wallet);
     const stateClass = state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : "";
@@ -740,7 +757,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const currentNoteKey = noteKey(index, wallet);
     const isEditingNote = editingNote === currentNoteKey;
     const note = row.notes?.[wallet] || "";
-    return <td key={wallet}><div className={`wallet-cell ${notesEnabled ? "notes-enabled" : ""}`}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly selectAllOnFirstClick onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: showNote }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${note ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} rows={Math.max(3, note.split(/\r?\n/).length)} readOnly={!isEditingNote} autoFocus={isEditingNote} value={note} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
+    return <td key={wallet}><div className={`wallet-cell ${notesEnabled ? "notes-enabled" : ""}`}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly selectAllOnFirstClick onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: (event) => showNote(event, currentNoteKey) }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${note ? "has-note" : ""} ${activeNoteKey === currentNoteKey ? "active" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} rows={Math.max(3, note.split(/\r?\n/).length)} readOnly={!isEditingNote} autoFocus={isEditingNote} value={note} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
   };
   return (
     <section className="panel accounts-panel">
