@@ -839,7 +839,7 @@ main {
   transform: translateY(-4px);
 }
 .wallet-cell:hover .wallet-note-popover {
-  transition-delay: 0.25s;
+  transition-delay: 0.65s;
 }
 .wallet-cell:focus-within .wallet-note-popover {
   transition-delay: 0s;
