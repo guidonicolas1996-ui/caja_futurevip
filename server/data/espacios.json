@@ -636,7 +636,16 @@
             "notes": {}
           }
         ],
-        "bonuses": [],
+        "bonuses": [
+          {
+            "id": "f7748802-2c2d-4676-b84b-1b7313e5817b",
+            "label": "",
+            "granted": 52,
+            "recovered": 0,
+            "verified": false,
+            "createdAt": "2026-08-24T04:32:58.119Z"
+          }
+        ],
         "ta": [],
         "tips": [],
         "expenses": [],
@@ -661,7 +670,7 @@
           {
             "platform": "Ganamos",
             "initial": 0,
-            "final": 0
+            "final": 12345
           },
           {
             "platform": "Zeus",

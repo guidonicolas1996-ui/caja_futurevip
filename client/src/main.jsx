@@ -443,6 +443,18 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
   const focused = React.useRef(false);
   const inputRef = React.useRef(null);
   const [isFocused, setIsFocused] = useState(false);
+  const selectionRef = React.useRef(null);
+
+  const digitCountBefore = (text, position) => (text.slice(0, position).match(/\d/g) || []).length;
+  const positionAfterDigits = (text, digits) => {
+    if (!digits) return 0;
+    let seen = 0;
+    for (let index = 0; index < text.length; index += 1) {
+      if (/\d/.test(text[index])) seen += 1;
+      if (seen === digits) return index + 1;
+    }
+    return text.length;
+  };
 
   useEffect(() => {
     if (!focused.current) {
@@ -450,10 +462,19 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
     }
   }, [value, numericOnly, normalizedValue, isFocused]);
   useEffect(() => {
-    if (!isFocused || !numericOnly) return undefined;
-    const frame = requestAnimationFrame(() => inputRef.current?.select());
+    if (!isFocused || !selectionRef.current) return undefined;
+    const selection = selectionRef.current;
+    const frame = requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) return;
+      input.setSelectionRange(
+        positionAfterDigits(input.value, selection.start),
+        positionAfterDigits(input.value, selection.end),
+      );
+      selectionRef.current = null;
+    });
     return () => cancelAnimationFrame(frame);
-  }, [isFocused, numericOnly]);
+  }, [isFocused, inputValue]);
 
   return (
     <input
@@ -466,11 +487,19 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       step={numericOnly ? 1 : undefined}
       inputMode={numericOnly ? "numeric" : "decimal"}
       onKeyDown={onKeyDown}
+      onMouseDown={() => { selectionRef.current = null; }}
       onFocus={(event) => {
         focused.current = true;
         setIsFocused(true);
-        if (numericOnly) setInputValue(normalizedValue ? String(normalizedValue) : "");
-        event.target.select();
+        if (numericOnly) {
+          const start = event.target.selectionStart ?? event.target.value.length;
+          const end = event.target.selectionEnd ?? start;
+          selectionRef.current = {
+            start: digitCountBefore(event.target.value, start),
+            end: digitCountBefore(event.target.value, end),
+          };
+          setInputValue(normalizedValue ? String(normalizedValue) : "");
+        }
       }}
       onChange={(event) => {
         const nextValue = numericOnly ? event.target.value.replace(/\D/g, "") : event.target.value;
@@ -478,6 +507,13 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
         onChange(numericOnly ? Number(nextValue) || 0 : parseNumberInput(nextValue));
       }}
       onBlur={() => {
+        const input = inputRef.current;
+        if (input) {
+          selectionRef.current = {
+            start: digitCountBefore(input.value, input.selectionStart ?? input.value.length),
+            end: digitCountBefore(input.value, input.selectionEnd ?? input.value.length),
+          };
+        }
         focused.current = false;
         setIsFocused(false);
         setInputValue(numericOnly ? formatNumberInput(inputValue) : formatNumberInput(inputValue));
