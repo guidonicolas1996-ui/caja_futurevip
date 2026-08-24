@@ -660,6 +660,8 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
   const [notePosition, setNotePosition] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const [activeNoteKey, setActiveNoteKey] = useState(null);
+  const [visibleNoteKey, setVisibleNoteKey] = useState(null);
+  const noteVisibilityTimer = React.useRef(null);
   const wallets = config.accounts.wallets;
   const accountSections = caja.accountSections || {};
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
@@ -735,9 +737,20 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
       setEditingNote(null);
     }
     setActiveNoteKey(currentNoteKey);
+    setVisibleNoteKey(null);
+    window.clearTimeout(noteVisibilityTimer.current);
+    noteVisibilityTimer.current = window.setTimeout(() => {
+      setVisibleNoteKey((key) => key === null ? currentNoteKey : key);
+    }, 650);
     const rect = event.currentTarget.getBoundingClientRect();
     const height = 110;
     setNotePosition({ left: Math.min(rect.left, window.innerWidth - 198), top: rect.bottom + height > window.innerHeight ? Math.max(8, rect.top - height) : rect.bottom });
+  };
+  const hideNote = (event, currentNoteKey) => {
+    if (event.relatedTarget?.closest?.(".wallet-note-popover") && activeNoteKey === currentNoteKey) return;
+    window.clearTimeout(noteVisibilityTimer.current);
+    setActiveNoteKey(null);
+    setVisibleNoteKey(null);
   };
   const sectionKey = (category) => category === "Depósitos" ? "deposits" : "shared";
   const isSectionCollapsed = (category) => category !== "Normal" && accountSections[sectionKey(category)] === true;
@@ -757,7 +770,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const currentNoteKey = noteKey(index, wallet);
     const isEditingNote = editingNote === currentNoteKey;
     const note = row.notes?.[wallet] || "";
-    return <td key={wallet}><div className={`wallet-cell ${notesEnabled ? "notes-enabled" : ""}`}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly selectAllOnFirstClick onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: (event) => showNote(event, currentNoteKey) }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${note ? "has-note" : ""} ${activeNoteKey === currentNoteKey ? "active" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} rows={Math.max(3, note.split(/\r?\n/).length)} readOnly={!isEditingNote} autoFocus={isEditingNote} value={note} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
+    return <td key={wallet}><div className={`wallet-cell ${notesEnabled ? "notes-enabled" : ""}`}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly selectAllOnFirstClick onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: (event) => showNote(event, currentNoteKey), onMouseLeave: (event) => hideNote(event, currentNoteKey) }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${note ? "has-note" : ""} ${activeNoteKey === currentNoteKey ? "active" : ""} ${visibleNoteKey === currentNoteKey ? "visible" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} rows={Math.max(3, note.split(/\r?\n/).length)} readOnly={!isEditingNote} autoFocus={isEditingNote} value={note} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
   };
   return (
     <section className="panel accounts-panel">

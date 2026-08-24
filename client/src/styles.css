@@ -883,26 +883,26 @@ main {
 }
 .wallet-note-edit:hover { background: #2d3b3d; color: var(--cyan); }
 .wallet-note-popover textarea[readonly] { cursor: text; }
-.wallet-cell.notes-enabled:has(.account-amount input:hover) .wallet-note-popover.active,
-.wallet-cell.notes-enabled:has(.wallet-note-popover.active:hover) .wallet-note-popover.active,
-.wallet-cell.notes-enabled:has(.wallet-note-popover.active:focus-within) .wallet-note-popover.active {
+.wallet-cell.notes-enabled:has(.account-amount input:hover) .wallet-note-popover.active.visible,
+.wallet-cell.notes-enabled:has(.wallet-note-popover.active.visible:hover) .wallet-note-popover.active.visible,
+.wallet-cell.notes-enabled:has(.wallet-note-popover.active.visible:focus-within) .wallet-note-popover.active.visible {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
-.wallet-cell.notes-enabled:has(.wallet-assignment-control:hover) .wallet-note-popover.active,
-.wallet-cell.notes-enabled:has(.wallet-assignment-control:focus-within) .wallet-note-popover.active {
+.wallet-cell.notes-enabled:has(.wallet-assignment-control:hover) .wallet-note-popover.active.visible,
+.wallet-cell.notes-enabled:has(.wallet-assignment-control:focus-within) .wallet-note-popover.active.visible {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
 }
-.wallet-cell.notes-enabled:has(.account-amount input:hover) .wallet-note-popover.active {
+.wallet-cell.notes-enabled:has(.account-amount input:hover) .wallet-note-popover.active.visible {
   transition-delay: 0.65s;
 }
-.wallet-cell.notes-enabled:has(.wallet-note-popover.active:focus-within) .wallet-note-popover.active {
+.wallet-cell.notes-enabled:has(.wallet-note-popover.active.visible:focus-within) .wallet-note-popover.active.visible {
   transition-delay: 0s;
 }
-.wallet-cell.notes-enabled:has(.account-amount input:focus) .wallet-note-popover.active {
+.wallet-cell.notes-enabled:has(.account-amount input:focus) .wallet-note-popover.active.visible {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
