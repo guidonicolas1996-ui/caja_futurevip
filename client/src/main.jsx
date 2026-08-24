@@ -247,7 +247,7 @@ function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTran
   return (
     <section className="transfer-panel">
       <div className="transfer-form">
-        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><span className="eyebrow">Movimiento entre cajas</span><h3>Nuevo traspaso</h3></div></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
+        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><h3>Movimiento entre cajas</h3><span>Nuevo traspaso</span></div></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
         <div className="transfer-fields">
           <TransferBoxPicker label="Desde" boxes={boxes} value={fromBoxId} onChange={changeFromBox} />
           <button type="button" className="transfer-invert" title="Invertir selección" aria-label="Invertir selección" onClick={invertSelection}><ArrowLeftRight size={16} /></button>

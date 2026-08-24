@@ -1438,9 +1438,10 @@ select:focus {
 .notes-column { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; height: 100%; }
 .transfer-panel { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: #182123; }
 .transfer-form-head { display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px; color: var(--box-accent, var(--cyan)); }
-.transfer-form-title { display: flex; align-items: flex-start; gap: 8px; }
+.transfer-form-title { display: flex; align-items: flex-start; gap: 6px; }
 .transfer-form-title > svg { flex: 0 0 auto; margin-top: 1px; }
-.transfer-form-head h3 { margin: 4px 0 0; font-size: 13px; color: #e4eeec; }
+.transfer-form-title h3 { margin: 0 0 3px; font-size: 13px; color: #f0f8f6; }
+.transfer-form-title span { color: var(--muted); font-size: 10px; line-height: 1.2; }
 .transfer-form-fields, .transfer-fields { display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr) minmax(100px, 1fr) 32px; gap: 9px; align-items: end; }
 .transfer-picker { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 9px; }
 .transfer-picker-control { position: relative; min-width: 0; }
