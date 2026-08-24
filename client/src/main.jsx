@@ -790,7 +790,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     const start = (shiftStart + slot * 2) % 24;
     const end = (start + 2) % 24;
     const label = `${String(start).padStart(2, "0")}:00 - ${String(end).padStart(2, "0")}:00`;
-    const items = caja.bonuses.map((bonus, index) => ({ bonus, index })).filter(({ bonus }) => {
+    const items = caja.bonuses.slice().reverse().map((bonus) => ({ bonus, index: caja.bonuses.indexOf(bonus) })).filter(({ bonus }) => {
       const hour = new Date(bonus.createdAt).getHours();
       const minutes = new Date(bonus.createdAt).getMinutes();
       const elapsed = (hour * 60 + minutes - shiftStart * 60 + 1440) % 1440;
