@@ -493,25 +493,31 @@ main {
 .section-head {
   padding: 16px 18px;
   justify-content: space-between;
+  align-items: flex-start;
 }
 .bonus-actions {
   display: flex;
   gap: 6px;
 }
 .section-title {
-  gap: 10px;
+  gap: 6px;
+  align-items: flex-start;
 }
 .section-title svg {
   color: var(--cyan);
+  flex: 0 0 auto;
+  margin-top: 1px;
 }
 .section-title h2 {
   font-size: 13px;
   margin: 0 0 3px;
   letter-spacing: -0.01em;
+  color: #f0f8f6;
 }
 .section-title span {
   font-size: 10px;
   color: var(--muted);
+  line-height: 1.2;
 }
 .accounts-header-actions {
   display: flex;
