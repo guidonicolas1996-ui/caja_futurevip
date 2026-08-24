@@ -29,6 +29,27 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import html2canvas from "html2canvas";
+import faviconIco from "./img/favicon/favicon.ico";
+import favicon16 from "./img/favicon/favicon-16x16.png";
+import favicon32 from "./img/favicon/favicon-32x32.png";
+import appleTouchIcon from "./img/favicon/apple-touch-icon.png";
+import androidIcon from "./img/favicon/android-chrome-192x192.png";
+
+const faviconLinks = [
+  { rel: "icon", type: "image/x-icon", href: faviconIco },
+  { rel: "icon", type: "image/png", sizes: "16x16", href: favicon16 },
+  { rel: "icon", type: "image/png", sizes: "32x32", href: favicon32 },
+  { rel: "apple-touch-icon", sizes: "180x180", href: appleTouchIcon },
+  { rel: "icon", type: "image/png", sizes: "192x192", href: androidIcon },
+];
+faviconLinks.forEach(({ rel, type, sizes, href }) => {
+  const link = document.createElement("link");
+  link.rel = rel;
+  if (type) link.type = type;
+  if (sizes) link.sizes = sizes;
+  link.href = href;
+  document.head.appendChild(link);
+});
 
 const money = (value) =>
   new Intl.NumberFormat("es-AR", {
