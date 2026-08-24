@@ -84,6 +84,7 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
   const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
   return cashDifference - bonuses + transferAdjustment;
 };
+const hasTextInNotes = (notes) => Object.values(notes || {}).some((note) => typeof note === "string" && note.trim().length > 0);
   const formatMovementTime = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
 const walletBelongsToBox = (row, wallet, config, boxId) => {
   const setting = config.accounts.walletSettings[row.holder]?.[wallet];
@@ -1540,7 +1541,7 @@ function App() {
       shortage,
     };
   }, [caja, config, activeBoxId]);
-  const hasPendingNotes = caja?.accounts?.some((account) => Object.values(account.notes || {}).some((note) => String(note).trim())) || false;
+  const hasPendingNotes = caja?.accounts?.some((account) => hasTextInNotes(account.notes)) || false;
   if (!caja || !boxes)
     return (
       <div className="loading">
