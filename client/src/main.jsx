@@ -500,14 +500,13 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
     <div className="quick-bonus-header flex items-center justify-between w-full gap-2">
       <div className={`quick-amount w-28 shrink-0 text-xs px-2 py-1 ${recoveredMode ? "recovered" : "granted"}`}>
         <span>$</span>
-        <input value={quick} placeholder="Bono Rapido" inputMode="decimal" aria-label="Insertar bono" onChange={(event) => setQuick(event.target.value)} onBlur={() => setQuick(formatNumberInput(quick))} onKeyDown={addBonus} />
+        <input value={quick} placeholder={`Bonos Netos: ${money(granted - recovered)}`} inputMode="decimal" aria-label="Insertar bono" onChange={(event) => setQuick(event.target.value)} onBlur={() => setQuick(formatNumberInput(quick))} onKeyDown={addBonus} />
       </div>
       <div className="quick-bonus-actions flex items-center gap-1.5 flex-shrink-0">
         <button className={`bonus-toggle shrink-0 ${recoveredMode ? "checked recovered" : "granted"}`} title="Cambiar entre otorgado y recuperado" onClick={() => setRecoveredMode(!recoveredMode)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBonus(event); } }}><ArrowUpDown size={12} /></button>
         <button className="icon-button shrink-0" title="Agregar bono manual" onClick={onAddManualBonus}><Plus size={14} /></button>
         <button className="icon-button shrink-0" title="Ver y editar bonos" onClick={onViewBonuses}><Eye size={14} /></button>
       </div>
-      <span className="quick-bonus-net shrink-0 text-xs whitespace-nowrap font-mono">Bonos Netos: <b>{money(granted - recovered)}</b></span>
     </div>
     <div className="quick-recent-bonuses"><span className="quick-recent-title">Últimos 3 bonos</span>{recentBonuses.map((bonus) => { const isRecovered = number(bonus.recovered) > 0; return <div className={`quick-recent-bonus ${isRecovered ? "recovered" : "granted"}`} key={bonus.id}><span>{isRecovered ? "Recuperado" : "Otorgado"}</span><input defaultValue={money(isRecovered ? bonus.recovered : bonus.granted)} aria-label="Editar bono reciente" onFocus={(event) => { event.currentTarget.value = formatNumberInput(isRecovered ? bonus.recovered : bonus.granted); event.currentTarget.select(); }} onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); event.currentTarget.value = value ? money(value) : "-"; editRecentBonus(bonus.id, value); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div>; })}</div>
   </div>;

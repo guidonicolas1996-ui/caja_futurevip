@@ -591,12 +591,10 @@ main {
 }
 .quick-bonus-header { display: flex; align-items: center; justify-content: space-between; width: 100%; min-width: 0; gap: 4px; }
 .quick-bonus-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.quick-bonus-header .quick-amount { flex-shrink: 0; }
-.quick-bonus-header .quick-bonus-net { flex-shrink: 0; }
+.quick-bonus-header .quick-amount { flex: 1 1 auto; min-width: 0; }
 .quick-bonus-access .quick-amount {
-  width: 112px;
-  max-width: 112px;
-  flex: 0 0 112px;
+  width: auto;
+  max-width: none;
   height: 27px;
   padding-left: 6px;
   font-size: 10px;
