@@ -5,35 +5,24 @@ import { getBoxes, createBox, updateBox, deleteBox, getCurrent, getHistory, getC
 const app = express();
 app.use(cors());
 app.use(express.json());
+const handle = (action) => async (req, res) => {
+  try { res.json(await action(req)); } catch (error) { res.status(400).json({ error: error.message }); }
+};
 
-app.get('/api/cajas', (_req, res) => res.json(getBoxes()));
-app.post('/api/cajas', (req, res) => { try { res.json(createBox(req.body)); } catch (error) { res.status(400).json({ error: error.message }); } });
-app.put('/api/cajas/:id', (req, res) => { try { res.json(updateBox(req.params.id, req.body)); } catch (error) { res.status(400).json({ error: error.message }); } });
-app.delete('/api/cajas/:id', (req, res) => { try { res.json(deleteBox(req.params.id)); } catch (error) { res.status(400).json({ error: error.message }); } });
-app.get('/api/caja/actual', (req, res) => res.json(getCurrent(req.query.boxId)));
-app.get('/api/caja/historial', (req, res) => res.json(getHistory(req.query.boxId)));
-app.get('/api/configuracion', (req, res) => res.json(getConfig(req.query.boxId)));
-app.put('/api/configuracion', (req, res) => {
-  try { res.json(updateConfig(req.body, req.query.boxId)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
-app.put('/api/caja/actualizar', (req, res) => {
-  try { res.json(updateCurrent(req.body, req.query.boxId)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
-app.put('/api/caja/asignacion-billetera', (req, res) => {
-  try { res.json(setWalletAssignment(req.body)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
-app.post('/api/traspasos', (req, res) => {
-  try { res.json(createTransfer(req.body)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
-app.put('/api/traspasos/:id', (req, res) => {
-  try { res.json(updateTransfer(req.params.id, req.body)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
-app.delete('/api/traspasos/:id', (req, res) => {
-  try { res.json(deleteTransfer(req.params.id)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
-app.post('/api/caja/cerrar', (req, res) => {
-  try { res.json(closeCurrent(req.body, req.query.boxId)); } catch (error) { res.status(400).json({ error: error.message }); }
-});
+app.get('/api/cajas', handle(() => getBoxes()));
+app.post('/api/cajas', handle((req) => createBox(req.body)));
+app.put('/api/cajas/:id', handle((req) => updateBox(req.params.id, req.body)));
+app.delete('/api/cajas/:id', handle((req) => deleteBox(req.params.id)));
+app.get('/api/caja/actual', handle((req) => getCurrent(req.query.boxId)));
+app.get('/api/caja/historial', handle((req) => getHistory(req.query.boxId)));
+app.get('/api/configuracion', handle((req) => getConfig(req.query.boxId)));
+app.put('/api/configuracion', handle((req) => updateConfig(req.body, req.query.boxId)));
+app.put('/api/caja/actualizar', handle((req) => updateCurrent(req.body, req.query.boxId)));
+app.put('/api/caja/asignacion-billetera', handle((req) => setWalletAssignment(req.body)));
+app.post('/api/traspasos', handle((req) => createTransfer(req.body)));
+app.put('/api/traspasos/:id', handle((req) => updateTransfer(req.params.id, req.body)));
+app.delete('/api/traspasos/:id', handle((req) => deleteTransfer(req.params.id)));
+app.post('/api/caja/cerrar', handle((req) => closeCurrent(req.body, req.query.boxId)));
 
 const port = Number(process.env.PORT) || 3001;
 app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port}`));
