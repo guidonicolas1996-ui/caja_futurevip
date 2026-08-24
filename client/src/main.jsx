@@ -1264,10 +1264,10 @@ function ChipsSection({ caja, update }) {
 
 function SummaryCard({ caja, calculations, update }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const metric = (label, value, className = "") => (
+  const metric = (label, value, className = "", valueClass = "") => (
     <div className={className}>
       <span>{label}</span>
-      <b>{money(value)}</b>
+      <b className={valueClass}>{money(value)}</b>
     </div>
   );
   return (
@@ -1294,8 +1294,8 @@ function SummaryCard({ caja, calculations, update }) {
       <div className="metric-list">
         {metric("Caja inicial", calculations.cashInitial)}
         {metric("Caja final", calculations.cashFinal)}
-        {metric("Diferencia caja", calculations.cashDifference)}
-        {metric("Diferencia real", calculations.realDifference)}
+        {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
+        {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
       </div>
       <div className="found-money">
         <label>Redondeo</label>
@@ -1320,8 +1320,8 @@ function SummaryCard({ caja, calculations, update }) {
               {metric("Diferencia", calculations.difference)}
               {metric("Saldo", calculations.balance)}
               {metric("Redondeo", caja.found)}
-              {metric("Diferencia caja", calculations.cashDifference)}
-              {metric("Diferencia real", calculations.realDifference)}
+              {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
+              {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
             </div>
           </div>
         </div>
