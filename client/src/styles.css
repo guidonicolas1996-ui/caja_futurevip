@@ -2790,6 +2790,7 @@ select:focus {
 .bonus-modal .bonus-time-column .bonus-row .bonus-toggle,
 .bonus-modal .bonus-time-column .bonus-row .note-button,
 .bonus-modal .bonus-time-column .bonus-row .delete-button {
+  grid-column: auto !important;
   width: 20px !important;
   min-width: 20px !important;
   height: 22px !important;
