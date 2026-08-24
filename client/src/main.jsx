@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import html2canvas from "html2canvas";
+import CajaReportCardV2 from "./CajaReportCardV2";
 import faviconIco from "./img/favicon/favicon.ico";
 import favicon16 from "./img/favicon/favicon-16x16.png";
 import favicon32 from "./img/favicon/favicon-32x32.png";
@@ -1354,7 +1355,7 @@ function HistoryModal({ history, onClose, onSelect, config, activeBoxId }) {
   );
 }
 
-function CajaReportCard({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
+function LegacyReportCard({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
   const wallets = config.accounts.wallets;
   const totalRows = (rows, kind) => rows.reduce((sum, row) => {
     const expense = kind === "expenses" && config.expenses.find((item) => item.name === row.category);
@@ -1425,7 +1426,7 @@ function CajaReportCard({ caja, calculations, snapshotRef, config, boxes, active
 }
 
 function SnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
-  return <CajaReportCard caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />;
+  return <CajaReportCardV2 data={{ caja, calculations, config, boxes, activeBox }} snapshotRef={snapshotRef} />;
 }
 
 function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
