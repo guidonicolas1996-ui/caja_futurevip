@@ -440,7 +440,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       value={inputValue}
       {...inputProps}
       placeholder={placeholder || zeroPlaceholder}
-      type={numericOnly ? (isFocused ? "number" : "text") : undefined}
+      type={numericOnly ? "text" : undefined}
       min={numericOnly ? 0 : undefined}
       step={numericOnly ? 1 : undefined}
       inputMode={numericOnly ? "numeric" : "decimal"}
