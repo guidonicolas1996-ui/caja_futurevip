@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { createPortal, createRoot } from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   ArrowRight,
