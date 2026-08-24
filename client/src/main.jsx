@@ -694,6 +694,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     if (!candidates[0]) return;
     event.preventDefault();
     candidates[0].focus();
+    requestAnimationFrame(() => candidates[0].select());
   };
   const totals = useMemo(
     () => ({
