@@ -35,6 +35,7 @@ import "./styles.css";
 import html2canvas from "html2canvas";
 import CajaReportCardV2 from "./CajaReportCardV2";
 import CajaReportCardV4 from "./CajaReportCardV4";
+import CajaReportCardV5 from "./CajaReportCardV5";
 import faviconIco from "./img/favicon/favicon.ico";
 import favicon16 from "./img/favicon/favicon-16x16.png";
 import favicon32 from "./img/favicon/favicon-32x32.png";
@@ -1427,7 +1428,7 @@ function LegacyReportCard({ caja, calculations, snapshotRef, config, boxes, acti
 }
 
 function SnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
-  return <CajaReportCardV4 data={{ caja, calculations, config, boxes, activeBox }} snapshotRef={snapshotRef} />;
+  return <CajaReportCardV5 data={{ caja, calculations, config, boxes, activeBox }} snapshotRef={snapshotRef} />;
 }
 
 function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
