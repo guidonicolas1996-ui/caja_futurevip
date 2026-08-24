@@ -538,10 +538,14 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       onFocus={(event) => {
         focused.current = true;
         setIsFocused(true);
-        if (selectAllOnFirstClick && selectAllPending.current) {
+        const selectAll = (selectAllOnFirstClick && selectAllPending.current) || event.currentTarget.dataset.selectAllOnFocus === "true";
+        delete event.currentTarget.dataset.selectAllOnFocus;
+        if (selectAll) {
           selectAllPending.current = false;
           selectAllHandled.current = true;
-          requestAnimationFrame(() => inputRef.current?.select());
+          const formattedValue = normalizedValue ? String(normalizedValue) : "";
+          selectionRef.current = { start: 0, end: formattedValue.length };
+          setInputValue(formattedValue);
           return;
         }
         if (numericOnly) {
@@ -693,8 +697,9 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     });
     if (!candidates[0]) return;
     event.preventDefault();
-    candidates[0].focus();
-    requestAnimationFrame(() => candidates[0].select());
+    const nextInput = candidates[0];
+    nextInput.dataset.selectAllOnFocus = "true";
+    nextInput.focus({ preventScroll: true });
   };
   const totals = useMemo(
     () => ({
