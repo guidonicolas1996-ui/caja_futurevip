@@ -2087,8 +2087,8 @@ select:focus {
 }
 .pending-notes {
   color: var(--red);
-  font-size: 10px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 800;
   text-transform: uppercase;
 }
 .bonus-modal .bonus-row {
