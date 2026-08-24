@@ -1526,6 +1526,7 @@ function App() {
       shortage,
     };
   }, [caja, config, activeBoxId]);
+  const hasPendingNotes = caja?.accounts?.some((account) => Object.values(account.notes || {}).some((note) => String(note).trim())) || false;
   if (!caja || !boxes)
     return (
       <div className="loading">
@@ -1602,7 +1603,10 @@ function App() {
             <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</h1>
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
-          <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
+          <div className="history-actions">
+            <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
+            {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
+          </div>
         </div>
         <SummaryCard
           caja={caja}
