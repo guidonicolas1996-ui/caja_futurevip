@@ -484,8 +484,6 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
   );
   const focused = React.useRef(false);
   const inputRef = React.useRef(null);
-  const firstClickPending = React.useRef(false);
-  const firstClickHandled = React.useRef(false);
   const [isFocused, setIsFocused] = useState(false);
   const selectionRef = React.useRef(null);
 
@@ -533,20 +531,10 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       onKeyDown={onKeyDown}
       onMouseDown={() => {
         selectionRef.current = null;
-        if (selectAllOnFirstClick && !firstClickHandled.current) firstClickPending.current = true;
       }}
       onFocus={(event) => {
         focused.current = true;
         setIsFocused(true);
-        const selectAll = selectAllOnFirstClick && firstClickPending.current;
-        firstClickPending.current = false;
-        if (selectAll) {
-          firstClickHandled.current = true;
-          selectionRef.current = null;
-          setInputValue(normalizedValue ? String(normalizedValue) : "");
-          requestAnimationFrame(() => inputRef.current?.select());
-          return;
-        }
         if (numericOnly) {
           const start = event.target.selectionStart ?? event.target.value.length;
           const end = event.target.selectionEnd ?? start;
@@ -559,10 +547,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       }}
       onClick={(event) => {
         inputProps.onClick?.(event);
-        if (selectAllOnFirstClick && !firstClickHandled.current) {
-          firstClickHandled.current = true;
-          requestAnimationFrame(() => event.currentTarget.select());
-        }
+        if (selectAllOnFirstClick) requestAnimationFrame(() => event.currentTarget.select());
       }}
       onChange={(event) => {
         const nextValue = numericOnly ? event.target.value.replace(/\D/g, "") : event.target.value;
