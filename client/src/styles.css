@@ -547,6 +547,13 @@ main {
 .chips-card { grid-column: 3; }
 .chips-card > .section-head .section-title svg { color: #a78bfa; }
 .chips-card > .section-head { padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
+.chips-section-head { padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
+.notes-toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 9px; cursor: pointer; }
+.notes-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.notes-toggle i { position: relative; width: 28px; height: 16px; border-radius: 10px; background: #354447; transition: background 120ms ease; }
+.notes-toggle i::after { content: ""; position: absolute; width: 12px; height: 12px; top: 2px; left: 2px; border-radius: 50%; background: #718083; transition: transform 120ms ease, background 120ms ease; }
+.notes-toggle input:checked + i { background: #34746d; }
+.notes-toggle input:checked + i::after { background: #c5fff1; transform: translateX(12px); }
 .advertising-card > .section-head { position: absolute; inset: 0; z-index: 1; display: block; padding: 0; pointer-events: none; }
 .advertising-card > .section-head .section-title { display: none; }
 .advertising-content { position: relative; align-self: stretch; width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 46px 8px 8px; display: flex; flex-direction: column; justify-content: center; }
@@ -821,7 +828,7 @@ main {
   z-index: 5;
   width: 190px;
   padding: 24px 8px 8px;
-  background: #202b2d;
+  background: rgba(32, 43, 45, .70);
   border: 1px solid #3e5454;
   border-radius: 3px;
   box-shadow: 0 6px 18px #0008;
@@ -836,7 +843,7 @@ main {
   min-height: 42px;
   resize: vertical;
   padding: 5px;
-  background: #192123;
+  background: rgba(25, 33, 35, .90);
   border: 1px solid #3e5454;
   color: #d8e0e0;
   font-size: 10px;
@@ -857,26 +864,26 @@ main {
 }
 .wallet-note-edit:hover { background: #2d3b3d; color: var(--cyan); }
 .wallet-note-popover textarea[readonly] { cursor: text; }
-.wallet-cell:has(.account-amount input:hover) .wallet-note-popover,
-.wallet-cell:has(.wallet-note-popover:hover) .wallet-note-popover,
-.wallet-cell:has(.wallet-note-popover:focus-within) .wallet-note-popover {
+.wallet-cell.notes-enabled:has(.account-amount input:hover) .wallet-note-popover,
+.wallet-cell.notes-enabled:has(.wallet-note-popover:hover) .wallet-note-popover,
+.wallet-cell.notes-enabled:has(.wallet-note-popover:focus-within) .wallet-note-popover {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
-.wallet-cell:has(.wallet-assignment-control:hover) .wallet-note-popover,
-.wallet-cell:has(.wallet-assignment-control:focus-within) .wallet-note-popover {
+.wallet-cell.notes-enabled:has(.wallet-assignment-control:hover) .wallet-note-popover,
+.wallet-cell.notes-enabled:has(.wallet-assignment-control:focus-within) .wallet-note-popover {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
 }
-.wallet-cell:has(.account-amount input:hover) .wallet-note-popover {
+.wallet-cell.notes-enabled:has(.account-amount input:hover) .wallet-note-popover {
   transition-delay: 0.65s;
 }
-.wallet-cell:has(.wallet-note-popover:focus-within) .wallet-note-popover {
+.wallet-cell.notes-enabled:has(.wallet-note-popover:focus-within) .wallet-note-popover {
   transition-delay: 0s;
 }
-.wallet-cell:has(.account-amount input:focus) .wallet-note-popover {
+.wallet-cell.notes-enabled:has(.account-amount input:focus) .wallet-note-popover {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);

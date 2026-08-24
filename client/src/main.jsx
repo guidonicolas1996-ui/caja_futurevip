@@ -595,7 +595,7 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
   </div>;
 }
 
-function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBonus, onNotify }) {
+function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBonus, onNotify, notesEnabled, onNotesEnabledChange }) {
   const advertising = caja.advertising || { "Publicidad A": { total: 0, new: 0, repeated: 0, derived: {} }, "Publicidad B": { total: 0, new: 0, repeated: 0, derived: {} } };
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...advertising[name], ...patch } } });
   const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
@@ -615,11 +615,11 @@ function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBon
   return <section className="advertising-panel">
     <div className="advertising-card"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button advertising-copy" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="advertising-content">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const response = number(item.new) + number(item.repeated) - number(item.total); const derivedTotal = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const effectiveness = item.total ? Math.round((derivedTotal / number(item.total)) * 100) : 0; return <div className="advertising-row" key={name}><strong><ReceiptText size={12} />{name}</strong><div className="advertising-subgroup"><div className="advertising-fields"><label><small>Lleg. Total</small><input maxLength={3} inputMode="numeric" value={item.total || ""} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><small>Nuevos</small><input maxLength={3} inputMode="numeric" value={item.new || ""} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><small>Repetidos</small><input maxLength={3} inputMode="numeric" value={item.repeated || ""} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><small>S/Resp</small><b>{response}</b></label></div></div><div className="advertising-subgroup"><span>Derivados <b>{derivedTotal}</b></span><div className="advertising-derived">{boxes.map((box) => <label key={box.id}><small className="advertising-box-label">{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] || ""} onChange={(event) => updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: Math.max(0, Number(String(event.target.value).replace(/\D/g, "").slice(0, 3)) || 0) } })} /></label>)}</div></div><strong className="advertising-effectiveness"><ReceiptText size={11} />{effectiveness}%</strong></div>; })}</div></div>
     <div className="bonus-card"><QuickBonusAccess caja={caja} update={update} onViewBonuses={onViewBonuses} onAddManualBonus={onAddManualBonus} /></div>
-    <div className="chips-card"><SectionHead icon={<Ticket size={16} />} title="Fichas Finales" /><div className="final-chip-fields">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); return <label className={`final-chip-field ${number(chip.final) !== 0 ? "has-value" : ""}`} key={chip.platform}><span>Ficha Final {chip.platform === "Ganamos" ? "Gan." : chip.platform === "Apostamos" ? "Apos." : "Zeus"}</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>Saldo {money(balance)}</small></label>; })}</div></div>
+    <div className="chips-card"><div className="section-head chips-section-head"><div className="section-title"><Ticket size={16} /><div><h2>Fichas Finales</h2></div></div><label className="notes-toggle" title="Mostrar u ocultar notas de cuentas"><span>Notas</span><input type="checkbox" checked={notesEnabled} onChange={(event) => onNotesEnabledChange(event.target.checked)} /><i /></label></div><div className="final-chip-fields">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); return <label className={`final-chip-field ${number(chip.final) !== 0 ? "has-value" : ""}`} key={chip.platform}><span>Ficha Final {chip.platform === "Ganamos" ? "Gan." : chip.platform === "Apostamos" ? "Apos." : "Zeus"}</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>Saldo {money(balance)}</small></label>; })}</div></div>
   </section>;
 }
 
-function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet, onViewBonuses }) {
+function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet, onViewBonuses, notesEnabled }) {
   const [notePosition, setNotePosition] = useState(null);
   const [editingNote, setEditingNote] = useState(null);
   const wallets = config.accounts.wallets;
@@ -712,7 +712,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const checks = <div className="cell-checks"><button tabIndex={-1} className={state.collections ? "checked" : ""} onClick={() => toggle(index, wallet, "collections")} title="Cobros e ingresos"><Check size={11} /></button><button tabIndex={-1} className={state.withdrawals ? "checked" : ""} onClick={() => toggle(index, wallet, "withdrawals")} title="Retiros y egresos"><Check size={11} /></button></div>;
     const currentNoteKey = noteKey(index, wallet);
     const isEditingNote = editingNote === currentNoteKey;
-    return <td key={wallet}><div className="wallet-cell"><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: showNote }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} readOnly={!isEditingNote} autoFocus={isEditingNote} value={row.notes?.[wallet] || ""} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
+    return <td key={wallet}><div className={`wallet-cell ${notesEnabled ? "notes-enabled" : ""}`}><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: showNote }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} readOnly={!isEditingNote} autoFocus={isEditingNote} value={row.notes?.[wallet] || ""} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
   };
   return (
     <section className="panel accounts-panel">
@@ -1377,8 +1377,12 @@ function App() {
   const [config, setConfig] = useState(null);
   const [boxes, setBoxes] = useState(null);
   const [activeBoxId, setActiveBoxId] = useState(null);
+  const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = false;
+  useEffect(() => {
+    setNotesEnabled(true);
+  }, [caja?.id]);
   useEffect(() => {
     const submitModalOnEnter = (event) => {
       if (event.key !== "Enter" || event.isComposing) return;
@@ -1607,8 +1611,8 @@ function App() {
         />
         <div className="dashboard-grid">
           <div className="content-column">
-            <AdvertisingSection caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} />
-            <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} />
+            <AdvertisingSection caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} notesEnabled={notesEnabled} onNotesEnabledChange={setNotesEnabled} />
+            <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
             <div className="operations-grid">
               <QuickMovementSection
                 title="Gastos"
