@@ -1382,6 +1382,24 @@ function App() {
     setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setCaja(null); setConfig(null);
     Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setConfig(settings); });
   };
+  useEffect(() => {
+    if (!activeBoxId || saving) return undefined;
+    let cancelled = false;
+    const refresh = async () => {
+      const [current, past] = await Promise.all([
+        api(`/api/caja/actual?boxId=${activeBoxId}`),
+        api(`/api/caja/historial?boxId=${activeBoxId}`),
+      ]);
+      if (cancelled || current?.error || !Array.isArray(past)) return;
+      setHistory(past);
+      setCaja(selectedIndex === 0 ? current : past.find((item) => String(item.id) === String(caja?.id)) || current);
+    };
+    const interval = window.setInterval(refresh, 3000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [activeBoxId, saving, selectedIndex, caja?.id]);
   const assignWallet = async (holder, wallet, boxId) => {
     const result = await api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId }) });
     if (result.error) return;
