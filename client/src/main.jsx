@@ -56,7 +56,7 @@ const walletModeClass = (config, wallet) => ({
   "Solo Depósito": "wallet-mode-deposit",
 }[config.accounts.walletModes?.[wallet] || "Cobros + Retiros"]);
 const api = (url, options) =>
-  fetch(url, {
+  fetch(`${import.meta.env.VITE_API_URL || ""}${url}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   }).then((r) => r.json());

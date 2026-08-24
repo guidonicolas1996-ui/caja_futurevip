@@ -35,4 +35,5 @@ app.post('/api/caja/cerrar', (req, res) => {
   try { res.json(closeCurrent(req.body, req.query.boxId)); } catch (error) { res.status(400).json({ error: error.message }); }
 });
 
-app.listen(3001, () => console.log('API de caja lista en http://localhost:3001'));
+const port = Number(process.env.PORT) || 3001;
+app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port}`));
