@@ -260,7 +260,7 @@
         "id": 0,
         "status": "ABIERTA",
         "shift": "Noche",
-        "date": "2026-08-24T06:00:14.391Z",
+        "date": "2026-08-24T10:01:46.742Z",
         "cashInitial": 0,
         "nextNotes": "",
         "notes": "",
@@ -272,8 +272,8 @@
           {
             "holder": "Fede Acuña",
             "values": {
-              "Ualá": 1234123412341234,
-              "Mercado Pago": 5678567856785678,
+              "Ualá": 0,
+              "Mercado Pago": 0,
               "Personal Pay": 0,
               "Naranja X": 0,
               "Brubank": 0,
