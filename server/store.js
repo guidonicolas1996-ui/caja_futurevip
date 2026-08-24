@@ -17,6 +17,29 @@ const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'vio
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
 
 const blankAdvertising = () => ({ 'Publicidad A': { total: 0, new: 0, repeated: 0, derived: {} }, 'Publicidad B': { total: 0, new: 0, repeated: 0, derived: {} } });
+function normalizeAdvertising(advertising) {
+  const defaults = blankAdvertising();
+  return Object.fromEntries(Object.keys(defaults).map((name) => {
+    const item = advertising?.[name] || {};
+    return [name, {
+      total: Number(item.total) || 0,
+      new: Number(item.new) || 0,
+      repeated: Number(item.repeated) || 0,
+      derived: { ...(item.derived || {}) },
+    }];
+  }));
+}
+function normalizeSpaces(spaces) {
+  let changed = false;
+  spaces.forEach((space) => space.cajas.forEach((caja) => {
+    const advertising = normalizeAdvertising(caja.advertising);
+    if (JSON.stringify(advertising) !== JSON.stringify(caja.advertising)) {
+      caja.advertising = advertising;
+      changed = true;
+    }
+  }));
+  return changed;
+}
 const defaultConfig = () => ({
   accounts: { holders: titulares, wallets: billeteras, availability: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, true]))])), walletSettings: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, { category: 'Normal', boxId: null }]))])), walletModes: Object.fromEntries(billeteras.map((wallet) => [wallet, 'Cobros + Retiros'])) },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
@@ -45,13 +68,7 @@ function readLocalSpaces() {
   fs.mkdirSync(path.dirname(spacesFile), { recursive: true });
   if (fs.existsSync(spacesFile)) {
     const spaces = JSON.parse(fs.readFileSync(spacesFile, 'utf8'));
-    let changed = false;
-    spaces.forEach((space) => space.cajas.forEach((caja) => {
-      if (!caja.advertising) {
-        caja.advertising = blankAdvertising();
-        changed = true;
-      }
-    }));
+    const changed = normalizeSpaces(spaces);
     if (spaces.some((space) => space.shiftVersion !== 2)) {
       const legacyNames = { Mañana: 'Noche', Tarde: 'Mañana', Noche: 'Tarde' };
       spaces.forEach((space) => { space.cajas.forEach((caja) => { caja.shift = legacyNames[caja.shift] || caja.shift; }); space.shiftVersion = 2; });
@@ -69,7 +86,11 @@ async function readSpaces() {
   if (!supabase) return readLocalSpaces();
   const { data, error } = await supabase.from('app_state').select('spaces').eq('id', 'main').maybeSingle();
   if (error) throw new Error(`No se pudo leer Supabase: ${error.message}`);
-  if (data?.spaces) return data.spaces;
+  if (data?.spaces) {
+    const spaces = data.spaces;
+    if (normalizeSpaces(spaces)) await writeSpaces(spaces);
+    return spaces;
+  }
   const spaces = readLocalSpaces();
   await writeSpaces(spaces);
   return spaces;
