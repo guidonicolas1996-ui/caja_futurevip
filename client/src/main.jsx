@@ -728,7 +728,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
   };
   const showNote = (event) => {
     const focusedNote = document.activeElement;
-    if (focusedNote instanceof HTMLTextAreaElement && focusedNote.closest(".wallet-note-popover")) {
+    if (focusedNote?.closest(".wallet-note-popover")) {
       focusedNote.blur();
       setEditingNote(null);
     }
