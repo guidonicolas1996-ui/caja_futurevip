@@ -746,6 +746,21 @@ main {
   text-align: center;
   text-transform: uppercase;
 }
+.wallet-section-toggle {
+  width: 100%;
+  min-height: 20px;
+  padding: 2px 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font: inherit;
+  text-transform: inherit;
+}
+.wallet-section-toggle:hover { background: rgba(255, 255, 255, .05); }
 .account-grid thead .wallet-group-row th,
 .snapshot-panel .wallet-group-row th {
   border-top: 0;

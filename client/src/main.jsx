@@ -10,6 +10,8 @@ import {
   Banknote,
   Camera,
   Check,
+  ChevronDown,
+  ChevronRight,
   Copy,
   Clock3,
   Coins,
@@ -619,6 +621,7 @@ function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBon
 function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet, onViewBonuses }) {
   const [notePosition, setNotePosition] = useState(null);
   const wallets = config.accounts.wallets;
+  const accountSections = caja.accountSections || {};
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
     category,
     rows: caja.accounts.map((row, index) => ({ row, index })).filter(({ row }) => wallets.some((wallet) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false)),
@@ -689,6 +692,12 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const height = 110;
     setNotePosition({ left: Math.min(rect.left, window.innerWidth - 198), top: rect.bottom + height > window.innerHeight ? Math.max(8, rect.top - height) : rect.bottom });
   };
+  const sectionKey = (category) => category === "Depósitos" ? "deposits" : "shared";
+  const isSectionCollapsed = (category) => category !== "Normal" && accountSections[sectionKey(category)] === true;
+  const toggleSection = (category) => {
+    const key = sectionKey(category);
+    update({ accountSections: { ...accountSections, [key]: !isSectionCollapsed(category) } });
+  };
   const renderCell = (row, index, wallet, category, rowPosition, walletIndex) => {
     const state = cellState(row, wallet);
     const stateClass = state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : "";
@@ -714,7 +723,13 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
             </tr>
           </thead>
           <tbody>
-            {walletGroups.flatMap((group, groupIndex) => [group.category !== "Normal" && <tr className="wallet-section-row" key={`${group.category}-title`}><th colSpan={wallets.length + 2}>{`Billeteras ${group.category}`}</th></tr>, ...group.rows.map(({ row, index }, rowIndex) => <tr key={`${group.category}-${row.holder}-${index}`}><th className="sticky-col holder">{row.holder}</th>{wallets.map((wallet, walletIndex) => renderCell(row, index, wallet, group.category, rowOffsets[groupIndex] + rowIndex, walletIndex))}<td className="total-cell">{money(totals.rows[groupIndex][rowIndex])}</td></tr>)])}
+            {walletGroups.flatMap((group, groupIndex) => {
+              const collapsed = isSectionCollapsed(group.category);
+              return [
+                group.category !== "Normal" && <tr className="wallet-section-row" key={`${group.category}-title`}><th colSpan={wallets.length + 2}><button type="button" className="wallet-section-toggle" onClick={() => toggleSection(group.category)} aria-expanded={!collapsed} aria-label={`${collapsed ? "Expandir" : "Minimizar"} billeteras ${group.category}`}><span>{`Billeteras ${group.category}`}</span>{collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}</button></th></tr>,
+                ...(!collapsed ? group.rows.map(({ row, index }, rowIndex) => <tr key={`${group.category}-${row.holder}-${index}`}><th className="sticky-col holder">{row.holder}</th>{wallets.map((wallet, walletIndex) => renderCell(row, index, wallet, group.category, rowOffsets[groupIndex] + rowIndex, walletIndex))}<td className="total-cell">{money(totals.rows[groupIndex][rowIndex])}</td></tr>) : []),
+              ];
+            })}
           </tbody>
           <tfoot>
             <tr>

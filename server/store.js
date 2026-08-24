@@ -52,6 +52,7 @@ const readLegacyConfig = () => fs.existsSync(legacyConfigFile) ? JSON.parse(fs.r
 const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
   cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
+  accountSections: structuredClone(previous?.accountSections || { deposits: false, shared: false }),
   accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
   bonuses: [], ta: [], tips: [], expenses: [], transfers: [], found: 0, foundMoney: [],
   advertising: previous?.shift === 'Tarde' ? blankAdvertising() : structuredClone(previous?.advertising || blankAdvertising()),
