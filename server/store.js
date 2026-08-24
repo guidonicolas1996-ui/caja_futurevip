@@ -10,6 +10,8 @@ const spacesFile = path.join(directory, 'data', 'espacios.json');
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && !supabase) throw new Error('Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en producción');
 const titulares = ['Fede Acuña', 'Pablo Totaro', 'Mateo Ferrer', 'Ever Lombardo'];
 const billeteras = ['Ualá', 'Mercado Pago', 'Personal Pay', 'Naranja X', 'Brubank', 'Prex', 'Astro Pay', 'Belo', 'Lemon'];
 const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
@@ -92,7 +94,8 @@ async function readSpaces() {
     if (normalizeSpaces(spaces)) await writeSpaces(spaces);
     return spaces;
   }
-  const spaces = readLocalSpaces();
+  const config = defaultConfig();
+  const spaces = [{ id: 'principal', title: 'Caja principal', color: 'teal', shiftVersion: 2, config, cajas: [blankCaja(0, null, config)] }];
   await writeSpaces(spaces);
   return spaces;
 }
