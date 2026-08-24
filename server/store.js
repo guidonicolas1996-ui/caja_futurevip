@@ -155,17 +155,6 @@ export async function updateCaja(id, patch, boxId) {
   await writeSpaces(spaces);
   return space.cajas[index];
 }
-export async function resetAllData() {
-  const spaces = await readSpaces();
-  const resetDate = '2026-08-23T19:00:00.000Z';
-  spaces.forEach((space) => {
-    const config = normalizeConfig(space.config);
-    space.config = config;
-    space.cajas = [{ ...blankCaja(0, null, config), shift: 'Tarde', date: resetDate }];
-  });
-  await writeSpaces(spaces);
-  return spaces;
-}
 export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');

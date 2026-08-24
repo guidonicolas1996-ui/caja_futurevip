@@ -325,7 +325,6 @@ function SummaryHeader({
   onSnapshot,
   capturing,
   onConfigure,
-  onFormat,
   boxes,
   activeBoxId,
   onBoxChange,
@@ -381,9 +380,6 @@ function SummaryHeader({
         </span>
         <button className="ghost-button" onClick={onConfigure}>
           <Settings2 size={17} /> Configurar
-        </button>
-        <button className="danger-button format-button" onClick={onFormat} title="Borrar todos los datos de prueba">
-          <Trash2 size={15} /> Formatear BDD
         </button>
         <button
           className="icon-button snapshot-button"
@@ -1249,7 +1245,6 @@ function App() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
-  const [formatConfirm, setFormatConfirm] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
@@ -1394,20 +1389,6 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
-  const formatDatabase = async () => {
-    const result = await api("/api/admin/formatear-bdd", { method: "POST" });
-    if (result.error) {
-      notify(result.error);
-      return;
-    }
-    const space = result.find((item) => item.id === activeBoxId) || result[0];
-    setCaja(space.cajas[0]);
-    setHistory([space.cajas[0]]);
-    setConfig(space.config);
-    setSelectedIndex(0);
-    setFormatConfirm(false);
-    notify("BDD formateada: Tarde del 23/08 lista");
-  };
   const downloadSnapshot = async () => {
     if (capturing) return;
     setCapturing(true);
@@ -1455,7 +1436,6 @@ function App() {
         onSnapshot={downloadSnapshot}
         capturing={capturing}
         onConfigure={() => setConfigurationOpen(true)}
-        onFormat={() => setFormatConfirm(true)}
         boxes={boxes}
         activeBoxId={activeBoxId}
         onBoxChange={changeBox}
@@ -1582,20 +1562,6 @@ function App() {
               <button className="close-button" onClick={close}>
                 Confirmar cierre <ArrowRight size={16} />
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {formatConfirm && (
-        <div className="modal-backdrop">
-          <div className="modal">
-            <button className="modal-close" onClick={() => setFormatConfirm(false)}><X size={18} /></button>
-            <div className="modal-icon"><Trash2 size={22} /></div>
-            <h2>¿Formatear BDD completa?</h2>
-            <p>Se borrarán todos los turnos, movimientos y datos de prueba de Supabase. Quedará solo una caja Tarde vacía del 23/08/2026. Esta acción no se puede deshacer.</p>
-            <div className="modal-actions">
-              <button className="ghost-button" onClick={() => setFormatConfirm(false)}>Cancelar</button>
-              <button className="danger-button" onClick={formatDatabase}>Sí, formatear BDD <Trash2 size={15} /></button>
             </div>
           </div>
         </div>
