@@ -913,7 +913,7 @@ main {
   content: "";
   position: absolute;
   top: -5px;
-  right: 7px;
+  left: 12px;
   width: 8px;
   height: 8px;
   background: #202b2d;
