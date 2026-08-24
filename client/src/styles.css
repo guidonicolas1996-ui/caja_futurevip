@@ -820,7 +820,7 @@ main {
   position: fixed;
   z-index: 5;
   width: 190px;
-  padding: 8px;
+  padding: 24px 8px 8px;
   background: #202b2d;
   border: 1px solid #3e5454;
   border-radius: 3px;
@@ -841,6 +841,22 @@ main {
   color: #d8e0e0;
   font-size: 10px;
 }
+.wallet-note-edit {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+}
+.wallet-note-edit:hover { background: #2d3b3d; color: var(--cyan); }
+.wallet-note-popover textarea[readonly] { cursor: text; }
 .wallet-cell:has(.account-amount input:hover) .wallet-note-popover,
 .wallet-cell:has(.wallet-note-popover:hover) .wallet-note-popover,
 .wallet-cell:has(.wallet-note-popover:focus-within) .wallet-note-popover {

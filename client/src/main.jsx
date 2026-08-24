@@ -20,6 +20,7 @@ import {
   GripVertical,
   Gift,
   LockKeyhole,
+  Pencil,
   Plus,
   RefreshCw,
   Send,
@@ -620,6 +621,7 @@ function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBon
 
 function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet, onViewBonuses }) {
   const [notePosition, setNotePosition] = useState(null);
+  const [editingNote, setEditingNote] = useState(null);
   const wallets = config.accounts.wallets;
   const accountSections = caja.accountSections || {};
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
@@ -698,6 +700,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const key = sectionKey(category);
     update({ accountSections: { ...accountSections, [key]: !isSectionCollapsed(category) } });
   };
+  const noteKey = (rowIndex, wallet) => `${rowIndex}-${wallet}`;
   const renderCell = (row, index, wallet, category, rowPosition, walletIndex) => {
     const state = cellState(row, wallet);
     const stateClass = state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : "";
@@ -707,7 +710,9 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const cellColorStyle = assignedBox ? boxColorStyle(assignedBox.color) : { "--box-accent": "#758689", "--box-line": "#536976", "--assignment-dot": "transparent" };
     const assignmentSelector = category !== "Normal" && <WalletAssignmentSelector boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
     const checks = <div className="cell-checks"><button tabIndex={-1} className={state.collections ? "checked" : ""} onClick={() => toggle(index, wallet, "collections")} title="Cobros e ingresos"><Check size={11} /></button><button tabIndex={-1} className={state.withdrawals ? "checked" : ""} onClick={() => toggle(index, wallet, "withdrawals")} title="Retiros y egresos"><Check size={11} /></button></div>;
-    return <td key={wallet}><div className="wallet-cell"><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: showNote }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><textarea tabIndex={-1} value={row.notes?.[wallet] || ""} placeholder="Escribí una nota..." onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
+    const currentNoteKey = noteKey(index, wallet);
+    const isEditingNote = editingNote === currentNoteKey;
+    return <td key={wallet}><div className="wallet-cell"><div className={`cell-control ${stateClass} ${number(row.values[wallet]) !== 0 ? "has-money" : ""} ${category === "Normal" ? "wallet-category-normal" : "wallet-category-assigned"}`} style={cellColorStyle}><div className="account-amount"><span>$</span><NumericInput value={row.values[wallet]} zeroPlaceholder="-" numericOnly onChange={(value) => edit(index, wallet, value)} onKeyDown={(event) => focusAdjacentAmount(event, rowPosition, walletIndex)} inputProps={{ "data-matrix-row": rowPosition, "data-matrix-column": walletIndex, onMouseEnter: showNote }} /></div>{category === "Normal" && checks}{category === "Depósitos" && assignmentSelector}{category === "Compartidas" && <div className="shared-wallet-controls">{checks}{assignmentSelector}</div>}</div><div className={`wallet-note-popover ${row.notes?.[wallet] ? "has-note" : ""}`} style={notePosition ? { left: `${notePosition.left}px`, top: `${notePosition.top}px` } : undefined}><button type="button" className="wallet-note-edit" title={isEditingNote ? "Terminar edición" : "Editar nota"} aria-label={isEditingNote ? "Terminar edición" : "Editar nota"} onClick={() => setEditingNote(isEditingNote ? null : currentNoteKey)}><Pencil size={11} /></button><textarea tabIndex={-1} readOnly={!isEditingNote} autoFocus={isEditingNote} value={row.notes?.[wallet] || ""} placeholder="Sin nota" onChange={(event) => editNote(index, wallet, event.target.value)} /></div></div></td>;
   };
   return (
     <section className="panel accounts-panel">
