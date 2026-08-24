@@ -602,8 +602,6 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
   const [recoveredMode, setRecoveredMode] = useState(false);
   const granted = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0);
   const recovered = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0);
-  const grantedCount = caja.bonuses.filter((bonus) => number(bonus.granted) > 0).length;
-  const recoveredCount = caja.bonuses.filter((bonus) => number(bonus.recovered) > 0).length;
   const recentBonuses = caja.bonuses.slice(-3).reverse();
   const editRecentBonus = (bonusId, value) => {
     const bonuses = caja.bonuses.map((bonus) => bonus.id === bonusId ? { ...bonus, granted: bonus.recovered > 0 ? 0 : value, recovered: bonus.recovered > 0 ? value : 0 } : bonus);
@@ -807,6 +805,8 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const [editorPercent, setEditorPercent] = useState(0);
   const [noteId, setNoteId] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
+  const grantedCount = caja.bonuses.filter((bonus) => number(bonus.granted) > 0).length;
+  const recoveredCount = caja.bonuses.filter((bonus) => number(bonus.recovered) > 0).length;
   useEffect(() => {
     if (viewRequest) setOpen(true);
   }, [viewRequest]);
