@@ -851,6 +851,7 @@ main {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
+  transform-origin: top left;
   transition: opacity 120ms ease, transform 120ms ease;
 }
 .wallet-note-popover textarea {
