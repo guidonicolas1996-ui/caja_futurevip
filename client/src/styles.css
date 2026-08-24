@@ -1843,6 +1843,18 @@ select:focus {
   border-color: var(--box-accent, var(--cyan));
   color: var(--box-accent, var(--cyan));
 }
+.cell-control.has-money.collections .account-amount,
+.cell-control.has-money.collections .account-amount input {
+  color: var(--green);
+}
+.cell-control.has-money.withdrawals .account-amount,
+.cell-control.has-money.withdrawals .account-amount input {
+  color: var(--orange);
+}
+.cell-control.has-money.both .account-amount,
+.cell-control.has-money.both .account-amount input {
+  color: var(--red);
+}
 .cell-control button.checked:first-child {
   color: #102322;
   background: var(--green);
