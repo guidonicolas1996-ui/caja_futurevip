@@ -1454,6 +1454,9 @@ select:focus {
 .transfer-form-title { display: flex; align-items: flex-start; gap: 6px; }
 .transfer-form-title > svg { flex: 0 0 auto; margin-top: 1px; }
 .transfer-form-title h3 { margin: 0; font-size: 13px; color: #f0f8f6; }
+.transfer-form-title-line { display: flex; align-items: center; gap: 7px; }
+.transfer-form-title-line span { color: var(--muted); font-size: 10px; line-height: 1.2; }
+.transfer-form-title-line span::before { content: "-"; margin-right: 7px; color: var(--muted); }
 .transfer-form-fields, .transfer-fields { display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr) minmax(100px, 1fr) 32px; gap: 9px; align-items: end; }
 .transfer-picker { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 9px; }
 .transfer-picker-control { position: relative; min-width: 0; }

@@ -246,7 +246,7 @@ function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTran
   return (
     <section className="transfer-panel">
       <div className="transfer-form">
-        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><h3>Movimiento entre cajas</h3></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
+        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><div className="transfer-form-title-line"><h3>Movimiento entre cajas</h3><span>{transfers.length} registros</span></div></div></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
         <div className="transfer-fields">
           <TransferBoxPicker label="Desde" boxes={boxes} value={fromBoxId} onChange={changeFromBox} />
           <button type="button" className="transfer-invert" title="Invertir selección" aria-label="Invertir selección" onClick={invertSelection}><ArrowLeftRight size={16} /></button>
@@ -602,6 +602,8 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
   const [recoveredMode, setRecoveredMode] = useState(false);
   const granted = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0);
   const recovered = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0);
+  const grantedCount = caja.bonuses.filter((bonus) => number(bonus.granted) > 0).length;
+  const recoveredCount = caja.bonuses.filter((bonus) => number(bonus.recovered) > 0).length;
   const recentBonuses = caja.bonuses.slice(-3).reverse();
   const editRecentBonus = (bonusId, value) => {
     const bonuses = caja.bonuses.map((bonus) => bonus.id === bonusId ? { ...bonus, granted: bonus.recovered > 0 ? 0 : value, recovered: bonus.recovered > 0 ? value : 0 } : bonus);
@@ -886,7 +888,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
       <SectionHead
         icon={<Gift size={18} />}
         title="Bonos"
-        meta={`${caja.bonuses.length} movimientos`}
+        meta={`${grantedCount} Bonos Otorgados | ${recoveredCount} Bonos Recuperados`}
         action={
           <div className="bonus-actions">
             <button className="icon-button" title="Agregar bono" onClick={openBonusEditor}>
@@ -1198,6 +1200,7 @@ function ChipsSection({ caja, update }) {
       <SectionHead
         icon={<Ticket size={18} />}
         title="Control de fichas"
+        meta={`${chipLoads.length} carga${chipLoads.length === 1 ? "" : "s"} de fichas`}
         action={<div className="chips-actions"><button className="icon-button" title="Agregar carga de fichas" onClick={() => setLoadOpen(true)}><Plus size={16} /></button><button className="icon-button" title="Ver y editar cargas de fichas" onClick={() => setLoadsEditorOpen(true)}><Eye size={16} /></button></div>}
       />
       <div className="chips-head">
