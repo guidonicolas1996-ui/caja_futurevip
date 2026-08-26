@@ -250,7 +250,7 @@ function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTran
     setFromBoxId(activeBoxId);
     setToBoxId(boxes.find((box) => box.id !== activeBoxId)?.id || "");
   }, [activeBoxId, boxes]);
-  const changeFromBox = (boxId) => {
+      const changeFromBox = (boxId) => {
     setFromBoxId(boxId);
     if (boxId && boxId === toBoxId) setToBoxId("");
   };
@@ -755,6 +755,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
         ? current
         : { collections: Boolean(current), withdrawals: false };
     state[flag] = !state[flag];
+    if (!state[flag]) state[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = new Date().toISOString();
     accounts[rowIndex].verified[wallet] = state;
     update({ accounts });
   };
@@ -1457,6 +1458,75 @@ function SnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBo
   return <CajaReportCardFinal data={{ caja, calculations, config, boxes, activeBox }} snapshotRef={snapshotRef} />;
 }
 
+function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onAssignWallet, onConfigChange }) {
+  const logistics = config.logistics || { order: [], hidden: [], added: [] };
+  const accounts = caja.accounts || [];
+  const keyFor = (holder, wallet) => `${holder}::${wallet}`;
+  const candidates = accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false).map((wallet) => {
+    const setting = config.accounts.walletSettings[row.holder]?.[wallet] || { category: "Normal" };
+    return { key: keyFor(row.holder, wallet), holder: row.holder, wallet, category: setting.category || "Normal", mode: config.accounts.walletModes?.[wallet] || "Cobros + Retiros", row };
+  }));
+  const included = candidates.filter((item) => item.mode === "Cobros + Retiros" || logistics.added.includes(item.key));
+  const orderIndex = (key) => logistics.order.indexOf(key);
+  const ordered = included.slice().sort((first, second) => {
+    const firstOrder = orderIndex(first.key);
+    const secondOrder = orderIndex(second.key);
+    return (firstOrder < 0 ? Number.MAX_SAFE_INTEGER : firstOrder) - (secondOrder < 0 ? Number.MAX_SAFE_INTEGER : secondOrder);
+  });
+  const grouped = ["Normal", "Depósitos", "Compartidas"].map((category) => ({ category, rows: ordered.filter((item) => item.category === category && !logistics.hidden.includes(item.key)) })).filter((group) => group.rows.length);
+  const hiddenItems = ordered.filter((item) => logistics.hidden.includes(item.key));
+  const hidden = (key) => logistics.hidden.includes(key);
+  const saveLogistics = (patch) => onConfigChange({ ...config, logistics: { ...logistics, ...patch } });
+  const toggleHidden = (key) => saveLogistics({ hidden: hidden(key) ? logistics.hidden.filter((item) => item !== key) : [...logistics.hidden, key] });
+  const reorder = (category, key, targetKey) => {
+    const keys = ordered.filter((item) => item.category === category).map((item) => item.key);
+    const from = keys.indexOf(key);
+    const to = keys.indexOf(targetKey);
+    if (from < 0 || to < 0 || from === to) return;
+    keys.splice(from, 1); keys.splice(to, 0, key);
+    const otherKeys = ordered.filter((item) => item.category !== category).map((item) => item.key);
+    saveLogistics({ order: [...otherKeys, ...keys] });
+  };
+  const addable = candidates.filter((item) => item.mode !== "Cobros + Retiros" && !logistics.added.includes(item.key));
+  const addWallet = (event) => {
+    const key = event.target.value;
+    if (!key) return;
+    saveLogistics({ added: [...logistics.added, key], hidden: logistics.hidden.filter((item) => item !== key) });
+    event.target.value = "";
+  };
+  const stateFor = (row, wallet) => {
+    const state = row.verified?.[wallet];
+    return typeof state === "object" ? state : { collections: Boolean(state), withdrawals: false };
+  };
+  const dateValue = (value) => value ? new Date(value).getTime() : 0;
+  const restartFor = (item) => {
+    const state = stateFor(item.row, item.wallet);
+    return [state.lastCollectionsAt, state.lastWithdrawalsAt, item.row.walletBoxUpdatedAt?.[item.wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0];
+  };
+  const restartTone = (value) => {
+    if (!value) return "";
+    const date = new Date(value); const today = new Date();
+    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    return day === todayDay ? "today" : day === todayDay - 86400000 ? "yesterday" : "";
+  };
+  const formatRestart = (value) => value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "1/1/2026 0:00:00";
+  const updateState = (item, flag) => {
+    const state = stateFor(item.row, item.wallet);
+    const nextState = { ...state, [flag]: !state[flag] };
+    if (!nextState[flag]) nextState[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = new Date().toISOString();
+    onUpdateAccounts(accounts.map((account) => account.holder !== item.holder ? account : { ...account, verified: { ...(account.verified || {}), [item.wallet]: nextState } }));
+  };
+  return <main className="logistics-page">
+    <div className="page-title logistics-title"><div><span className="eyebrow">Control operativo</span><h1>Logística</h1><p>Ordená, ocultá y controlá el estado de las billeteras.</p></div><select className="logistics-add" onChange={addWallet} value=""><option value="">Agregar billetera...</option>{addable.map((item) => <option key={item.key} value={item.key}>{item.holder} · {item.wallet}</option>)}</select></div>
+    <section className="logistics-board">
+      <div className="logistics-head"><span>En uso</span><span>Pagos</span><span>Cuenta</span><span>Billetera</span><span>Aclaración</span><span>Último R. Uso</span><span>Último R. Retiros</span><span>Último R. Caja</span><span>Último Reinicio</span><span /></div>
+      {grouped.map((group) => <React.Fragment key={group.category}><div className="logistics-group">Billeteras {group.category}</div>{group.rows.map((item) => { const state = stateFor(item.row, item.wallet); const setting = config.accounts.walletSettings[item.holder]?.[item.wallet] || {}; const box = boxes.find((candidate) => candidate.id === item.row.walletBoxes?.[item.wallet]); const restart = restartFor(item); return <div className={`logistics-row ${state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : ""}`} key={item.key} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", item.key)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => reorder(group.category, event.dataTransfer.getData("text/plain"), item.key)}><label className="logistics-check"><input type="checkbox" checked={Boolean(state.collections)} onChange={() => updateState(item, "collections")} /><span /></label><label className="logistics-check"><input type="checkbox" checked={Boolean(state.withdrawals)} onChange={() => updateState(item, "withdrawals")} /><span /></label><b>{item.holder}</b><strong>{item.wallet}</strong><span>{item.category === "Depósitos" ? "Únicamente enviar como depósito" : item.category === "Compartidas" ? "Máximo 500k · (Depósitos o Pagos Grandes)" : `Máximo 250k · ${item.mode === "Solo Cobros" ? "Cobros" : "Pagos"}`}</span><time>{formatRestart(state.lastCollectionsAt)}</time><time>{formatRestart(state.lastWithdrawalsAt)}</time><button className={`logistics-box ${box ? "assigned" : ""}`} onClick={() => item.category === "Compartidas" && onAssignWallet(item.holder, item.wallet, box ? "" : activeBoxId)}>{box?.title || (item.category === "Compartidas" ? "Sin caja" : "-")}</button><time className={restartTone(restart)}>{formatRestart(restart)}</time><button className="logistics-hide" title={hidden(item.key) ? "Mostrar billetera" : "Ocultar billetera"} onClick={() => toggleHidden(item.key)}><Eye size={14} /></button></div>; })}</React.Fragment>)}
+      {hiddenItems.length > 0 && <div className="logistics-hidden"><span>Ocultas</span>{hiddenItems.map((item) => <button key={item.key} onClick={() => toggleHidden(item.key)}>{item.holder} · {item.wallet}</button>)}</div>}
+    </section>
+  </main>;
+}
+
 function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
   const wallets = config.accounts.wallets;
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
@@ -1540,6 +1610,7 @@ function App() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [logisticsOpen, setLogisticsOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
@@ -1630,6 +1701,12 @@ function App() {
       350,
     );
   };
+  const updateLogisticsConfig = async (nextConfig) => {
+    setConfig(nextConfig);
+    const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    if (result.config) setConfig(result.config);
+  };
+  const updateAccountsFromLogistics = (accounts) => update({ accounts });
   const saveConfig = async (nextConfig, boxId) => {
     const result = await api(`/api/configuracion?boxId=${boxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
     if (boxId === activeBoxId) {
@@ -1789,11 +1866,12 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
+            <button className="history-trigger logistics-trigger" onClick={() => setLogisticsOpen(!logisticsOpen)}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
-        <SummaryCard
+        {logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
@@ -1880,7 +1958,7 @@ function App() {
               <ChipsSection caja={caja} update={update} />
             </div>
           </div>
-        </div>
+        </div></>}
       </main>
       <SnapshotView caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />
       {confirm && (

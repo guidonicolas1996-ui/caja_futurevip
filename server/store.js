@@ -45,6 +45,7 @@ function normalizeSpaces(spaces) {
 }
 const defaultConfig = () => ({
   accounts: { holders: titulares, wallets: billeteras, availability: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, true]))])), walletSettings: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, { category: 'Normal', boxId: null }]))])), walletModes: Object.fromEntries(billeteras.map((wallet) => [wallet, 'Cobros + Retiros'])) },
+  logistics: { order: [], hidden: [], added: [] },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
 });
@@ -53,7 +54,7 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
   cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
   accountSections: structuredClone(previous?.accountSections || { deposits: false, shared: false }),
-  accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
+  accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, walletBoxUpdatedAt: { ...(previousAccount?.walletBoxUpdatedAt ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
   bonuses: [], ta: [], tips: [], expenses: [], transfers: [], found: 0, foundMoney: [],
   advertising: previous?.shift === 'Tarde' ? blankAdvertising() : structuredClone(previous?.advertising || blankAdvertising()),
   chips: config.platforms.map((platform) => { const previousChip = previous?.chips?.find((item) => item.platform === platform); const value = previousChip?.final ?? 0; return { platform, initial: value, final: value }; }),
@@ -111,7 +112,9 @@ function normalizeConfig(config) {
   const walletSettings = Object.fromEntries(holders.map((holder) => [holder, Object.fromEntries(wallets.map((wallet) => { const legacySetting = sourceWalletSettings[wallet]; const setting = sourceWalletSettings[holder]?.[wallet] || (legacySetting && !legacySetting.category ? legacySetting : {}); return [wallet, { category: walletCategories.includes(setting.category) ? setting.category : 'Normal', boxId: setting.boxId || null }]; }))]));
   const sourceWalletModes = accounts.walletModes || {};
   const walletModes = Object.fromEntries(wallets.map((wallet) => [wallet, ['Cobros + Retiros', 'Solo Cobros', 'Solo Depósito'].includes(sourceWalletModes[wallet]) ? sourceWalletModes[wallet] : 'Cobros + Retiros']));
-  return { ...defaults, ...config, accounts: { holders, wallets, availability, walletSettings, walletModes }, expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, platforms: Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms };
+  const sourceLogistics = config?.logistics || {};
+  const logistics = { order: Array.isArray(sourceLogistics.order) ? sourceLogistics.order : [], hidden: Array.isArray(sourceLogistics.hidden) ? sourceLogistics.hidden : [], added: Array.isArray(sourceLogistics.added) ? sourceLogistics.added : [] };
+  return { ...defaults, ...config, logistics, accounts: { holders, wallets, availability, walletSettings, walletModes }, expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, platforms: Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms };
 }
 export async function getBoxes() { return (await readSpaces()).map(({ id, title, color }) => ({ id, title, color })); }
 export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = defaultConfig(); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
@@ -159,7 +162,7 @@ export async function updateCaja(id, patch, boxId) {
   await writeSpaces(spaces);
   return space.cajas[index];
 }
-export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
+export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); const updatedAt = new Date().toISOString(); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) { account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: updatedAt }; } }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
   const value = Number(amount) || 0;
@@ -193,7 +196,7 @@ export async function deleteTransfer(id) {
 export async function updateConfig(config, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const normalized = normalizeConfig(config); space.config = normalized;
   const current = space.cajas.at(-1); const existing = new Map(current.accounts.map((account) => [account.holder, account]));
-  current.accounts = normalized.accounts.holders.map((holder) => { const account = existing.get(holder); return { holder, values: Object.fromEntries(normalized.accounts.wallets.map((wallet) => [wallet, account?.values?.[wallet] ?? 0])), walletBoxes: account?.walletBoxes || {}, verified: account?.verified || {}, notes: account?.notes || {} }; });
+  current.accounts = normalized.accounts.holders.map((holder) => { const account = existing.get(holder); return { holder, values: Object.fromEntries(normalized.accounts.wallets.map((wallet) => [wallet, account?.values?.[wallet] ?? 0])), walletBoxes: account?.walletBoxes || {}, walletBoxUpdatedAt: account?.walletBoxUpdatedAt || {}, verified: account?.verified || {}, notes: account?.notes || {} }; });
   current.chips = normalized.platforms.map((platform) => ({ platform, initial: current.chips.find((chip) => chip.platform === platform)?.initial ?? 0, final: current.chips.find((chip) => chip.platform === platform)?.final ?? 0 }));
   current.expenses = current.expenses.map((expense) => ({ ...expense, category: normalized.expenses.some((item) => item.name === expense.category) ? expense.category : normalized.expenses[0]?.name || 'Gasto' }));
   space.cajas[space.cajas.length - 1] = current; await writeSpaces(spaces); return { config: normalized, current };
