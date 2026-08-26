@@ -1415,7 +1415,7 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     holder: row.holder,
     wallet,
     state: stateFor(row, wallet),
-    restart: [stateFor(row, wallet).lastCollectionsAt, stateFor(row, wallet).lastWithdrawalsAt, row.walletBoxUpdatedAt?.[wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0],
+    restart: row.walletRestartAt?.[wallet] || [stateFor(row, wallet).lastCollectionsAt, stateFor(row, wallet).lastWithdrawalsAt, row.walletBoxUpdatedAt?.[wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0],
   }))).sort((first, second) => {
     const firstIndex = logisticsOrder.indexOf(first.key);
     const secondIndex = logisticsOrder.indexOf(second.key);
