@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { getBoxes, createBox, updateBox, deleteBox, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
+import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
 
 const app = express();
 app.use(cors());
@@ -13,6 +14,7 @@ app.get('/api/cajas', handle(() => getBoxes()));
 app.post('/api/cajas', handle((req) => createBox(req.body)));
 app.put('/api/cajas/:id', handle((req) => updateBox(req.params.id, req.body)));
 app.delete('/api/cajas/:id', handle((req) => deleteBox(req.params.id)));
+app.post('/api/caja/crear-anterior', handle((req) => createPreviousCaja(req.query.boxId)));
 app.get('/api/caja/actual', handle((req) => getCurrent(req.query.boxId)));
 app.get('/api/caja/historial', handle((req) => getHistory(req.query.boxId)));
 app.get('/api/configuracion', handle((req) => getConfig(req.query.boxId)));
