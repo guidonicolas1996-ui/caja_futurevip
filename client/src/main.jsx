@@ -67,8 +67,27 @@ const money = (value) =>
     minimumFractionDigits: 2,
   }).format(Number(value) || 0);
 const number = (value) => Number(value) || 0;
-const parseNumberInput = (value) =>
-  Number(String(value).replace(/\./g, "").replace(",", ".")) || 0;
+const parseNumberInput = (value) => {
+  const text = String(value ?? "").trim().replace(/\s/g, "");
+  if (!text) return 0;
+  const sign = text.startsWith("-") ? -1 : 1;
+  const unsigned = text.replace(/^[+-]/, "").replace(/[^\d.,]/g, "");
+  if (!unsigned) return 0;
+  const separators = [...unsigned.matchAll(/[.,]/g)].map((match) => match.index);
+  if (!separators.length) return sign * (Number(unsigned) || 0);
+
+  const lastSeparator = separators[separators.length - 1];
+  const digitsAfterLast = unsigned.length - lastSeparator - 1;
+  const hasBothSeparators = unsigned.includes(".") && unsigned.includes(",");
+  const repeatedSeparator = separators.length > 1 && new Set([...unsigned].filter((character) => character === "." || character === ",")).size === 1;
+  const decimalSeparator = hasBothSeparators || (!repeatedSeparator && digitsAfterLast <= 2)
+    ? unsigned[lastSeparator]
+    : null;
+  const normalized = decimalSeparator
+    ? `${unsigned.slice(0, lastSeparator).replace(/[.,]/g, "")}.${unsigned.slice(lastSeparator + 1)}`
+    : unsigned.replace(/[.,]/g, "");
+  return sign * (Number(normalized) || 0);
+};
 const formatNumberInput = (value) => {
   const parsed = parseNumberInput(value);
   return parsed
