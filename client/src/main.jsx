@@ -1308,7 +1308,34 @@ function ChipsSection({ caja, update }) {
   );
 }
 
-function SummaryCard({ caja, calculations, update }) {
+function WalletRoute({ caja, config }) {
+  const wallets = config.accounts.wallets.filter((wallet) => caja.accounts.some((row) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal"));
+  const stateFor = (row, wallet) => {
+    const state = row.verified?.[wallet];
+    return typeof state === "object" ? state : { collections: Boolean(state), withdrawals: false };
+  };
+  const dateValue = (value) => value ? new Date(value).getTime() : 0;
+  const restartFor = (wallet) => caja.accounts
+    .filter((row) => wallets.includes(wallet) && config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal")
+    .map((row) => {
+      const state = stateFor(row, wallet);
+      return [state.lastCollectionsAt, state.lastWithdrawalsAt, row.walletBoxUpdatedAt?.[wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0];
+    })
+    .reduce((oldest, value) => !oldest || (value && dateValue(value) < dateValue(oldest)) ? value : oldest, "");
+  if (!wallets.length) return null;
+  const currentIndex = Math.max(0, wallets.findIndex((wallet) => caja.accounts.some((row) => wallets.includes(wallet) && stateFor(row, wallet).collections)));
+  const route = [0, 1, 2].map((offset) => wallets[(currentIndex + offset) % wallets.length]);
+  const recommended = wallets.slice().sort((first, second) => dateValue(restartFor(first)) - dateValue(restartFor(second)))[0];
+  const formatRestart = (value) => value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "Sin reinicio";
+
+  return <section className="wallet-route" aria-label="Seguimiento de billeteras">
+    <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended}</strong><small>Reinicio más antiguo · {formatRestart(restartFor(recommended))}</small></div>
+    <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span></div>
+    <div className="wallet-route-list">{route.map((wallet, index) => <div className={`wallet-route-item ${index === 0 ? "current" : ""}`} key={`${wallet}-${index}`}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{wallet}</strong>{wallet === recommended && <small>Recomendada</small>}</div>)}</div>
+  </section>;
+}
+
+function SummaryCard({ caja, calculations, update, config }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const metric = (label, value, className = "", valueClass = "") => (
     <div className={className}>
@@ -1337,6 +1364,7 @@ function SummaryCard({ caja, calculations, update }) {
           {calculations.shortage >= 0 ? "+" : ""}{money(calculations.shortage)}
         </strong>
       </div>
+      <WalletRoute caja={caja} config={config} />
       <div className="metric-list">
         <div className="editable-summary-metric">
           <span>Caja inicial</span>
@@ -1924,6 +1952,7 @@ function App() {
           caja={caja}
           calculations={calculations}
           update={update}
+          config={config}
         />
         <div className="dashboard-grid">
           <div className="content-column">
