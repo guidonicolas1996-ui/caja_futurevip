@@ -237,6 +237,9 @@
 .invert-toggle::before { content: ""; width: 14px; height: 14px; border: 1px solid #526567; border-radius: 3px; }
 .invert-toggle:has(input:checked) { color: var(--orange); }
 .invert-toggle:has(input:checked)::before { background: var(--orange); box-shadow: inset 0 0 0 3px #202a2c; }
+.data-reset-card { max-width: 760px; border-color: #6d3a3f; }
+.data-reset-card p { max-width: 650px; margin: 0 0 16px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.data-reset-card .danger-button { width: fit-content; }
 @media (max-width: 700px) { .configuration-header { padding: 0 15px; } .configuration-header h1 { font-size: 18px; } .configuration-header .close-button { padding: 0 9px; font-size: 0; } .configuration-header .close-button svg { margin: 0; } .configuration-layout { display: block; padding: 20px 15px 40px; } .configuration-tabs { flex-direction: row; overflow-x: auto; margin-bottom: 24px; } .configuration-tabs button { flex: 0 0 auto; } .config-two-columns { grid-template-columns: 1fr; } .config-card, .config-list { padding: 16px; } .expense-config-row { flex-wrap: wrap; } .expense-config-row input { flex-basis: 100%; } }
 @media (max-width: 700px) { .config-target-bar { align-items: flex-start; flex-direction: column; gap: 9px; } .config-target-bar .box-selector { width: 100%; } }
 @media (max-width: 700px) { .wallet-config-row { grid-template-columns: 16px minmax(0, 1fr) 28px; } .wallet-config-row select { grid-column: 2; } .wallet-config-row select:nth-of-type(2) { grid-row: 3; } .wallet-config-row .delete-button { grid-column: 3; grid-row: 1; } }

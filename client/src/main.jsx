@@ -348,12 +348,15 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
   </>;
 }
 
-function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged }) {
+function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, onClearData }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
   const [draft, setDraft] = useState(structuredClone(config));
   const [saving, setSaving] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
+  const [clearDataOpen, setClearDataOpen] = useState(false);
+  const [clearingData, setClearingData] = useState(false);
+  const [clearDataError, setClearDataError] = useState("");
   const updateAccounts = (patch) => setDraft((current) => ({ ...current, accounts: { ...current.accounts, ...patch } }));
   useEffect(() => {
     let cancelled = false;
@@ -367,6 +370,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
     return () => { cancelled = true; };
   }, [configBoxId]);
   const save = async () => { setSaving(true); await onSave(draft, configBoxId); setSaving(false); };
+  const clearData = async () => { setClearingData(true); setClearDataError(""); try { await onClearData(); setClearDataOpen(false); } catch (error) { setClearDataError(error.message); } finally { setClearingData(false); } };
   const configTarget = boxes.find((box) => box.id === configBoxId) || boxes[0];
   return (
     <div className="configuration-page">
@@ -386,7 +390,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
         <main className="configuration-content">
           {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
           {!loadingConfig && draft && <>
-          {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section></>}
+          {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section><section className="config-card data-reset-card"><div className="config-list-head"><h3>Datos de caja</h3><span>Acción irreversible</span></div><p>Elimina los turnos y movimientos, conserva configuraciones y comienza el 25/08 en turno Tarde.</p><button className="danger-button" onClick={() => setClearDataOpen(true)}><Trash2 size={15} /> Limpiar datos de caja</button></section></>}
           {tab === "accounts" && <>
             <div className="config-intro"><span className="eyebrow">Matriz de cuentas</span><h2>Titulares y billeteras</h2><p>Creá las listas y definí qué billeteras puede usar cada titular.</p></div>
             <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
@@ -396,6 +400,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           </>}
         </main>
       </div>
+      {clearDataOpen && <div className="modal-backdrop" onClick={() => !clearingData && setClearDataOpen(false)}><div className="modal confirm-dialog" onClick={(event) => event.stopPropagation()}><div className="modal-icon"><Trash2 size={21} /></div><h2>¿Limpiar datos de caja?</h2><p>Se eliminarán todos los turnos, movimientos, saldos, bonos, fichas, notas y registros diarios de todas las cajas. Se conservarán las configuraciones, billeteras, titulares, categorías y colores.</p>{clearDataError && <p className="transfer-error">{clearDataError}</p>}<div className="modal-actions"><button className="ghost-button" disabled={clearingData} onClick={() => setClearDataOpen(false)}>Cancelar</button><button className="danger-button" disabled={clearingData} onClick={clearData}>{clearingData ? "Limpiando..." : "Sí, limpiar todo"} <Trash2 size={15} /></button></div></div></div>}
     </div>
   );
 }
@@ -1714,6 +1719,11 @@ function App() {
       setCaja(result.current);
     }
   };
+  const clearCajaData = async () => {
+    const result = await api("/api/caja/limpiar", { method: "POST" });
+    if (result.error) throw new Error(result.error);
+    changeBox(activeBoxId);
+  };
   const manageBoxes = async ({ type, id, patch }) => {
     if (type === "create") { const created = await api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue" }) }); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
     if (type === "delete") { const next = await api(`/api/cajas/${id}`, { method: "DELETE" }); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
@@ -1781,7 +1791,7 @@ function App() {
       </div>
     );
   if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
-  if (configurationOpen) return <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} />;
+  if (configurationOpen) return <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onClearData={clearCajaData} />;
   const close = () =>
     api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
