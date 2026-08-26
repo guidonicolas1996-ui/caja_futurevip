@@ -1356,9 +1356,15 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     return (firstIndex < 0 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex < 0 ? Number.MAX_SAFE_INTEGER : secondIndex);
   });
   if (!items.length) return null;
-  const currentIndex = Math.max(0, items.findIndex((item) => item.state.collections));
+  const inUseIndexes = items.map((item, index) => item.state.collections ? index : -1).filter((index) => index >= 0);
+  const currentIndex = inUseIndexes.length === 0 ? 0 : inUseIndexes.find((index) => {
+    const previous = (index - 1 + items.length) % items.length;
+    const next = (index + 1) % items.length;
+    return inUseIndexes.includes(previous) && !inUseIndexes.includes(next);
+  }) ?? inUseIndexes[0];
   const route = [0, 1, 2].map((offset) => items[(currentIndex + offset) % items.length]);
-  const recommended = items.slice().sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0];
+  const currentItem = items[currentIndex];
+  const recommended = items.filter((item) => item.key !== currentItem.key).sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0] || currentItem;
   const formatRestart = (value) => value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "Sin reinicio";
   const markInUse = (target) => {
     const now = new Date().toISOString();

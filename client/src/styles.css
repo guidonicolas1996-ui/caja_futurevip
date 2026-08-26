@@ -2239,7 +2239,7 @@ select:focus {
 }
 .wallet-route {
   border-color: var(--box-line, #315552);
-  padding: 0 18px 14px;
+  padding: 12px 18px 14px;
 }
 .wallet-recommendation {
   display: flex;
@@ -2272,8 +2272,10 @@ select:focus {
 .wallet-route-head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
-  margin: 13px 0 8px;
+  row-gap: 8px;
+  margin: 16px 0 9px;
 }
 .wallet-route-head h2 {
   display: flex;
@@ -2296,7 +2298,8 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 5px;
-  margin-left: auto;
+  width: 100%;
+  justify-content: flex-end;
 }
 .wallet-route-actions button {
   display: inline-flex;
