@@ -436,7 +436,6 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
         {tab !== "boxes" && <BoxSelector label="EDITAR" boxes={boxes} activeBoxId={configBoxId} onChange={setConfigBoxId} />}
       </header>}
       <div className="configuration-layout">
-        {embedded && <div className="configuration-inline-header"><div><span className="eyebrow">Configuración</span><h1>Preferencias de la caja</h1></div><div><button className="history-trigger" onClick={onBack}><ArrowLeft size={16} /> Caja</button><span className={`configuration-save-state ${saving ? "saving" : ""}`}>{saving ? "Guardando..." : "Guardado automáticamente"}</span></div></div>}
         <nav className="configuration-tabs">
           <button className={tab === "boxes" ? "active" : ""} onClick={() => setTab("boxes")}><Banknote size={17} /> Cajas</button>
           <button className={tab === "accounts" ? "active" : ""} onClick={() => setTab("accounts")}><WalletCards size={17} /> Matriz de cuentas</button>
