@@ -45,6 +45,7 @@ const defaultConfig = () => ({
   monthlyGoal: { final: 0, achieved: 0 },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
+  platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
 });
 const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
@@ -114,7 +115,9 @@ function normalizeConfig(config) {
   const statistics = { employees: Math.max(1, Number(sourceStatistics.employees) || 1), proportionalPercent: sourceStatistics.proportionalPercent === undefined ? 100 : Math.min(100, Math.max(0, Number(sourceStatistics.proportionalPercent) || 0)) };
   const sourceMonthlyGoal = config?.monthlyGoal || {};
   const monthlyGoal = { final: Math.max(0, Number(sourceMonthlyGoal.final) || 0), achieved: Math.max(0, Number(sourceMonthlyGoal.achieved) || 0) };
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, accounts: { holders, wallets, availability, walletSettings, walletModes }, expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, platforms: Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms };
+  const platforms = Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms;
+  const platformColors = Object.fromEntries(platforms.map((platform, index) => [platform, colors.includes(config?.platformColors?.[platform]) ? config.platformColors[platform] : defaults.platformColors[platform] || colors[index % colors.length]]));
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, platformColors, accounts: { holders, wallets, availability, walletSettings, walletModes }, expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, platforms };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0);

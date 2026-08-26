@@ -351,6 +351,11 @@ function ConfigList({ title, items, onChange, placeholder, sortable = false, onI
   );
 }
 
+function PlatformConfigList({ platforms, platformColors, onPlatformsChange, onColorChange }) {
+  const colorNames = { teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" };
+  return <div className="config-list platform-config-list"><div className="config-list-head"><h3>Plataformas</h3><span>{platforms.length} elementos</span></div>{platforms.map((platform, index) => <div className="platform-config-row" key={index}><i className={`box-swatch ${platformColors[platform] || "teal"}`} /><input value={platform} placeholder="Nombre de plataforma" onChange={(event) => { const next = [...platforms]; const previous = next[index]; next[index] = event.target.value; onPlatformsChange(next); if (previous !== event.target.value) onColorChange(event.target.value, platformColors[previous] || "teal", previous); }} /><select value={platformColors[platform] || "teal"} aria-label={`Color de ${platform}`} onChange={(event) => onColorChange(platform, event.target.value)}>{Object.entries(colorNames).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><button className="delete-button" title="Eliminar plataforma" onClick={() => onPlatformsChange(platforms.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onPlatformsChange([...platforms, ""])}><Plus size={15} /> Agregar plataforma</button></div>;
+}
+
 function WalletConfigList({ wallets, modes, onChange, onModeChange }) {
   const [dragIndex, setDragIndex] = useState(null);
   const reorder = (targetIndex) => { if (dragIndex === null || dragIndex === targetIndex) return; const next = [...wallets]; const [moved] = next.splice(dragIndex, 1); next.splice(targetIndex, 0, moved); onChange(next); setDragIndex(null); };
@@ -477,7 +482,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
             <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
-          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas que aparecen en la matriz y en el control de fichas.</p></div><ConfigList title="Plataformas" items={draft.platforms} placeholder="Nombre de plataforma" onChange={(platforms) => setDraft({ ...draft, platforms })} /></>}
+          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /></>}
           {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivo mensual</span><h2>Seguimiento del objetivo</h2><p>Ingresá manualmente el objetivo final y el importe alcanzado durante el mes.</p></div><MonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           </>}
         </main>
@@ -744,7 +749,7 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
   </div>;
 }
 
-function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBonus, onNotify, notesEnabled, onNotesEnabledChange }) {
+function AdvertisingSection({ caja, update, boxes, config, onViewBonuses, onAddManualBonus, onNotify, notesEnabled, onNotesEnabledChange }) {
   const advertising = caja.advertising || { "Publicidad A": { total: 0, new: 0, repeated: 0, derived: {} }, "Publicidad B": { total: 0, new: 0, repeated: 0, derived: {} } };
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...advertising[name], ...patch } } });
   const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
@@ -764,7 +769,7 @@ function AdvertisingSection({ caja, update, boxes, onViewBonuses, onAddManualBon
   return <section className="advertising-panel">
     <div className="advertising-card"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad (En Progreso tenganme paciencia polfavol)" action={<button className="icon-button advertising-copy" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="advertising-content">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const response = number(item.new) + number(item.repeated) - number(item.total); const derivedTotal = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const effectiveness = item.total ? Math.round((derivedTotal / number(item.total)) * 100) : 0; return <div className="advertising-row" key={name}><strong><ReceiptText size={12} />{name}</strong><div className="advertising-subgroup"><div className="advertising-fields"><label><small>Lleg. Total</small><input maxLength={3} inputMode="numeric" value={item.total || ""} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><small>Nuevos</small><input maxLength={3} inputMode="numeric" value={item.new || ""} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><small>Repetidos</small><input maxLength={3} inputMode="numeric" value={item.repeated || ""} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><small>S/Resp</small><b>{response}</b></label></div></div><div className="advertising-subgroup"><span>Derivados <b>{derivedTotal}</b></span><div className="advertising-derived">{boxes.map((box) => <label key={box.id}><small className="advertising-box-label">{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] || ""} onChange={(event) => updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: Math.max(0, Number(String(event.target.value).replace(/\D/g, "").slice(0, 3)) || 0) } })} /></label>)}</div></div><strong className="advertising-effectiveness"><ReceiptText size={11} />{effectiveness}%</strong></div>; })}</div></div>
     <div className="bonus-card"><QuickBonusAccess caja={caja} update={update} onViewBonuses={onViewBonuses} onAddManualBonus={onAddManualBonus} /></div>
-    <div className="chips-card"><div className="section-head chips-section-head"><div className="section-title"><Ticket size={16} /><div><h2>Fichas Finales</h2></div></div><label className="notes-toggle" title="Mostrar u ocultar notas de cuentas"><span>Notas</span><input type="checkbox" checked={notesEnabled} onChange={(event) => onNotesEnabledChange(event.target.checked)} /><i /></label></div><div className="final-chip-fields">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); return <label className={`final-chip-field ${number(chip.final) !== 0 ? "has-value" : ""}`} key={chip.platform}><span>Ficha Final ({chip.platform})</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>Saldo {money(balance)}</small></label>; })}</div></div>
+    <div className="chips-card"><div className="section-head chips-section-head"><div className="section-title"><Ticket size={16} /><div><h2>Fichas Finales</h2></div></div><label className="notes-toggle" title="Mostrar u ocultar notas de cuentas"><span>Notas</span><input type="checkbox" checked={notesEnabled} onChange={(event) => onNotesEnabledChange(event.target.checked)} /><i /></label></div><div className="final-chip-fields">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); const platformColor = boxColorStyle(config.platformColors?.[chip.platform] || "teal")["--box-accent"]; return <label className={`final-chip-field ${number(chip.final) !== 0 ? "has-value" : ""}`} style={{ "--platform-accent": platformColor }} key={chip.platform}><span>Ficha Final ({chip.platform})</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>Saldo {money(balance)}</small></label>; })}</div></div>
   </section>;
 }
 
@@ -1305,7 +1310,7 @@ function FoundMoneySection({ caja, update, config }) {
   </section>;
 }
 
-function ChipsSection({ caja, update }) {
+function ChipsSection({ caja, update, config }) {
   const [loadOpen, setLoadOpen] = useState(false);
   const [loadsEditorOpen, setLoadsEditorOpen] = useState(false);
   const [loadAmount, setLoadAmount] = useState("");
@@ -1351,7 +1356,7 @@ function ChipsSection({ caja, update }) {
       </div>
       <div className="chips-list">
         {caja.chips.map((chip, index) => (
-          <div className="chip-row" key={chip.platform}>
+          <div className="chip-row" key={chip.platform} style={{ "--platform-accent": boxColorStyle(config.platformColors?.[chip.platform] || "teal")["--box-accent"] }}>
             <b>{chip.platform}</b>
             <span className="readonly-amount chip-initial-input">{money(chip.initial)}</span>
             <AmountInput
@@ -2151,7 +2156,7 @@ function App() {
         />
         <div className="dashboard-grid">
           <div className="content-column">
-            <AdvertisingSection caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} notesEnabled={notesEnabled} onNotesEnabledChange={setNotesEnabled} />
+            <AdvertisingSection caja={caja} update={update} boxes={boxes} config={config} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} notesEnabled={notesEnabled} onNotesEnabledChange={setNotesEnabled} />
             <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
             <WalletRoute caja={caja} config={config} onUpdateAccounts={updateAccountsFromLogistics} />
             <div className="operations-grid">
@@ -2229,7 +2234,7 @@ function App() {
                   setCaja(result.currents[activeBoxId]);
                 }}
               />
-              <ChipsSection caja={caja} update={update} />
+              <ChipsSection caja={caja} update={update} config={config} />
             </div>
           </div>
         </div></>}
