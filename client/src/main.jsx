@@ -125,7 +125,7 @@ const api = (url, options) =>
   }).then(async (response) => {
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
-      throw new Error("La API no está configurada: el servidor devolvió HTML en lugar de JSON. Revisá VITE_API_URL y que el backend esté desplegado.");
+      throw new Error("La API no está respondiendo: el servidor devolvió HTML en lugar de JSON. Verificá que VITE_API_URL apunte al backend y que esté actualizado.");
     }
     const result = await response.json();
     if (!response.ok || result?.error) throw new Error(result?.error || `Error de API (${response.status})`);
