@@ -227,7 +227,7 @@
 .availability-table { overflow-x: auto; padding-bottom: 4px; }
 .availability-row { display: grid; grid-template-columns: 190px repeat(var(--wallet-count, 9), minmax(105px, 1fr)); align-items: center; border-top: 1px solid var(--line); min-width: 1150px; }
 .availability-row > * { padding: 10px 8px; font-size: 10px; }
-.account-config-cell { display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 105px; }
+.account-config-cell { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 5px; min-width: 105px; }
 .account-config-cell .toggle-cell { padding: 0; }
 .account-config-cell select { width: 100%; height: 25px; padding: 4px 5px; font-size: 9px; }
 .account-settings-button { display: grid; place-items: center; width: 26px; height: 25px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: #202a2c; color: var(--muted); }
