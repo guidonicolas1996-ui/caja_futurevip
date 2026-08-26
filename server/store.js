@@ -204,25 +204,4 @@ function walletBelongsToBox(row, wallet, config, boxId) {
   return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
 export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; space.cajas.push(blankCaja(current.id + 1, current, space.config)); await writeSpaces(spaces); return space.cajas.at(-1); }
-export async function closeAllOpenExcept() {
-  const spaces = await readSpaces();
-  const excludedDate = '2026-08-26';
-  const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit' });
-  const closed = [];
-  spaces.forEach((space) => {
-    const config = normalizeConfig(space.config);
-    space.cajas.forEach((caja) => {
-      if (caja.status !== 'ABIERTA') return;
-      const currentDate = dateFormatter.format(new Date(caja.date));
-      if (caja.shift === 'Noche' && currentDate === excludedDate) return;
-      const accountsTotal = (caja.accounts || []).flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0);
-      caja.cashFinal = accountsTotal;
-      caja.status = 'CERRADA';
-      caja.closedAt = new Date().toISOString();
-      closed.push({ boxId: space.id, cajaId: caja.id, shift: caja.shift });
-    });
-  });
-  await writeSpaces(spaces);
-  return { closed };
-}
 export { billeteras, titulares, plataformas };
