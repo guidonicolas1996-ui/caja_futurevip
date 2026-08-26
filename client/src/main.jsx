@@ -258,16 +258,16 @@ function TransferBoxPicker({ label, boxes, value, excludeId, onChange }) {
   </div>;
 }
 
-function ConfirmDialog({ message, onConfirm, onCancel }) {
+function ConfirmDialog({ message, onConfirm, onCancel, title = "¿Eliminar registro?", confirmLabel = "Eliminar", confirmIcon = <Trash2 size={15} /> }) {
   return (
     <div className="modal-backdrop confirm-backdrop" onClick={onCancel}>
           <div className="modal confirm-dialog" onClick={(event) => event.stopPropagation()}>
               <div className="modal-icon"><Trash2 size={21} /></div>
-            <h2>¿Eliminar registro?</h2>
+            <h2>{title}</h2>
         <p>{message}</p>
         <div className="modal-actions">
           <button className="ghost-button" onClick={onCancel}>Cancelar</button>
-          <button className="danger-button" onClick={onConfirm}>Eliminar <Trash2 size={15} /></button>
+          <button className="danger-button" onClick={onConfirm}>{confirmLabel} {confirmIcon}</button>
         </div>
       </div>
     </div>
@@ -1330,6 +1330,7 @@ function ChipsSection({ caja, update }) {
 }
 
 function WalletRoute({ caja, config, onUpdateAccounts }) {
+  const [pendingWallet, setPendingWallet] = useState(null);
   const stateFor = (row, wallet) => {
     const state = row.verified?.[wallet];
     return typeof state === "object" ? state : { collections: Boolean(state), withdrawals: false };
@@ -1374,12 +1375,14 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     });
     onUpdateAccounts(accounts);
   };
-  const moveRoute = (offset) => markInUse(items[(currentIndex + offset + items.length) % items.length]);
+  const requestInUse = (target) => setPendingWallet(target);
+  const moveRoute = (offset) => requestInUse(items[(currentIndex + offset + items.length) % items.length]);
 
   return <section className="panel wallet-route" aria-label="Seguimiento de billeteras">
     <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>Reinicio más antiguo · {formatRestart(recommended.restart)}</small></div>
-    <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => markInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
-    <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : ""}`} key={`${item.key}-${index}`}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
+    <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => requestInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
+    <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : "clickable"}`} key={`${item.key}-${index}`} onClick={() => index > 0 && requestInUse(item)} role={index > 0 ? "button" : undefined} tabIndex={index > 0 ? 0 : undefined} onKeyDown={(event) => { if (index > 0 && (event.key === "Enter" || event.key === " ")) requestInUse(item); }}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
+    {pendingWallet && <ConfirmDialog title="Cambiar billetera en uso" message={`¿Desea colocar en uso la billetera ${pendingWallet.holder} · ${pendingWallet.wallet}?`} confirmLabel="Colocar en uso" confirmIcon={<Check size={15} />} onCancel={() => setPendingWallet(null)} onConfirm={() => { markInUse(pendingWallet); setPendingWallet(null); }} />}
   </section>;
 }
 

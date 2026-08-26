@@ -2303,6 +2303,7 @@ select:focus {
 }
 .wallet-route-head > span {
   margin-left: auto;
+  margin-right: 10px;
   color: #819795;
   font-size: 9px;
   text-transform: uppercase;
@@ -2360,6 +2361,15 @@ select:focus {
 .wallet-route-item.current {
   border-color: var(--cyan);
   background: rgba(91, 219, 201, .08);
+}
+.wallet-route-item.clickable {
+  cursor: pointer;
+}
+.wallet-route-item.clickable:hover,
+.wallet-route-item.clickable:focus-visible {
+  border-color: var(--cyan);
+  background: rgba(91, 219, 201, .05);
+  outline: none;
 }
 .wallet-route-index {
   color: #8aa3a0;
@@ -2862,6 +2872,7 @@ select:focus {
   }
   .wallet-route-head > span {
     margin-left: 0;
+    margin-right: 0;
   }
   .wallet-route-actions button {
     flex: 1;
