@@ -757,7 +757,10 @@ main {
 .publicity-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(230px, 1fr) minmax(230px, 1fr); gap: 10px; align-items: start; width: 100%; }
 .publicity-layout > .panel { min-width: 0; margin: 0; overflow: hidden; }
 .publicity-panel { min-height: 116px; }
-.publicity-panel > .section-head { display: flex; padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
+.publicity-panel { position: relative; }
+.publicity-panel > .section-head { display: flex; padding: 7px 12px 6px; border-bottom: 1px solid rgba(82,101,103,.3); }
+.publicity-panel > .section-head .section-title h2 { font-size: 11px; }
+.publicity-panel > .section-head .icon-button { position: absolute; top: 50%; right: 10px; z-index: 3; transform: translateY(-50%); }
 .publicity-list { display: grid; gap: 4px; padding: 8px; }
 .publicity-item { display: grid; grid-template-columns: minmax(90px, .75fr) minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 7px; align-items: center; min-width: 0; min-height: 34px; padding: 3px 4px; border-top: 1px solid rgba(82,101,103,.22); }
 .publicity-item:first-child { border-top: 0; }
@@ -770,8 +773,10 @@ main {
 .publicity-numbers input, .publicity-derived input { box-sizing: border-box; width: 100%; min-width: 0; height: 24px; padding: 3px; border: 1px solid transparent; border-radius: 4px; background: #202a2c; color: #aeb8ba; font: 12px "DM Mono"; text-align: center; }
 .publicity-numbers input:focus, .publicity-derived input:focus { border-color: var(--cyan); color: #dbe3e3; outline: 0; }
 .publicity-numbers b, .publicity-derived > span b { color: #aeb8ba; font: 12px "DM Mono"; text-align: center; }
-.publicity-derived { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.publicity-derived { display: flex; align-items: center; gap: 8px; min-width: 0; padding-left: 8px; border-left: 1px solid rgba(82,101,103,.45); }
 .publicity-derived > span { flex: 0 0 auto; padding: 5px 6px; border: 1px solid var(--line); border-radius: 5px; background: #202a2c; }
+.publicity-derived > span { font-size: 0; }
+.publicity-derived > span::before { content: "Total"; font-size: 8px; }
 .publicity-derived > div { flex: 1 1 auto; }
 .publicity-rate { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #2f3352; color: #93c5fd; font-size: 13px; white-space: nowrap; }
 .publicity-rate svg { color: #b79cff; }
