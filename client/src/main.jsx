@@ -402,13 +402,14 @@ function MonthlyGoalConfig({ draft, update }) {
   </section>;
 }
 
-function MonthlyGoalProgress({ config }) {
+function MonthlyGoalProgress({ config, boxColor }) {
   const goal = config.monthlyGoal || {};
   const finalGoal = Math.max(0, number(goal.final));
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
-  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual">
-    <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
+  const colors = boxColorStyle(boxColor);
+  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual" style={{ "--goal-accent": colors["--box-accent"] }}>
+    <div className="monthly-goal-track" style={{ "--goal-glow": colors["--box-line"] }}><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
     <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span>Objetivo actual {money(achieved)}</span><span>Objetivo final {money(finalGoal)}</span></div>
   </section>;
 }
@@ -2141,7 +2142,7 @@ function App() {
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
-        <MonthlyGoalProgress config={config} />
+        <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}

@@ -116,14 +116,18 @@ function normalizeConfig(config) {
   const monthlyGoal = { final: Math.max(0, Number(sourceMonthlyGoal.final) || 0), achieved: Math.max(0, Number(sourceMonthlyGoal.achieved) || 0) };
   return { ...defaults, ...config, logistics, statistics, monthlyGoal, accounts: { holders, wallets, availability, walletSettings, walletModes }, expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, platforms: Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms };
 }
+function globalMonthlyGoalFor(spaces) {
+  const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0);
+  return source || { final: 0, achieved: 0 };
+}
 export async function getBoxes() { return (await readSpaces()).map(({ id, title, color }) => ({ id, title, color })); }
-export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = defaultConfig(); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
+export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = { ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }; const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
 export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
 export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next, { allowSpaceDeletion: true }); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
 export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = { Tarde: 'Mañana', Mañana: 'Noche', Noche: 'Tarde' }[oldest.shift] || 'Tarde'; const previousDate = new Date(new Date(oldest.date).getTime() - 8 * 60 * 60 * 1000).toISOString(); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
-export async function getConfig(boxId) { const space = await getSpace(boxId); return normalizeConfig(space.config); }
+export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }
 export async function updateCurrent(patch, boxId) {
   const spaces = await readSpaces();
   const space = spaces.find((item) => item.id === boxId) || spaces[0];
@@ -195,7 +199,7 @@ export async function deleteTransfer(id) {
   if (!found) throw new Error('Traspaso no encontrado'); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) };
 }
 export async function updateConfig(config, boxId) {
-  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const normalized = normalizeConfig(config); space.config = normalized;
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const normalized = normalizeConfig(config); spaces.forEach((targetSpace) => { targetSpace.config = { ...normalizeConfig(targetSpace.config), monthlyGoal: normalized.monthlyGoal }; }); space.config = normalized;
   const current = space.cajas.at(-1); const existing = new Map(current.accounts.map((account) => [account.holder, account]));
   current.accounts = normalized.accounts.holders.map((holder) => { const account = existing.get(holder); return { holder, values: Object.fromEntries(normalized.accounts.wallets.map((wallet) => [wallet, account?.values?.[wallet] ?? 0])), walletBoxes: account?.walletBoxes || {}, walletBoxUpdatedAt: account?.walletBoxUpdatedAt || {}, walletRestartAt: account?.walletRestartAt || {}, verified: account?.verified || {}, notes: account?.notes || {} }; });
   current.chips = normalized.platforms.map((platform) => ({ platform, initial: current.chips.find((chip) => chip.platform === platform)?.initial ?? 0, final: current.chips.find((chip) => chip.platform === platform)?.final ?? 0 }));

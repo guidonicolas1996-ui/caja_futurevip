@@ -555,12 +555,24 @@ main {
   background: #2d2d27;
 }
 .monthly-goal-track span {
+  position: relative;
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #e8d477;
-  box-shadow: 0 0 12px rgba(232, 212, 119, .45);
+  background: linear-gradient(90deg, var(--goal-accent), color-mix(in srgb, var(--goal-accent) 55%, white));
+  box-shadow: 0 0 12px var(--goal-glow);
   transition: width 180ms ease;
+}
+.monthly-goal-track span::after {
+  position: absolute;
+  top: 0;
+  right: -24px;
+  bottom: 0;
+  width: 48px;
+  content: "";
+  background: linear-gradient(90deg, transparent, #ffffffaa, transparent);
+  filter: blur(2px);
+  animation: monthly-goal-spark 2.2s linear infinite;
 }
 .monthly-goal-values {
   display: flex;
@@ -572,10 +584,15 @@ main {
   white-space: nowrap;
 }
 .monthly-goal-values strong {
-  color: #e8d477;
-  font: 700 13px "DM Mono";
+  color: var(--goal-accent, #e8d477);
+  font: 700 24px "DM Mono";
+  line-height: 1;
 }
 .monthly-goal-values span + span { color: #d8d3ad; }
+@keyframes monthly-goal-spark {
+  from { transform: translateX(-80px); }
+  to { transform: translateX(80px); }
+}
 .monthly-goal-card { max-width: 760px; }
 .monthly-goal-fields { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 14px; }
 .monthly-goal-fields label { display: grid; gap: 7px; color: var(--muted); font-size: 10px; }
