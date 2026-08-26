@@ -311,6 +311,9 @@ body {
     radial-gradient(circle at 76% -10%, var(--box-glow, #243b3c) 0, transparent 30%), var(--bg);
   min-width: 320px;
 }
+#root {
+  min-height: 0;
+}
 button,
 input,
 textarea,
@@ -500,7 +503,7 @@ button {
 main {
   max-width: 1500px;
   margin: auto;
-  padding: 38px 34px 70px;
+  padding: 38px 34px 20px;
 }
 .page-title {
   display: flex;
@@ -1825,7 +1828,7 @@ select:focus {
     display: none;
   }
   main {
-    padding: 25px 15px 50px;
+    padding: 25px 15px 20px;
   }
   .page-title {
     align-items: start;
