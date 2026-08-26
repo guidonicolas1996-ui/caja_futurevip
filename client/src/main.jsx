@@ -791,8 +791,8 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
         : { collections: Boolean(current), withdrawals: false };
     state[flag] = !state[flag];
     if (!state[flag]) state[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = new Date().toISOString();
-    accounts[rowIndex].verified[wallet] = state;
-    update({ accounts });
+    accounts[rowIndex].verified = { ...(accounts[rowIndex].verified || {}), [wallet]: state };
+    update({ accounts }, true);
   };
   const cellState = (row, wallet) => {
     const state = row.verified?.[wallet];
@@ -1859,18 +1859,15 @@ function App() {
     if (result.error) return;
     setCaja(result.currents[activeBoxId]);
   };
-  const update = (patch) => {
+  const update = (patch, immediate = false) => {
     setCaja((current) => ({ ...current, ...patch }));
     setSaving(true);
     clearTimeout(window.saveTimer);
-    window.saveTimer = setTimeout(
-      () =>
-        api(`${selectedIndex === 0 ? `/api/caja/actualizar?boxId=${activeBoxId}` : `/api/caja/${caja.id}?boxId=${activeBoxId}`}`, {
+    const savePatch = () => api(`${selectedIndex === 0 ? `/api/caja/actualizar?boxId=${activeBoxId}` : `/api/caja/${caja.id}?boxId=${activeBoxId}`}`, {
           method: "PUT",
           body: JSON.stringify(patch),
-        }).then(() => setSaving(false)).catch((error) => { setSaving(false); notify(error.message); }),
-      350,
-    );
+        }).then((savedCaja) => { setCaja(savedCaja); setSaving(false); }).catch((error) => { setSaving(false); notify(error.message); });
+    window.saveTimer = immediate ? savePatch() : setTimeout(savePatch, 350);
   };
   const updateLogisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
@@ -1882,7 +1879,7 @@ function App() {
     const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
     if (result.config) setConfig(result.config);
   };
-  const updateAccountsFromLogistics = (accounts) => update({ accounts });
+  const updateAccountsFromLogistics = (accounts) => update({ accounts }, true);
   const saveConfig = async (nextConfig, boxId) => {
     const result = await api(`/api/configuracion?boxId=${boxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
     if (boxId === activeBoxId) {
