@@ -1,17 +1,9 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { createClient } from '@supabase/supabase-js';
 
-const directory = path.dirname(fileURLToPath(import.meta.url));
-const legacyFile = path.join(directory, 'data', 'cajas.json');
-const legacyConfigFile = path.join(directory, 'data', 'configuracion.json');
-const spacesFile = path.join(directory, 'data', 'espacios.json');
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-const isHosted = process.env.NODE_ENV === 'production' || process.env.VERCEL || process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.FLY_APP_NAME;
-if (isHosted && !supabase) throw new Error('Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en el entorno desplegado; se bloqueó el almacenamiento local para proteger los datos');
+if (!supabaseUrl || !supabaseKey) throw new Error('Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY; la API solo funciona con almacenamiento Supabase');
+const supabase = createClient(supabaseUrl, supabaseKey);
 const titulares = ['Fede Acuña', 'Pablo Totaro', 'Mateo Ferrer', 'Ever Lombardo'];
 const billeteras = ['Ualá', 'Mercado Pago', 'Personal Pay', 'Naranja X', 'Brubank', 'Prex', 'Astro Pay', 'Belo', 'Lemon'];
 const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
@@ -49,7 +41,6 @@ const defaultConfig = () => ({
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
 });
-const readLegacyConfig = () => fs.existsSync(legacyConfigFile) ? JSON.parse(fs.readFileSync(legacyConfigFile, 'utf8')) : defaultConfig();
 const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
   cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
@@ -60,46 +51,24 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   chips: config.platforms.map((platform) => { const previousChip = previous?.chips?.find((item) => item.platform === platform); const value = previousChip?.final ?? 0; return { platform, initial: value, final: value }; }),
   chipLoads: [],
 });
-function writeLocalSpaces(spaces) { fs.writeFileSync(spacesFile, JSON.stringify(spaces, null, 2)); }
 async function writeSpaces(spaces) {
-  if (supabase) {
-    const { error } = await supabase.from('app_state').upsert({ id: 'main', spaces, updated_at: new Date().toISOString() });
-    if (error) throw new Error(`No se pudo guardar en Supabase: ${error.message}`);
-    return;
-  }
-  writeLocalSpaces(spaces);
-}
-function readLocalSpaces() {
-  fs.mkdirSync(path.dirname(spacesFile), { recursive: true });
-  if (fs.existsSync(spacesFile)) {
-    const spaces = JSON.parse(fs.readFileSync(spacesFile, 'utf8'));
-    const changed = normalizeSpaces(spaces);
-    if (spaces.some((space) => space.shiftVersion !== 2)) {
-      const legacyNames = { Mañana: 'Noche', Tarde: 'Mañana', Noche: 'Tarde' };
-      spaces.forEach((space) => { space.cajas.forEach((caja) => { caja.shift = legacyNames[caja.shift] || caja.shift; }); space.shiftVersion = 2; });
-      writeLocalSpaces(spaces);
-    }
-    if (changed) writeLocalSpaces(spaces);
-    return spaces;
-  }
-  const legacy = fs.existsSync(legacyFile) ? JSON.parse(fs.readFileSync(legacyFile, 'utf8')) : [blankCaja(0, null, readLegacyConfig())];
-  const spaces = [{ id: 'principal', title: 'Caja principal', color: 'teal', shiftVersion: 2, config: readLegacyConfig(), cajas: legacy }];
-  writeLocalSpaces(spaces);
-  return spaces;
+  if (!spaces.updatedAt) throw new Error('No se pudo guardar: falta la versión de la BDD');
+  const updatedAt = new Date().toISOString();
+  const { data, error } = await supabase.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', spaces.updatedAt).select('id').maybeSingle();
+  if (error) throw new Error(`No se pudo guardar en Supabase: ${error.message}`);
+  if (!data) throw new Error('No se guardó el cambio porque la BDD cambió desde la última lectura. Recargá la página e intentá nuevamente.');
+  spaces.updatedAt = updatedAt;
 }
 async function readSpaces() {
-  if (!supabase) return readLocalSpaces();
-  const { data, error } = await supabase.from('app_state').select('spaces').eq('id', 'main').maybeSingle();
+  const { data, error } = await supabase.from('app_state').select('spaces, updated_at').eq('id', 'main').maybeSingle();
   if (error) throw new Error(`No se pudo leer Supabase: ${error.message}`);
   if (data?.spaces) {
     const spaces = data.spaces;
+    spaces.updatedAt = data.updated_at;
     if (normalizeSpaces(spaces)) await writeSpaces(spaces);
     return spaces;
   }
-  const config = defaultConfig();
-  const spaces = [{ id: 'principal', title: 'Caja principal', color: 'teal', shiftVersion: 2, config, cajas: [blankCaja(0, null, config)] }];
-  await writeSpaces(spaces);
-  return spaces;
+  throw new Error('La BDD no contiene el estado de la aplicación. No se crearán datos iniciales automáticamente.');
 }
 async function getSpace(boxId) { const spaces = await readSpaces(); return spaces.find((space) => space.id === boxId) || spaces[0]; }
 function normalizeConfig(config) {
