@@ -679,6 +679,11 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
   })).filter((group) => group.rows.length);
   const rowOffsets = walletGroups.map((group, groupIndex) => walletGroups.slice(0, groupIndex).reduce((total, previousGroup) => total + previousGroup.rows.length, 0));
   const focusAdjacentAmount = (event, rowPosition, walletIndex) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.currentTarget.blur();
+      return;
+    }
     const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     const direction = directions[event.key];
     if (!direction) return;
@@ -1512,6 +1517,7 @@ function App() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
+  const [closeWarning, setCloseWarning] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
@@ -1691,6 +1697,14 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
+  const confirmClose = () => {
+    if (calculations.shortage !== 0) {
+      setConfirm(false);
+      setCloseWarning(true);
+      return;
+    }
+    close();
+  };
   const downloadSnapshot = async () => {
     if (capturing) return;
     setCapturing(true);
@@ -1871,8 +1885,34 @@ function App() {
               >
                 Cancelar
               </button>
-              <button className="close-button" onClick={close}>
+              <button className="close-button" onClick={confirmClose}>
                 Confirmar cierre <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {closeWarning && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <button className="modal-close" onClick={() => setCloseWarning(false)}>
+              <X size={18} />
+            </button>
+            <div className="modal-icon">
+              <LockKeyhole size={22} />
+            </div>
+            <h2>¿Cerrar con diferencia?</h2>
+            <p>
+              Hay <strong className={calculations.shortage < 0 ? "negative" : "positive"}>
+                {money(Math.abs(calculations.shortage))}
+              </strong> de {calculations.shortage < 0 ? "faltante" : "sobrante"}. ¿Estás seguro de cerrar la caja?
+            </p>
+            <div className="modal-actions">
+              <button className="ghost-button" onClick={() => setCloseWarning(false)}>
+                Cancelar
+              </button>
+              <button className="close-button" onClick={() => { setCloseWarning(false); close(); }}>
+                Cerrar caja <ArrowRight size={16} />
               </button>
             </div>
           </div>
