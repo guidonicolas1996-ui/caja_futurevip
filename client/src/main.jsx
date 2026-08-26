@@ -1629,6 +1629,9 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
+  const [createPreviousOpen, setCreatePreviousOpen] = useState(false);
+  const [creatingPrevious, setCreatingPrevious] = useState(false);
+  const [createPreviousError, setCreatePreviousError] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
@@ -1743,12 +1746,32 @@ function App() {
     const updated = await api(`/api/cajas/${id}`, { method: "PUT", body: JSON.stringify(patch) }); setBoxes(boxes.map((box) => box.id === id ? updated : box));
   };
   const navigate = (direction) => {
+    if (direction > 0 && selectedIndex >= history.length - 1) {
+      setCreatePreviousError("");
+      setCreatePreviousOpen(true);
+      return;
+    }
     const nextIndex = Math.max(
       0,
       Math.min(history.length - 1, selectedIndex + direction),
     );
     setSelectedIndex(nextIndex);
     setCaja(history[nextIndex]);
+  };
+  const createPrevious = async () => {
+    setCreatingPrevious(true);
+    setCreatePreviousError("");
+    try {
+      const previous = await api(`/api/caja/crear-anterior?boxId=${activeBoxId}`, { method: "POST" });
+      setHistory((currentHistory) => [...currentHistory, previous]);
+      setSelectedIndex(history.length);
+      setCaja(previous);
+      setCreatePreviousOpen(false);
+    } catch (error) {
+      setCreatePreviousError(error.message);
+    } finally {
+      setCreatingPrevious(false);
+    }
   };
   const calculations = useMemo(() => {
     if (!caja || !config) return {};
@@ -2035,6 +2058,20 @@ function App() {
               <button className="close-button" onClick={() => { setCloseWarning(false); close(); }}>
                 Cerrar caja <ArrowRight size={16} />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {createPreviousOpen && (
+        <div className="modal-backdrop" onClick={() => !creatingPrevious && setCreatePreviousOpen(false)}>
+          <div className="modal confirm-dialog" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-icon"><Clock3 size={21} /></div>
+            <h2>No existe un turno anterior</h2>
+            <p>Este es el primer turno registrado. ¿Querés crear un turno anterior vacío para cargar manualmente la información?</p>
+            {createPreviousError && <p className="transfer-error">{createPreviousError}</p>}
+            <div className="modal-actions">
+              <button className="ghost-button" disabled={creatingPrevious} onClick={() => setCreatePreviousOpen(false)}>Cancelar</button>
+              <button className="close-button" disabled={creatingPrevious} onClick={createPrevious}>{creatingPrevious ? "Creando..." : "Crear turno anterior"} <ArrowLeft size={16} /></button>
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import { getBoxes, createBox, updateBox, deleteBox, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
 import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
 
 const app = express();
