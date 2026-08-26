@@ -179,6 +179,8 @@
 .configuration-inline-header { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 22px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 9px; background: rgba(25, 33, 35, .86); }
 .configuration-inline-header h1 { margin: 4px 0 0; font-size: 18px; }
 .configuration-inline-header > div:last-child { display: flex; align-items: center; gap: 8px; }
+.configuration-save-state { color: var(--muted); font: 9px "DM Mono"; white-space: nowrap; }
+.configuration-save-state.saving { color: var(--orange); }
 .configuration-header { height: 84px; padding: 0 34px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 16px; background: rgba(17,23,25,.92); }
 .configuration-header > div { flex: 1; }
 .configuration-header h1 { margin: 4px 0 0; font-size: 22px; }

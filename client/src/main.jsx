@@ -395,9 +395,13 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
   const [draft, setDraft] = useState(structuredClone(config));
   const [saving, setSaving] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(false);
+  const skipAutoSave = React.useRef(true);
+  const onSaveRef = React.useRef(onSave);
+  onSaveRef.current = onSave;
   const updateAccounts = (patch) => setDraft((current) => ({ ...current, accounts: { ...current.accounts, ...patch } }));
   useEffect(() => {
     let cancelled = false;
+    skipAutoSave.current = true;
     setLoadingConfig(true);
     setDraft(null);
     api(`/api/configuracion?boxId=${configBoxId}`).then((nextConfig) => {
@@ -407,7 +411,22 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
     });
     return () => { cancelled = true; };
   }, [configBoxId]);
-  const save = async () => { setSaving(true); await onSave(draft, configBoxId); setSaving(false); };
+  useEffect(() => {
+    if (loadingConfig || !draft) return undefined;
+    if (skipAutoSave.current) {
+      skipAutoSave.current = false;
+      return undefined;
+    }
+    setSaving(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        await onSaveRef.current(draft, configBoxId);
+      } finally {
+        setSaving(false);
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [draft, configBoxId, loadingConfig]);
   const configTarget = boxes.find((box) => box.id === configBoxId) || boxes[0];
   return (
     <div className={`configuration-page ${embedded ? "embedded" : ""}`}>
@@ -415,10 +434,9 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
         <button className="icon-button" title="Volver a la caja" onClick={onBack}><ArrowLeft size={18} /></button>
         <div><span className="eyebrow">Configuración exclusiva</span><h1>Preferencias de la caja</h1></div>
         {tab !== "boxes" && <BoxSelector label="EDITAR" boxes={boxes} activeBoxId={configBoxId} onChange={setConfigBoxId} />}
-        <button className="close-button" onClick={save} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"} <Check size={16} /></button>
       </header>}
       <div className="configuration-layout">
-        {embedded && <div className="configuration-inline-header"><div><span className="eyebrow">Configuración</span><h1>Preferencias de la caja</h1></div><div><button className="history-trigger" onClick={onBack}><ArrowLeft size={16} /> Caja</button><button className="close-button" onClick={save} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"} <Check size={16} /></button></div></div>}
+        {embedded && <div className="configuration-inline-header"><div><span className="eyebrow">Configuración</span><h1>Preferencias de la caja</h1></div><div><button className="history-trigger" onClick={onBack}><ArrowLeft size={16} /> Caja</button><span className={`configuration-save-state ${saving ? "saving" : ""}`}>{saving ? "Guardando..." : "Guardado automáticamente"}</span></div></div>}
         <nav className="configuration-tabs">
           <button className={tab === "boxes" ? "active" : ""} onClick={() => setTab("boxes")}><Banknote size={17} /> Cajas</button>
           <button className={tab === "accounts" ? "active" : ""} onClick={() => setTab("accounts")}><WalletCards size={17} /> Matriz de cuentas</button>
