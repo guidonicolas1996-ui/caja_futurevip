@@ -385,7 +385,7 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
   </>;
 }
 
-function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged }) {
+function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, embedded = false }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
   const [draft, setDraft] = useState(structuredClone(config));
@@ -406,14 +406,15 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
   const save = async () => { setSaving(true); await onSave(draft, configBoxId); setSaving(false); };
   const configTarget = boxes.find((box) => box.id === configBoxId) || boxes[0];
   return (
-    <div className="configuration-page">
-      <header className="configuration-header">
+    <div className={`configuration-page ${embedded ? "embedded" : ""}`}>
+      {!embedded && <header className="configuration-header">
         <button className="icon-button" title="Volver a la caja" onClick={onBack}><ArrowLeft size={18} /></button>
         <div><span className="eyebrow">Configuración exclusiva</span><h1>Preferencias de la caja</h1></div>
         {tab !== "boxes" && <BoxSelector label="EDITAR" boxes={boxes} activeBoxId={configBoxId} onChange={setConfigBoxId} />}
         <button className="close-button" onClick={save} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"} <Check size={16} /></button>
-      </header>
+      </header>}
       <div className="configuration-layout">
+        {embedded && <div className="configuration-inline-header"><div><span className="eyebrow">Configuración</span><h1>Preferencias de la caja</h1></div><div><button className="history-trigger" onClick={onBack}><ArrowLeft size={16} /> Caja</button><button className="close-button" onClick={save} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"} <Check size={16} /></button></div></div>}
         <nav className="configuration-tabs">
           <button className={tab === "boxes" ? "active" : ""} onClick={() => setTab("boxes")}><Banknote size={17} /> Cajas</button>
           <button className={tab === "accounts" ? "active" : ""} onClick={() => setTab("accounts")}><WalletCards size={17} /> Matriz de cuentas</button>
@@ -1965,7 +1966,6 @@ function App() {
       </div>
     );
   if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
-  if (configurationOpen) return <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} />;
   const close = () =>
     api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
@@ -2050,14 +2050,14 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
-            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
-            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setStatisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
+            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setConfigurationOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
+            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setConfigurationOpen(false); setStatisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
-            <button className="history-trigger" onClick={() => setConfigurationOpen(true)}><Settings2 size={16} /> Configurar</button>
+            <button className="history-trigger" onClick={() => { setConfigurationOpen(!configurationOpen); setStatisticsOpen(false); setLogisticsOpen(false); }}><Settings2 size={16} /> {configurationOpen ? "Caja" : "Configurar"}</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
-        {statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
