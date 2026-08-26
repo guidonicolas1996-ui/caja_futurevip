@@ -527,6 +527,11 @@ button {
   opacity: 0.35;
   cursor: not-allowed;
 }
+.close-all-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 9px;
+}
 .danger-button { border: 0; border-radius: 7px; height: 34px; padding: 0 14px; background: var(--red); color: #241719; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; }
 main {
   max-width: 1500px;
@@ -942,7 +947,7 @@ main {
   position: fixed;
   z-index: 5;
   width: 190px;
-  padding: 24px 8px 8px;
+  padding: 8px 9px;
   background: rgba(32, 43, 45, .80);
   border: 1px solid #3e5454;
   border-radius: 3px;
@@ -983,10 +988,10 @@ main {
 }
 .wallet-note-edit:hover { background: #2d3b3d; color: var(--cyan); }
 .wallet-note-popover textarea[readonly] { cursor: text; }
-.wallet-account-info { display: grid; gap: 7px; padding-top: 2px; }
-.wallet-account-info > div { display: grid; gap: 3px; }
+.wallet-account-info { display: grid; gap: 3px; }
+.wallet-account-info > div { display: grid; grid-template-columns: 58px minmax(0, 1fr); align-items: center; gap: 6px; }
 .wallet-account-info b { color: var(--cyan); font: 8px "DM Mono"; text-transform: uppercase; }
-.wallet-account-info textarea { width: 100%; min-height: 20px; padding: 3px 4px; resize: none; color: #dce8e6; background: transparent; border: 0; font: 10px "DM Mono"; }
+.wallet-account-info textarea { width: 100%; min-height: 0; height: auto; padding: 0; resize: none; color: #dce8e6; background: transparent; border: 0; font: 10px "DM Mono"; line-height: 1.35; }
 .account-settings-modal { width: min(470px, calc(100% - 32px)); }
 .account-settings-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
 .account-settings-fields label { display: grid; gap: 5px; color: var(--muted); font-size: 10px; }

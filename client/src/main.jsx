@@ -455,6 +455,7 @@ function SummaryHeader({
   boxes,
   activeBoxId,
   onBoxChange,
+  onCloseAll,
 }) {
   return (
     <header className="topbar">
@@ -520,6 +521,7 @@ function SummaryHeader({
         >
           <LockKeyhole size={16} /> Cerrar caja
         </button>
+        <button className="danger-button close-all-button" onClick={onCloseAll} title="Acción temporal: cerrar todas las cajas abiertas">Cerrar abiertas</button>
       </div>
     </header>
   );
@@ -1784,6 +1786,7 @@ function App() {
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
+  const [closeAllConfirm, setCloseAllConfirm] = useState(false);
   const [createPreviousOpen, setCreatePreviousOpen] = useState(false);
   const [creatingPrevious, setCreatingPrevious] = useState(false);
   const [createPreviousError, setCreatePreviousError] = useState("");
@@ -2017,6 +2020,20 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
+  const closeAllOpen = async () => {
+    try {
+      const result = await api("/api/cajas/cerrar-abiertas-excepto", { method: "POST" });
+      setCloseAllConfirm(false);
+      notify(`${result.closed.length} cajas cerradas. Se excluyó Noche del 26/08.`);
+      const [current, past] = await Promise.all([api(`/api/caja/actual?boxId=${activeBoxId}`), api(`/api/caja/historial?boxId=${activeBoxId}`)]);
+      setCaja(current);
+      setHistory(past);
+      setSelectedIndex(0);
+    } catch (error) {
+      setCloseAllConfirm(false);
+      notify(error.message);
+    }
+  };
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
@@ -2082,6 +2099,7 @@ function App() {
         boxes={boxes}
         activeBoxId={activeBoxId}
         onBoxChange={changeBox}
+        onCloseAll={() => setCloseAllConfirm(true)}
       />
       <main>
         <div className="page-title">
@@ -2190,6 +2208,7 @@ function App() {
         </div>
       </main>
       <SnapshotView caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />
+      {closeAllConfirm && <ConfirmDialog title="Cerrar todas las cajas abiertas" message="¿Desea cerrar todas las cajas abiertas de todos los espacios, excepto el turno Noche del 26/08/2026? Esta acción temporal no crea turnos nuevos." confirmLabel="Cerrar cajas" confirmIcon={<LockKeyhole size={15} />} dialogIcon={<LockKeyhole size={21} />} onCancel={() => setCloseAllConfirm(false)} onConfirm={closeAllOpen} />}
       {confirm && (
         <div className="modal-backdrop">
           <div className="modal">
