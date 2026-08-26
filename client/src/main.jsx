@@ -784,7 +784,7 @@ function AdvertisingSectionRebuilt({ caja, update, boxes, onViewBonuses, onAddMa
       const item = advertising[name] || {};
       const total = number(item.total);
       const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0);
-      lines.push(`*${name}*`, `Total LL: ${total}`, `Nuevos: ${number(item.new)}`, `Repetidos: ${number(item.repeated)}`, `S/Resp: ${number(item.new) + number(item.repeated) - total}`, `Total D: ${derived}`, ...boxes.map((box) => `${box.title}: ${number(item.derived?.[box.id])}`), `Efectividad: ${total ? Math.round((derived / total) * 100) : 0}%`, "");
+      lines.push(`*${name}*`, `*Efectividad: ${total ? Math.round((derived / total) * 100) : 0}%*`, "", `*Llegados: ${total}*`, `Nuevos: ${number(item.new)}`, `Repetidos: ${number(item.repeated)}`, `S/Resp: ${number(item.new) + number(item.repeated) - total}`, "", `*Derivados: ${derived}*`, ...boxes.map((box) => `${box.title}: ${number(item.derived?.[box.id])}`), "");
     });
     const text = lines.join("\n");
     try {
