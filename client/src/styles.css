@@ -3085,6 +3085,7 @@ select:focus {
 }
 .bonus-quick .bonus-toggle {
   flex: 0 0 24px;
+  height: 29px;
 }
 .bonus-type {
   font-size: 9px;
