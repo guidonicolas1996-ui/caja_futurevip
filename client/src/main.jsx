@@ -1628,6 +1628,7 @@ function App() {
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
   const [toast, setToast] = useState("");
+  const [apiError, setApiError] = useState("");
   const [config, setConfig] = useState(null);
   const [boxes, setBoxes] = useState(null);
   const [activeBoxId, setActiveBoxId] = useState(null);
@@ -1672,7 +1673,7 @@ function App() {
         setConfig(settings);
       },
       );
-    });
+    }).catch((error) => setApiError(error.message));
   }, []);
   const changeBox = (boxId) => {
     setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setCaja(null); setConfig(null);
@@ -1792,6 +1793,7 @@ function App() {
     };
   }, [caja, config, activeBoxId]);
   const hasPendingNotes = [caja?.notes, caja?.nextNotes].some((note) => typeof note === "string" && note.trim().length > 0);
+  if (apiError) return <div className="loading api-error"><X size={20} /><div><strong>No se pudo cargar la caja</strong><p>{apiError}</p><button className="close-button" onClick={() => window.location.reload()}>Reintentar <RefreshCw size={15} /></button></div></div>;
   if (!caja || !boxes)
     return (
       <div className="loading">
