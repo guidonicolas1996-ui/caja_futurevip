@@ -1617,7 +1617,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   const candidates = accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false).map((wallet) => {
     const setting = config.accounts.walletSettings[row.holder]?.[wallet] || { category: "Normal" };
     const mode = config.accounts.walletModes?.[wallet] || "Cobros + Retiros";
-    return { key: keyFor(row.holder, wallet), holder: row.holder, wallet, category: mode === "Solo Depósito" ? "Depósitos" : setting.category || "Normal", mode, row };
+    return { key: keyFor(row.holder, wallet), holder: row.holder, wallet, category: setting.category === "Compartidas" ? "Compartidas" : mode === "Solo Depósito" ? "Depósitos" : setting.category || "Normal", mode, row };
   }));
   const included = candidates.filter((item) => ["Cobros + Retiros", "Solo Cobros"].includes(item.mode) || logistics.added.includes(item.key));
   const orderIndex = (key) => logistics.order.indexOf(key);
