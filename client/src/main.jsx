@@ -410,7 +410,7 @@ function MonthlyGoalProgress({ config, boxColor }) {
   const colors = boxColorStyle(boxColor);
   return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
     <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
-    <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span>Objetivo actual {money(achieved)}</span><span>Objetivo final {money(finalGoal)}</span></div>
+    <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(finalGoal)}</span></div>
   </section>;
 }
 

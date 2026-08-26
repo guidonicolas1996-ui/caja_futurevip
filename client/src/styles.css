@@ -578,7 +578,9 @@ main {
   font: 700 24px "DM Mono";
   line-height: 1;
 }
-.monthly-goal-values span + span { color: #d8d3ad; }
+.monthly-goal-values i { color: #7f806b; font-style: normal; }
+.monthly-goal-values .monthly-goal-achieved { color: #c5c39f; }
+.monthly-goal-values .monthly-goal-final { color: #f0edc2; font-size: 12px; font-weight: 700; }
 @keyframes monthly-goal-electric {
   from { background-position: 100% 0; }
   to { background-position: -120% 0; }
