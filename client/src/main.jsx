@@ -1723,7 +1723,7 @@ function App() {
         api(`${selectedIndex === 0 ? `/api/caja/actualizar?boxId=${activeBoxId}` : `/api/caja/${caja.id}?boxId=${activeBoxId}`}`, {
           method: "PUT",
           body: JSON.stringify(patch),
-        }).then(() => setSaving(false)),
+        }).then(() => setSaving(false)).catch((error) => { setSaving(false); notify(error.message); }),
       350,
     );
   };

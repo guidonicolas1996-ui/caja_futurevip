@@ -54,12 +54,30 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   chips: config.platforms.map((platform) => { const previousChip = previous?.chips?.find((item) => item.platform === platform); const value = previousChip?.final ?? 0; return { platform, initial: value, final: value }; }),
   chipLoads: [],
 });
-async function writeSpaces(spaces) {
+async function writeSpaces(spaces, { allowSpaceDeletion = false } = {}) {
   const database = requireSupabase();
   if (!Array.isArray(spaces) || spaces.length === 0 || spaces.some((space) => !space?.id || !space?.config || !Array.isArray(space.cajas) || space.cajas.length === 0)) {
     throw new Error('No se guardó el cambio: la BDD debe conservar al menos una caja, su configuración y un registro diario.');
   }
   if (!spaces.updatedAt) throw new Error('No se pudo guardar: falta la versión de la BDD');
+  const { data: currentState, error: readError } = await database.from('app_state').select('spaces, updated_at').eq('id', 'main').maybeSingle();
+  if (readError) throw new Error(`No se pudo verificar la BDD antes de guardar: ${readError.message}`);
+  if (!currentState?.spaces) throw new Error('No se guardó el cambio: la BDD no contiene un estado válido.');
+  const currentIds = new Set(currentState.spaces.map((space) => space.id));
+  const nextIds = new Set(spaces.map((space) => space.id));
+  if (!allowSpaceDeletion && [...currentIds].some((id) => !nextIds.has(id))) {
+    throw new Error('No se guardó el cambio: detectamos que desaparecería una caja. Recargá la página e intentá nuevamente.');
+  }
+  if (!allowSpaceDeletion) {
+    currentState.spaces.forEach((currentSpace) => {
+      const nextSpace = spaces.find((space) => space.id === currentSpace.id);
+      const nextCajaIds = new Set((nextSpace?.cajas || []).map((caja) => String(caja.id)));
+      if (currentSpace.cajas.some((caja) => !nextCajaIds.has(String(caja.id)))) {
+        throw new Error('No se guardó el cambio: detectamos que desaparecería un registro diario. Recargá la página e intentá nuevamente.');
+      }
+    });
+  }
+  if (currentState.updated_at !== spaces.updatedAt) throw new Error('No se guardó el cambio porque la BDD cambió desde la última lectura. Recargá la página e intentá nuevamente.');
   const updatedAt = new Date().toISOString();
   const { data, error } = await database.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', spaces.updatedAt).select('id').maybeSingle();
   if (error) throw new Error(`No se pudo guardar en Supabase: ${error.message}`);
@@ -95,7 +113,7 @@ function normalizeConfig(config) {
 export async function getBoxes() { return (await readSpaces()).map(({ id, title, color }) => ({ id, title, color })); }
 export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = defaultConfig(); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
 export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
-export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
+export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next, { allowSpaceDeletion: true }); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
 export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = { Tarde: 'Mañana', Mañana: 'Noche', Noche: 'Tarde' }[oldest.shift] || 'Tarde'; const previousDate = new Date(new Date(oldest.date).getTime() - 8 * 60 * 60 * 1000).toISOString(); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
