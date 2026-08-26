@@ -1281,6 +1281,18 @@ select:focus {
   grid-template-columns: 1fr 95px 130px 82px;
   gap: 9px;
 }
+.chips-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.chips-panel > .section-head,
+.chips-panel > .chips-head,
+.chips-panel > .chips-list,
+.chips-panel > .chip-loads,
+.chips-panel > .chips-total {
+  flex-shrink: 0;
+}
 .chips-actions { display: flex; gap: 5px; }
 .chip-row {
   display: grid;
@@ -1324,6 +1336,12 @@ select:focus {
   margin: 0 12px;
   padding: 10px 0 0;
   border-top: 1px solid var(--line);
+}
+.chips-panel > .chip-loads {
+  flex: 1 1 auto;
+}
+.chips-panel > .chips-total {
+  margin-top: auto;
 }
 .chip-loads-title {
   display: block;

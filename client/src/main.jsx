@@ -1284,7 +1284,7 @@ function ChipsSection({ caja, update }) {
     update({ chips, chipLoads: nextLoads });
   };
   return (
-    <section className="panel compact">
+    <section className="panel compact chips-panel">
       <SectionHead
         icon={<Ticket size={18} />}
         title="Control de fichas"
