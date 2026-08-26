@@ -1309,33 +1309,37 @@ function ChipsSection({ caja, update }) {
 }
 
 function WalletRoute({ caja, config }) {
-  const wallets = config.accounts.wallets.filter((wallet) => caja.accounts.some((row) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal"));
   const stateFor = (row, wallet) => {
     const state = row.verified?.[wallet];
     return typeof state === "object" ? state : { collections: Boolean(state), withdrawals: false };
   };
   const dateValue = (value) => value ? new Date(value).getTime() : 0;
-  const restartFor = (wallet) => caja.accounts
-    .filter((row) => wallets.includes(wallet) && config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal")
-    .map((row) => {
-      const state = stateFor(row, wallet);
-      return [state.lastCollectionsAt, state.lastWithdrawalsAt, row.walletBoxUpdatedAt?.[wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0];
-    })
-    .reduce((oldest, value) => !oldest || (value && dateValue(value) < dateValue(oldest)) ? value : oldest, "");
-  if (!wallets.length) return null;
-  const currentIndex = Math.max(0, wallets.findIndex((wallet) => caja.accounts.some((row) => wallets.includes(wallet) && stateFor(row, wallet).collections)));
-  const route = [0, 1, 2].map((offset) => wallets[(currentIndex + offset) % wallets.length]);
-  const recommended = wallets.slice().sort((first, second) => dateValue(restartFor(first)) - dateValue(restartFor(second)))[0];
+  const logisticsOrder = config.logistics?.order || [];
+  const items = caja.accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal").map((wallet) => ({
+    key: `${row.holder}::${wallet}`,
+    holder: row.holder,
+    wallet,
+    state: stateFor(row, wallet),
+    restart: [stateFor(row, wallet).lastCollectionsAt, stateFor(row, wallet).lastWithdrawalsAt, row.walletBoxUpdatedAt?.[wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0],
+  }))).sort((first, second) => {
+    const firstIndex = logisticsOrder.indexOf(first.key);
+    const secondIndex = logisticsOrder.indexOf(second.key);
+    return (firstIndex < 0 ? Number.MAX_SAFE_INTEGER : firstIndex) - (secondIndex < 0 ? Number.MAX_SAFE_INTEGER : secondIndex);
+  });
+  if (!items.length) return null;
+  const currentIndex = Math.max(0, items.findIndex((item) => item.state.collections));
+  const route = [0, 1, 2].map((offset) => items[(currentIndex + offset) % items.length]);
+  const recommended = items.slice().sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0];
   const formatRestart = (value) => value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "Sin reinicio";
 
-  return <section className="wallet-route" aria-label="Seguimiento de billeteras">
-    <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended}</strong><small>Reinicio más antiguo · {formatRestart(restartFor(recommended))}</small></div>
+  return <section className="panel wallet-route" aria-label="Seguimiento de billeteras">
+    <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>Reinicio más antiguo · {formatRestart(recommended.restart)}</small></div>
     <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span></div>
-    <div className="wallet-route-list">{route.map((wallet, index) => <div className={`wallet-route-item ${index === 0 ? "current" : ""}`} key={`${wallet}-${index}`}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{wallet}</strong>{wallet === recommended && <small>Recomendada</small>}</div>)}</div>
+    <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : ""}`} key={`${item.key}-${index}`}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
   </section>;
 }
 
-function SummaryCard({ caja, calculations, update, config }) {
+function SummaryCard({ caja, calculations, update }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const metric = (label, value, className = "", valueClass = "") => (
     <div className={className}>
@@ -1364,7 +1368,6 @@ function SummaryCard({ caja, calculations, update, config }) {
           {calculations.shortage >= 0 ? "+" : ""}{money(calculations.shortage)}
         </strong>
       </div>
-      <WalletRoute caja={caja} config={config} />
       <div className="metric-list">
         <div className="editable-summary-metric">
           <span>Caja inicial</span>
@@ -1952,12 +1955,12 @@ function App() {
           caja={caja}
           calculations={calculations}
           update={update}
-          config={config}
         />
         <div className="dashboard-grid">
           <div className="content-column">
             <AdvertisingSection caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} notesEnabled={notesEnabled} onNotesEnabledChange={setNotesEnabled} />
             <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
+            <WalletRoute caja={caja} config={config} />
             <div className="operations-grid">
               <QuickMovementSection
                 title="Gastos"

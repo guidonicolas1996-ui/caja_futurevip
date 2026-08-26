@@ -2238,10 +2238,8 @@ select:focus {
   color: #d8e7e4;
 }
 .wallet-route {
-  grid-column: 1 / -1;
-  border-top: 1px solid var(--box-line, #315552);
-  border-bottom: 1px solid var(--box-line, #315552);
-  padding: 12px 18px 14px;
+  border-color: var(--box-line, #315552);
+  padding: 0 18px 14px;
 }
 .wallet-recommendation {
   display: flex;
