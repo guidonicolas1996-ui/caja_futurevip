@@ -578,7 +578,7 @@ function SectionHead({ icon, title, meta, action }) {
   return (
     <div className="section-head">
       <div className="section-title">
-        {icon}
+        {title === "Publicidad" ? <Ticket size={16} /> : icon}
         <div className="section-title-copy">
           <div className="section-title-line">
             <h2>{title}</h2>
