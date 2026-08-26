@@ -543,36 +543,26 @@ main {
   min-height: 42px;
   margin: -11px 0 20px;
   padding: 8px 13px;
-  border: 1px solid rgba(232, 212, 119, .28);
+  border: 1px solid var(--goal-line, rgba(232, 212, 119, .28));
   border-radius: 7px;
-  background: rgba(232, 212, 119, .06);
+  background: linear-gradient(105deg, var(--goal-soft, #37331f), rgba(17, 23, 25, .82));
 }
 .monthly-goal-track {
   flex: 1;
   height: 7px;
   overflow: hidden;
   border-radius: 99px;
-  background: #2d2d27;
+  background: color-mix(in srgb, var(--goal-soft, #37331f) 72%, #111719);
 }
 .monthly-goal-track span {
-  position: relative;
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--goal-accent), color-mix(in srgb, var(--goal-accent) 55%, white));
+  background: linear-gradient(90deg, var(--goal-accent), color-mix(in srgb, var(--goal-accent) 55%, white), var(--goal-accent), color-mix(in srgb, var(--goal-accent) 55%, white));
+  background-size: 220% 100%;
   box-shadow: 0 0 12px var(--goal-glow);
+  animation: monthly-goal-electric 2.2s linear infinite;
   transition: width 180ms ease;
-}
-.monthly-goal-track span::after {
-  position: absolute;
-  top: 0;
-  right: -24px;
-  bottom: 0;
-  width: 48px;
-  content: "";
-  background: linear-gradient(90deg, transparent, #ffffffaa, transparent);
-  filter: blur(2px);
-  animation: monthly-goal-spark 2.2s linear infinite;
 }
 .monthly-goal-values {
   display: flex;
@@ -589,9 +579,9 @@ main {
   line-height: 1;
 }
 .monthly-goal-values span + span { color: #d8d3ad; }
-@keyframes monthly-goal-spark {
-  from { transform: translateX(-80px); }
-  to { transform: translateX(80px); }
+@keyframes monthly-goal-electric {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
 }
 .monthly-goal-card { max-width: 760px; }
 .monthly-goal-fields { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 14px; }

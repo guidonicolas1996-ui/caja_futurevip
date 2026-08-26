@@ -408,8 +408,8 @@ function MonthlyGoalProgress({ config, boxColor }) {
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
   const colors = boxColorStyle(boxColor);
-  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual" style={{ "--goal-accent": colors["--box-accent"] }}>
-    <div className="monthly-goal-track" style={{ "--goal-glow": colors["--box-line"] }}><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
+  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
+    <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
     <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span>Objetivo actual {money(achieved)}</span><span>Objetivo final {money(finalGoal)}</span></div>
   </section>;
 }
