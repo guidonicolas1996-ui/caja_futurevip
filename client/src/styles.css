@@ -837,6 +837,10 @@ main {
   width: 24px;
   height: 24px;
 }
+.bonus-quick .bonus-toggle:not(.checked) {
+  border-color: var(--orange);
+  color: var(--orange);
+}
 .quick-bonus-access .bonus-toggle.granted {
   border-color: var(--orange);
   color: var(--orange);
