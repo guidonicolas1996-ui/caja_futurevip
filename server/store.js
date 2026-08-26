@@ -13,7 +13,6 @@ const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
 const nextShift = { Noche: 'Mañana', Mañana: 'Tarde', Tarde: 'Noche' };
-const resetStartDate = '2026-08-25T19:00:00.000Z';
 
 const blankAdvertising = () => ({ 'Publicidad A': { total: 0, new: 0, repeated: 0, derived: {} }, 'Publicidad B': { total: 0, new: 0, repeated: 0, derived: {} } });
 function normalizeAdvertising(advertising) {
@@ -57,6 +56,9 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => ({
 });
 async function writeSpaces(spaces) {
   const database = requireSupabase();
+  if (!Array.isArray(spaces) || spaces.length === 0 || spaces.some((space) => !space?.id || !space?.config || !Array.isArray(space.cajas) || space.cajas.length === 0)) {
+    throw new Error('No se guardó el cambio: la BDD debe conservar al menos una caja, su configuración y un registro diario.');
+  }
   if (!spaces.updatedAt) throw new Error('No se pudo guardar: falta la versión de la BDD');
   const updatedAt = new Date().toISOString();
   const { data, error } = await database.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', spaces.updatedAt).select('id').maybeSingle();
@@ -94,7 +96,6 @@ export async function getBoxes() { return (await readSpaces()).map(({ id, title,
 export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = defaultConfig(); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
 export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
 export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
-export async function clearCajaData() { const spaces = await readSpaces(); const nextSpaces = spaces.map((space) => { const caja = blankCaja(0, null, space.config); caja.shift = 'Tarde'; caja.date = resetStartDate; return { ...space, cajas: [caja] }; }); nextSpaces.updatedAt = spaces.updatedAt; await writeSpaces(nextSpaces); return { resetStartDate, boxes: nextSpaces.map(({ id, title, color }) => ({ id, title, color })) }; }
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
 export async function getConfig(boxId) { const space = await getSpace(boxId); return normalizeConfig(space.config); }
