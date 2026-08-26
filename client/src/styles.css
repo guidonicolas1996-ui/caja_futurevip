@@ -1408,6 +1408,7 @@ select:focus {
 }
 .chip-row .amount-input {
   height: 26px;
+  border-color: var(--platform-accent, var(--line));
 }
 .chip-row .amount-input input {
   padding-top: 5px;
