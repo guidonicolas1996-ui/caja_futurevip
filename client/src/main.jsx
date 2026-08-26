@@ -396,8 +396,8 @@ function MonthlyGoalConfig({ draft, update }) {
   return <section className="config-card monthly-goal-card">
     <div className="config-list-head"><h3>Valores del objetivo</h3><span>Se actualizan manualmente</span></div>
     <div className="monthly-goal-fields">
-      <label><span>Objetivo final</span><NumericInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
-      <label><span>Objetivo alcanzado</span><NumericInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /></label>
+      <label><span>Objetivo final</span><AmountInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
+      <label><span>Objetivo alcanzado</span><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /></label>
     </div>
   </section>;
 }
@@ -470,6 +470,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           </>}
         </main>
       </div>
+
     </div>
   );
 }
@@ -2129,6 +2130,7 @@ function App() {
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
+        <MonthlyGoalProgress config={config} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
