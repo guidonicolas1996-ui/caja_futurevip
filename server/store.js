@@ -2,8 +2,11 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!supabaseUrl || !supabaseKey) throw new Error('Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY; la API solo funciona con almacenamiento Supabase');
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const requireSupabase = () => {
+  if (!supabase) throw new Error('Faltan SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY; la API está bloqueada hasta conectar Supabase');
+  return supabase;
+};
 const titulares = ['Fede Acuña', 'Pablo Totaro', 'Mateo Ferrer', 'Ever Lombardo'];
 const billeteras = ['Ualá', 'Mercado Pago', 'Personal Pay', 'Naranja X', 'Brubank', 'Prex', 'Astro Pay', 'Belo', 'Lemon'];
 const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
@@ -53,15 +56,17 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   chipLoads: [],
 });
 async function writeSpaces(spaces) {
+  const database = requireSupabase();
   if (!spaces.updatedAt) throw new Error('No se pudo guardar: falta la versión de la BDD');
   const updatedAt = new Date().toISOString();
-  const { data, error } = await supabase.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', spaces.updatedAt).select('id').maybeSingle();
+  const { data, error } = await database.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', spaces.updatedAt).select('id').maybeSingle();
   if (error) throw new Error(`No se pudo guardar en Supabase: ${error.message}`);
   if (!data) throw new Error('No se guardó el cambio porque la BDD cambió desde la última lectura. Recargá la página e intentá nuevamente.');
   spaces.updatedAt = updatedAt;
 }
 async function readSpaces() {
-  const { data, error } = await supabase.from('app_state').select('spaces, updated_at').eq('id', 'main').maybeSingle();
+  const database = requireSupabase();
+  const { data, error } = await database.from('app_state').select('spaces, updated_at').eq('id', 'main').maybeSingle();
   if (error) throw new Error(`No se pudo leer Supabase: ${error.message}`);
   if (data?.spaces) {
     const spaces = data.spaces;
