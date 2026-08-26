@@ -7,6 +7,7 @@ import {
   ArrowLeftRight,
   ArrowUpDown,
   ArrowDownToLine,
+  BarChart3,
   Banknote,
   Camera,
   Check,
@@ -118,6 +119,34 @@ const walletModeClass = (config, wallet) => ({
   "Solo Cobros": "wallet-mode-collections",
   "Solo Depósito": "wallet-mode-deposit",
 }[config.accounts.walletModes?.[wallet] || "Cobros + Retiros"]);
+const statisticsFor = (caja, config, activeBoxId) => {
+  const accounts = caja.accounts
+    .flatMap((row) => Object.entries(row.values).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
+    .reduce((sum, value) => sum + number(value), 0);
+  const tips = caja.tips.reduce((sum, row) => sum + number(row.amount), 0);
+  const granted = caja.bonuses.reduce((sum, row) => sum + number(row.granted), 0);
+  const recovered = caja.bonuses.reduce((sum, row) => sum + number(row.recovered), 0);
+  const ta = caja.ta.reduce((sum, row) => sum + number(row.amount), 0);
+  const found = (caja.foundMoney || []).reduce((sum, row) => sum + number(row.amount), 0);
+  const rounding = number(caja.found);
+  const expensesByCategory = config.expenses.reduce((result, category) => {
+    result[category.name] = caja.expenses.filter((row) => row.category === category.name).reduce((sum, row) => sum + number(row.amount), 0);
+    return result;
+  }, {});
+  caja.expenses.forEach((row) => {
+    if (!(row.category in expensesByCategory)) expensesByCategory[row.category] = 0;
+  });
+  const expenses = Object.values(expensesByCategory).reduce((sum, value) => sum + value, 0);
+  const balance = caja.chips.reduce((sum, row) => sum + number(row.initial) - number(row.final), 0);
+  const cashInitial = number(caja.cashInitial);
+  const cashFinal = accounts;
+  const preDifference = expenses + ta + cashFinal + granted - recovered;
+  const difference = preDifference - cashInitial;
+  const cashDifference = cashFinal - cashInitial;
+  const transfers = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
+  const realDifference = difference - (granted - recovered) + transfers;
+  return { tips, found, rounding, granted, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, transfers, bonusesNet: granted - recovered };
+};
 const api = (url, options) =>
   fetch(`${import.meta.env.VITE_API_URL || ""}${url}`, {
     headers: { "Content-Type": "application/json" },
@@ -1339,6 +1368,49 @@ function WalletRoute({ caja, config }) {
   </section>;
 }
 
+function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
+  const today = new Date();
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const [startDate, setStartDate] = useState(dateKey(monthStart));
+  const [endDate, setEndDate] = useState(dateKey(today));
+  const [chartMetric, setChartMetric] = useState("tips");
+  const [selectedBar, setSelectedBar] = useState(null);
+  const setRange = (start, end) => { setStartDate(dateKey(start)); setEndDate(dateKey(end)); setSelectedBar(null); };
+  const shortcut = (name) => {
+    const current = new Date();
+    if (name === "hoy") return setRange(current, current);
+    if (name === "ayer") { const day = new Date(current); day.setDate(day.getDate() - 1); return setRange(day, day); }
+    if (name === "semana") { const day = new Date(current); day.setDate(day.getDate() - ((day.getDay() + 6) % 7)); return setRange(day, current); }
+    if (name === "mes") return setRange(new Date(current.getFullYear(), current.getMonth(), 1), current);
+    setRange(new Date(current.getFullYear(), current.getMonth() - 1, 1), new Date(current.getFullYear(), current.getMonth(), 0));
+  };
+  const filtered = history.filter((caja) => { const date = new Date(caja.date); return date >= new Date(`${startDate}T00:00:00`) && date <= new Date(`${endDate}T23:59:59`); });
+  const groups = ["Mañana", "Tarde", "Noche"].map((shift) => ({ shift, rows: filtered.filter((caja) => caja.shift === shift) }));
+  const totalGroup = { shift: "Total", rows: filtered };
+  const summarize = (rows) => rows.reduce((total, caja) => {
+    const values = statisticsFor(caja, config, activeBoxId);
+    Object.keys(values).forEach((key) => { if (key !== "expensesByCategory") total[key] = (total[key] || 0) + (typeof values[key] === "number" ? values[key] : 0); });
+    Object.entries(values.expensesByCategory).forEach(([key, value]) => { total.expensesByCategory[key] = (total.expensesByCategory[key] || 0) + value; });
+    return total;
+  }, { expensesByCategory: {} });
+  const summaries = [...groups, totalGroup].map((group) => ({ ...group, values: summarize(group.rows) }));
+  const total = summaries[3].values;
+  const statistics = config.statistics || { employees: 1, proportionalPercent: 100 };
+  const employees = number(statistics.employees) || 1;
+  const percent = number(statistics.proportionalPercent);
+  const updateStatistics = (patch) => onConfigChange({ ...config, statistics: { ...statistics, ...patch } });
+  const metricOptions = [{ key: "tips", label: "Propinas" }, { key: "found", label: "Encontrado" }, { key: "granted", label: "Bonos otorgados" }, { key: "expenses", label: "Salidas" }, { key: "ta", label: "Cargas T.A." }];
+  const chartRows = [...groups, totalGroup].map((group) => ({ label: group.shift, value: group.shift === "Total" ? total[chartMetric] : group.values[chartMetric] || 0 }));
+  const maxChart = Math.max(...chartRows.map((row) => row.value), 1);
+  const metrics = [{ label: "Propinas", key: "tips" }, { label: "Dinero encontrado", key: "found" }, { label: "Redondeo", key: "rounding" }, { label: "Bonos otorgados", key: "granted" }, { label: "Bonos recuperados", key: "recovered" }, { label: "Bonos netos", key: "bonusesNet" }, { label: "Traspasos", key: "transfers" }, { label: "Cargas T.A.", key: "ta" }, { label: "Caja inicial", key: "cashInitial" }, { label: "Caja final", key: "cashFinal" }, { label: "Saldo", key: "balance" }, { label: "Pre diferencia", key: "preDifference" }, { label: "Diferencia", key: "difference" }, { label: "Diferencia caja", key: "cashDifference" }, { label: "Diferencia real", key: "realDifference" }];
+  return <main className="statistics-page">
+    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
+    <section className="statistics-grid">{summaries.map((group) => <section className={`panel statistics-shift ${group.shift === "Total" ? "statistics-total" : ""}`} key={group.shift}><div className="statistics-shift-head"><h2>{group.shift}</h2><span>{group.rows.length} turnos</span></div><div className="statistics-metrics">{metrics.map((metric) => <div key={metric.key}><span>{metric.label}</span><b>{money(group.values[metric.key])}</b></div>)}</div><div className="statistics-expenses"><strong>Desglose de salidas</strong>{Object.entries(group.values.expensesByCategory).map(([category, value]) => <span key={category}>{category}<b>{money(value)}</b></span>)}{!Object.keys(group.values.expensesByCategory).length && <small>Sin salidas</small>}</div></section>)}</section>
+    <section className="statistics-visuals"><section className="panel statistics-chart"><div className="statistics-chart-head"><div><h2>Comparativa por turno</h2><span>Seleccioná una métrica y una barra</span></div><select value={chartMetric} onChange={(event) => { setChartMetric(event.target.value); setSelectedBar(null); }}>{metricOptions.map((metric) => <option value={metric.key} key={metric.key}>{metric.label}</option>)}</select></div><div className="statistics-bars">{chartRows.map((row) => <button type="button" className={selectedBar === row.label ? "selected" : ""} key={row.label} onClick={() => setSelectedBar(row.label)}><span className="statistics-bar-value">{money(row.value)}</span><i style={{ height: `${Math.max(4, row.value / maxChart * 150)}px` }} /><small>{row.label}</small></button>)}</div>{selectedBar && <p className="statistics-chart-detail">{selectedBar}: <b>{money(chartRows.find((row) => row.label === selectedBar)?.value)}</b></p>}</section><section className="panel statistics-tips"><div className="statistics-chart-head"><div><h2>Totalizador de propinas</h2><span>Valores guardados en configuración</span></div><Coins size={18} /></div><div className="statistics-tip-total"><span>Total de propinas</span><strong>{money(total.tips)}</strong></div><div className="statistics-tip-fields"><label>Empleados<input type="number" min="1" step="1" value={statistics.employees ?? 1} onChange={(event) => updateStatistics({ employees: Math.max(1, number(event.target.value)) })} /></label><label>Propinas c/u<strong>{money(total.tips / employees)}</strong></label><label>% proporcional<input type="number" min="0" max="100" step="1" value={statistics.proportionalPercent ?? 100} onChange={(event) => updateStatistics({ proportionalPercent: Math.min(100, Math.max(0, number(event.target.value))) })} /></label><label>Proporcional c/u<strong>{money(total.tips / employees * percent / 100)}</strong></label></div></section></section>
+  </main>;
+}
+
 function SummaryCard({ caja, calculations, update }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const metric = (label, value, className = "", valueClass = "") => (
@@ -1669,6 +1741,7 @@ function App() {
   const [capturing, setCapturing] = useState(false);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
   const [logisticsOpen, setLogisticsOpen] = useState(false);
+  const [statisticsOpen, setStatisticsOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
@@ -1721,7 +1794,7 @@ function App() {
     }).catch((error) => setApiError(error.message));
   }, []);
   const changeBox = (boxId) => {
-    setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setCaja(null); setConfig(null);
+    setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setCaja(null); setConfig(null);
     Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setConfig(settings); });
   };
   useEffect(() => {
@@ -1761,6 +1834,11 @@ function App() {
     );
   };
   const updateLogisticsConfig = async (nextConfig) => {
+    setConfig(nextConfig);
+    const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    if (result.config) setConfig(result.config);
+  };
+  const updateStatisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
     const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
     if (result.config) setConfig(result.config);
@@ -1946,12 +2024,13 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
-            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
+            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
+            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setStatisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
-        {logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
+        {statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
