@@ -755,7 +755,7 @@ main {
   grid-auto-rows: max-content;
   gap: 8px;
   height: 116px;
-  padding: 14px 10px;
+  padding: 14px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -831,7 +831,7 @@ main {
   overflow: hidden;
   height: auto;
   flex: 1;
-  padding: 0 11px 10px;
+  padding: 12px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -839,7 +839,7 @@ main {
 .advertising-actions .final-chip-fields {
   align-self: center;
   margin-left: 0;
-  padding-left: 12px;
+  padding: 12px;
   border-left-color: var(--line);
 }
 .final-chip-field {
