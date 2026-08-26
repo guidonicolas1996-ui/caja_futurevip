@@ -157,7 +157,7 @@ function BoxSelector({ boxes, activeBoxId, onChange, label = "CAJA" }) {
   </div>;
 }
 
-function WalletAssignmentSelector({ boxes, value, onChange }) {
+function WalletAssignmentSelector({ boxes, value, onChange, showLabel = true }) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
   const selectorRef = React.useRef(null);
@@ -199,8 +199,8 @@ function WalletAssignmentSelector({ boxes, value, onChange }) {
   }, [open]);
   return (
     <div ref={selectorRef} className="wallet-assignment-control" style={assignmentStyle(selected)}>
-      <button ref={buttonRef} type="button" tabIndex={-1} className={`wallet-assignment ${selected ? "" : "unassigned"}`} aria-label="Caja a la que pertenece" title="Caja a la que pertenece" onClick={toggleMenu}>
-        {selected ? <i className="wallet-assignment-dot" /> : "-"}
+      <button ref={buttonRef} type="button" tabIndex={-1} className={`wallet-assignment ${selected ? "" : "unassigned"} ${showLabel ? "with-label" : ""}`} aria-label="Caja a la que pertenece" title="Caja a la que pertenece" onClick={toggleMenu}>
+        {selected ? <><i className="wallet-assignment-dot" />{showLabel && <b>{selected.title}</b>}</> : showLabel ? "Sin caja" : "-"}
       </button>
       {open && menuPosition && createPortal(
         <div ref={menuRef} className="wallet-assignment-options" style={{ top: menuPosition.top, left: menuPosition.left }}>
@@ -809,7 +809,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     if (walletCategory !== category || config.accounts.availability[row.holder]?.[wallet] === false) return <td key={wallet}><div className="disabled-wallet" /></td>;
     const assignedBox = boxes.find((box) => box.id === row.walletBoxes?.[wallet]);
     const cellColorStyle = assignedBox ? boxColorStyle(assignedBox.color) : { "--box-accent": "#758689", "--box-line": "#536976", "--assignment-dot": "transparent" };
-    const assignmentSelector = category !== "Normal" && <WalletAssignmentSelector boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
+    const assignmentSelector = category !== "Normal" && <WalletAssignmentSelector showLabel={false} boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
     const checks = <div className="cell-checks"><button tabIndex={-1} className={state.collections ? "checked" : ""} onClick={() => toggle(index, wallet, "collections")} title="Cobros e ingresos"><Check size={11} /></button><button tabIndex={-1} className={state.withdrawals ? "checked" : ""} onClick={() => toggle(index, wallet, "withdrawals")} title="Retiros y egresos"><Check size={11} /></button></div>;
     const currentNoteKey = noteKey(index, wallet);
     const isEditingNote = editingNote === currentNoteKey;
@@ -1913,7 +1913,7 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
-            <button className="history-trigger logistics-trigger" onClick={() => setLogisticsOpen(!logisticsOpen)}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
+            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
