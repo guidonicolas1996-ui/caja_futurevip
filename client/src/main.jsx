@@ -1337,7 +1337,7 @@ function ChipsSection({ caja, update }) {
   );
 }
 
-function WalletRoute({ caja, config }) {
+function WalletRoute({ caja, config, onUpdateAccounts }) {
   const stateFor = (row, wallet) => {
     const state = row.verified?.[wallet];
     return typeof state === "object" ? state : { collections: Boolean(state), withdrawals: false };
@@ -1360,15 +1360,32 @@ function WalletRoute({ caja, config }) {
   const route = [0, 1, 2].map((offset) => items[(currentIndex + offset) % items.length]);
   const recommended = items.slice().sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0];
   const formatRestart = (value) => value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "Sin reinicio";
+  const markInUse = (target) => {
+    const now = new Date().toISOString();
+    const accounts = structuredClone(caja.accounts);
+    accounts.forEach((row) => {
+      const normalWallets = config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal");
+      normalWallets.forEach((wallet) => {
+        const item = items.find((candidate) => candidate.holder === row.holder && candidate.wallet === wallet);
+        if (!item) return;
+        const previous = stateFor(row, wallet);
+        const nextState = { ...previous, collections: item.key === target.key };
+        if (previous.collections && item.key !== target.key) nextState.lastCollectionsAt = now;
+        row.verified = { ...(row.verified || {}), [wallet]: nextState };
+      });
+    });
+    onUpdateAccounts(accounts);
+  };
+  const moveRoute = (offset) => markInUse(items[(currentIndex + offset + items.length) % items.length]);
 
   return <section className="panel wallet-route" aria-label="Seguimiento de billeteras">
     <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>Reinicio más antiguo · {formatRestart(recommended.restart)}</small></div>
-    <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span></div>
+    <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => markInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
     <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : ""}`} key={`${item.key}-${index}`}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
   </section>;
 }
 
-function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
+function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onConfigChange }) {
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -1376,6 +1393,8 @@ function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
   const [endDate, setEndDate] = useState(dateKey(today));
   const [chartMetric, setChartMetric] = useState("tips");
   const [selectedBar, setSelectedBar] = useState(null);
+  const [selectedBoxIds, setSelectedBoxIds] = useState([activeBoxId]);
+  const [combinedView, setCombinedView] = useState(false);
   const setRange = (start, end) => { setStartDate(dateKey(start)); setEndDate(dateKey(end)); setSelectedBar(null); };
   const shortcut = (name) => {
     const current = new Date();
@@ -1385,18 +1404,24 @@ function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
     if (name === "mes") return setRange(new Date(current.getFullYear(), current.getMonth(), 1), current);
     setRange(new Date(current.getFullYear(), current.getMonth() - 1, 1), new Date(current.getFullYear(), current.getMonth(), 0));
   };
-  const filtered = (Array.isArray(history) ? history : []).filter((caja) => { const date = new Date(caja.date); return date >= new Date(`${startDate}T00:00:00`) && date <= new Date(`${endDate}T23:59:59`); });
-  const groups = ["Mañana", "Tarde", "Noche"].map((shift) => ({ shift, rows: filtered.filter((caja) => caja.shift === shift) }));
-  const totalGroup = { shift: "Total", rows: filtered };
+  const availableHistories = boxes.map((box) => ({ box, rows: Array.isArray(boxHistories?.[box.id]) ? boxHistories[box.id] : box.id === activeBoxId ? history : [] }));
+  const selectedHistories = availableHistories.filter(({ box }) => selectedBoxIds.includes(box.id));
+  const filterRows = (rows) => rows.filter((caja) => { const date = new Date(caja.date); return date >= new Date(`${startDate}T00:00:00`) && date <= new Date(`${endDate}T23:59:59`); });
+  const combinedRows = selectedHistories.flatMap(({ rows }) => filterRows(rows));
+  const filtered = combinedRows;
+  const groupsFor = (rows) => ["Mañana", "Tarde", "Noche"].map((shift) => ({ shift, rows: rows.filter((caja) => caja.shift === shift) }));
+  const totalGroup = { shift: "Total", rows: combinedRows };
   const summarize = (rows) => rows.reduce((total, caja) => {
     const values = statisticsFor(caja, config, activeBoxId);
     Object.keys(values).forEach((key) => { if (key !== "expensesByCategory") total[key] = (total[key] || 0) + (typeof values[key] === "number" ? values[key] : 0); });
     Object.entries(values.expensesByCategory).forEach(([key, value]) => { total.expensesByCategory[key] = (total.expensesByCategory[key] || 0) + value; });
     return total;
   }, { expensesByCategory: {} });
-  const summaries = groups.map((group) => ({ ...group, values: summarize(group.rows) }));
+  const groups = groupsFor(combinedRows);
+  const makeSummaries = (rows) => groupsFor(rows).map((group) => ({ ...group, values: summarize(group.rows) })).concat({ shift: "Total", rows, values: summarize(rows) });
+  const summarySets = (combinedView ? [{ box: { id: "combined", title: "Suma seleccionadas" }, rows: combinedRows }] : selectedHistories.map(({ box, rows }) => ({ box, rows: filterRows(rows) }))).map(({ box, rows }) => ({ box, summaries: makeSummaries(rows) }));
+  const summaries = summarySets[0]?.summaries || makeSummaries([]);
   const total = summarize(totalGroup.rows) || { expensesByCategory: {} };
-  summaries.push({ ...totalGroup, values: total });
   const statistics = config.statistics || { employees: 1, proportionalPercent: 100 };
   const employees = number(statistics.employees) || 1;
   const percent = number(statistics.proportionalPercent);
@@ -1406,8 +1431,8 @@ function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
   const maxChart = Math.max(...chartRows.map((row) => row.value), 1);
   const metrics = [{ label: "Propinas", key: "tips" }, { label: "Dinero encontrado", key: "found" }, { label: "Redondeo", key: "rounding" }, { label: "Bonos otorgados", key: "granted" }, { label: "Bonos recuperados", key: "recovered" }, { label: "Bonos netos", key: "bonusesNet" }, { label: "Traspasos", key: "transfers" }, { label: "Cargas T.A.", key: "ta" }, { label: "Caja inicial", key: "cashInitial" }, { label: "Caja final", key: "cashFinal" }, { label: "Saldo", key: "balance" }, { label: "Pre diferencia", key: "preDifference" }, { label: "Diferencia", key: "difference" }, { label: "Diferencia caja", key: "cashDifference" }, { label: "Diferencia real", key: "realDifference" }];
   return <main className="statistics-page">
-    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
-    <section className="statistics-grid">{summaries.map((group) => <section className={`panel statistics-shift ${group.shift === "Total" ? "statistics-total" : ""}`} key={group.shift}><div className="statistics-shift-head"><h2>{group.shift}</h2><span>{group.rows.length} turnos</span></div><div className="statistics-metrics">{metrics.map((metric) => <div key={metric.key}><span>{metric.label}</span><b>{money(group.values[metric.key])}</b></div>)}</div><div className="statistics-expenses"><strong>Desglose de salidas</strong>{Object.entries(group.values.expensesByCategory).map(([category, value]) => <span key={category}>{category}<b>{money(value)}</b></span>)}{!Object.keys(group.values.expensesByCategory).length && <small>Sin salidas</small>}</div></section>)}</section>
+    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined"><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
+    {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id}><h2 className="statistics-box-title">{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => <section className={`panel statistics-shift ${group.shift === "Total" ? "statistics-total" : ""}`} key={`${box.id}-${group.shift}`}><div className="statistics-shift-head"><h2>{group.shift}</h2><span>{group.rows.length} turnos</span></div><div className="statistics-metrics">{metrics.map((metric) => <div key={metric.key}><span>{metric.label}</span><b>{money(group.values[metric.key])}</b></div>)}</div><div className="statistics-expenses"><strong>Desglose de salidas</strong>{Object.entries(group.values.expensesByCategory).map(([category, value]) => <span key={category}>{category}<b>{money(value)}</b></span>)}{!Object.keys(group.values.expensesByCategory).length && <small>Sin salidas</small>}</div></section>)}</section></section>)}
     <section className="statistics-visuals"><section className="panel statistics-chart"><div className="statistics-chart-head"><div><h2>Comparativa por turno</h2><span>Seleccioná una métrica y una barra</span></div><select value={chartMetric} onChange={(event) => { setChartMetric(event.target.value); setSelectedBar(null); }}>{metricOptions.map((metric) => <option value={metric.key} key={metric.key}>{metric.label}</option>)}</select></div><div className="statistics-bars">{chartRows.map((row) => <button type="button" className={selectedBar === row.label ? "selected" : ""} key={row.label} onClick={() => setSelectedBar(row.label)}><span className="statistics-bar-value">{money(row.value)}</span><i style={{ height: `${Math.max(4, row.value / maxChart * 150)}px` }} /><small>{row.label}</small></button>)}</div>{selectedBar && <p className="statistics-chart-detail">{selectedBar}: <b>{money(chartRows.find((row) => row.label === selectedBar)?.value)}</b></p>}</section><section className="panel statistics-tips"><div className="statistics-chart-head"><div><h2>Totalizador de propinas</h2><span>Valores guardados en configuración</span></div><Coins size={18} /></div><div className="statistics-tip-total"><span>Total de propinas</span><strong>{money(total.tips)}</strong></div><div className="statistics-tip-fields"><label>Empleados<input type="number" min="1" step="1" value={statistics.employees ?? 1} onChange={(event) => updateStatistics({ employees: Math.max(1, number(event.target.value)) })} /></label><label>Propinas c/u<strong>{money(total.tips / employees)}</strong></label><label>% proporcional<input type="number" min="0" max="100" step="1" value={statistics.proportionalPercent ?? 100} onChange={(event) => updateStatistics({ proportionalPercent: Math.min(100, Math.max(0, number(event.target.value))) })} /></label><label>Proporcional c/u<strong>{money(total.tips / employees * percent / 100)}</strong></label></div></section></section>
   </main>;
 }
@@ -1750,6 +1775,7 @@ function App() {
   const [apiError, setApiError] = useState("");
   const [config, setConfig] = useState(null);
   const [boxes, setBoxes] = useState(null);
+  const [boxHistories, setBoxHistories] = useState({});
   const [activeBoxId, setActiveBoxId] = useState(null);
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
@@ -1785,10 +1811,11 @@ function App() {
       const boxId = availableBoxes[0]?.id;
       setBoxes(availableBoxes);
       setActiveBoxId(boxId);
-      return Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(
-      ([current, past, settings]) => {
+      return Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`), ...availableBoxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))]).then(
+      ([current, past, settings, ...allPast]) => {
         setCaja(current);
         setHistory(past);
+        setBoxHistories(Object.fromEntries(availableBoxes.map((box, index) => [box.id, allPast[index]])));
         setConfig(settings);
       },
       );
@@ -1796,7 +1823,7 @@ function App() {
   }, []);
   const changeBox = (boxId) => {
     setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setCaja(null); setConfig(null);
-    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setConfig(settings); });
+    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`), ...boxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))]).then(([current, past, settings, ...allPast]) => { setCaja(current); setHistory(past); setBoxHistories(Object.fromEntries(boxes.map((box, index) => [box.id, allPast[index]]))); setConfig(settings); });
   };
   useEffect(() => {
     if (!activeBoxId || saving) return undefined;
@@ -2031,7 +2058,7 @@ function App() {
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
-        {statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
+        {statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
@@ -2040,7 +2067,7 @@ function App() {
           <div className="content-column">
             <AdvertisingSection caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} notesEnabled={notesEnabled} onNotesEnabledChange={setNotesEnabled} />
             <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
-            <WalletRoute caja={caja} config={config} />
+            <WalletRoute caja={caja} config={config} onUpdateAccounts={updateAccountsFromLogistics} />
             <div className="operations-grid">
               <QuickMovementSection
                 title="Gastos"
