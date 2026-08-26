@@ -752,7 +752,7 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
         <button className="icon-button shrink-0" title="Ver y editar bonos" onClick={onViewBonuses}><Eye size={14} /></button>
       </div>
     </div>
-    <div className="quick-recent-bonuses"><span className="quick-recent-title">Últimos 5 bonos</span>{recentBonuses.map((bonus) => { const isRecovered = number(bonus.recovered) > 0; return <div className={`quick-recent-bonus ${isRecovered ? "recovered" : "granted"}`} key={bonus.id}><span>{isRecovered ? "Recuperado" : "Otorgado"}</span><div className="recent-bonus-value"><input defaultValue={money(isRecovered ? bonus.recovered : bonus.granted)} aria-label="Editar bono reciente" onFocus={(event) => { event.currentTarget.value = formatNumberInput(isRecovered ? bonus.recovered : bonus.granted); event.currentTarget.select(); }} onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); event.currentTarget.value = value ? money(value) : "-"; editRecentBonus(bonus.id, value); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><span className="recent-bonus-time">- {formatMovementTime(bonus.createdAt)}</span></div></div>; })}</div>
+    <div className="quick-recent-bonuses"><span className="quick-recent-title">Últimos 5 bonos</span>{recentBonuses.map((bonus) => { const isRecovered = number(bonus.recovered) > 0; return <div className={`quick-recent-bonus ${isRecovered ? "recovered" : "granted"}`} key={bonus.id}><span>{isRecovered ? "Recuperado" : "Otorgado"}</span><div className="recent-bonus-value"><span className="recent-bonus-time">{formatMovementTime(bonus.createdAt)} -</span><input defaultValue={money(isRecovered ? bonus.recovered : bonus.granted)} aria-label="Editar bono reciente" onFocus={(event) => { event.currentTarget.value = formatNumberInput(isRecovered ? bonus.recovered : bonus.granted); event.currentTarget.select(); }} onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); event.currentTarget.value = value ? money(value) : "-"; editRecentBonus(bonus.id, value); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div></div>; })}</div>
   </div>;
 }
 
@@ -1209,7 +1209,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
           return (
             <div className={`recent-bonus ${isRecovered ? "recovered" : "granted"}`} key={bonus.id}>
               <span>{isRecovered ? "Recuperado" : "Otorgado"}</span>
-              <div className="recent-bonus-value"><input
+              <div className="recent-bonus-value"><span className="recent-bonus-time">{formatMovementTime(bonus.createdAt)} -</span><input
                   className="recent-bonus-amount"
                   defaultValue={money(amount)}
                   aria-label={`Valor del bono ${isRecovered ? "recuperado" : "otorgado"}`}
