@@ -112,6 +112,13 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
   return cashDifference - bonuses + transferAdjustment;
 };
   const formatMovementTime = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
+  const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
+    const shiftDate = new Date(cajaDate);
+    const bonusDate = new Date(createdAt);
+    const shiftStartAt = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate(), shiftStart);
+    const elapsed = (bonusDate - shiftStartAt) / 60000;
+    return elapsed < 0 ? 0 : Math.min(3, Math.floor(elapsed / 120));
+  };
 const walletBelongsToBox = (row, wallet, config, boxId) => {
   const setting = config.accounts.walletSettings[row.holder]?.[wallet];
   return config.accounts.availability[row.holder]?.[wallet] !== false && (setting?.category === "Normal" || !setting?.category ? true : row.walletBoxes?.[wallet] === boxId);
@@ -1000,10 +1007,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     const end = (start + 2) % 24;
     const label = `${String(start).padStart(2, "0")}:00 - ${String(end).padStart(2, "0")}:00`;
     const items = caja.bonuses.slice().reverse().map((bonus) => ({ bonus, index: caja.bonuses.indexOf(bonus) })).filter(({ bonus }) => {
-      const hour = new Date(bonus.createdAt).getHours();
-      const minutes = new Date(bonus.createdAt).getMinutes();
-      const elapsed = (hour * 60 + minutes - shiftStart * 60 + 1440) % 1440;
-      return Math.floor(elapsed / 120) === slot;
+      return bonusSlotFor(bonus.createdAt, caja.date, shiftStart) === slot;
     });
     return { label, items };
   });

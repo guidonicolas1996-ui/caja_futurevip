@@ -4,6 +4,13 @@ import { ArrowDownToLine, ArrowLeftRight, Banknote, Coins, FileText, Gift, Recei
 const n = (value) => Number(value) || 0;
 const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n(value));
 const time = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
+const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
+  const shiftDate = new Date(cajaDate);
+  const bonusDate = new Date(createdAt);
+  const shiftStartAt = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate(), shiftStart);
+  const elapsed = (bonusDate - shiftStartAt) / 60000;
+  return elapsed < 0 ? 0 : Math.min(3, Math.floor(elapsed / 120));
+};
 const shifts = { Noche: [0, "00:00 - 08:00"], Mañana: [8, "08:00 - 16:00"], Tarde: [16, "16:00 - 00:00"] };
 const colors = { teal: "#72d7ca", blue: "#82b8ff", green: "#83d5a2", orange: "#f5ad69", pink: "#ed9fc1", red: "#ef8888", yellow: "#e8d477", violet: "#c2a0ed", slate: "#aebdca" };
 
@@ -18,7 +25,7 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
   const chips = caja.chips || [];
   const chipBalance = (chip) => n(chip.initial) - n(chip.final);
   const totalFor = (title, list) => title === "Gastos" ? list.reduce((sum, row) => { const category = config.expenses.find((item) => item.name === row.category); return sum + n(row.amount) * (category?.inverted ? -1 : 1); }, 0) : list.reduce((sum, row) => sum + n(row.amount), 0);
-  const bonusSlots = Array.from({ length: 4 }, (_, index) => { const from = (start + index * 2) % 24; const to = (from + 2) % 24; const items = (caja.bonuses || []).filter((bonus) => { const date = new Date(bonus.createdAt); const elapsed = (date.getHours() * 60 + date.getMinutes() - start * 60 + 1440) % 1440; return Math.floor(elapsed / 120) === index; }); return { label: `${String(from).padStart(2, "0")}:00 - ${String(to).padStart(2, "0")}:00`, items }; });
+  const bonusSlots = Array.from({ length: 4 }, (_, index) => { const from = (start + index * 2) % 24; const to = (from + 2) % 24; const items = (caja.bonuses || []).filter((bonus) => bonusSlotFor(bonus.createdAt, caja.date, start) === index); return { label: `${String(from).padStart(2, "0")}:00 - ${String(to).padStart(2, "0")}:00`, items }; });
   const granted = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.granted), 0);
   const recovered = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.recovered), 0);
   const metric = (label, value, hero = false) => <div className={`report-v5-metric ${hero ? "hero" : ""}`}><span>{label}</span><b className={value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
