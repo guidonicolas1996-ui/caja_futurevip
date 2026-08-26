@@ -779,8 +779,26 @@ function AdvertisingSectionRebuilt({ caja, update, boxes, onViewBonuses, onAddMa
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...(advertising[name] || {}), ...patch } } });
   const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
   const copySummary = async () => {
-    const text = ["*Conteo de Publi:*", "", ...["Publicidad A", "Publicidad B"].flatMap((name) => { const item = advertising[name] || {}; const total = number(item.total); const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); return [`*${name}*`, `*Efectividad: ${total ? Math.round((derived / total) * 100) : 0}%*`, `Llegados: ${total}`, `Nuevos: ${number(item.new)}`, `Repetidos: ${number(item.repeated)}`, `Derivados: ${derived}`, ""]; })].join("\n");
-    await navigator.clipboard?.writeText(text);
+    const lines = ["*Conteo de Publicidad*", ""];
+    ["Publicidad A", "Publicidad B"].forEach((name) => {
+      const item = advertising[name] || {};
+      const total = number(item.total);
+      const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0);
+      lines.push(`*${name}*`, `Total LL: ${total}`, `Nuevos: ${number(item.new)}`, `Repetidos: ${number(item.repeated)}`, `S/Resp: ${number(item.new) + number(item.repeated) - total}`, `Total D: ${derived}`, ...boxes.map((box) => `${box.title}: ${number(item.derived?.[box.id])}`), `Efectividad: ${total ? Math.round((derived / total) * 100) : 0}%`, "");
+    });
+    const text = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
     onNotify("Copiado al portapapeles");
   };
   return <div className="publicity-layout" onClick={(event) => { if (event.target instanceof HTMLInputElement && event.target.closest(".publicity-panel")) event.target.select(); }}>
