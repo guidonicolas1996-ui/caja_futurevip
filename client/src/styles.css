@@ -765,12 +765,13 @@ main {
 .publicity-name svg { color: #b79cff; flex: 0 0 auto; }
 .publicity-numbers, .publicity-derived > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; min-width: 0; }
 .publicity-derived > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.publicity-numbers label, .publicity-derived label { display: grid; gap: 3px; min-width: 0; }
-.publicity-numbers span, .publicity-derived > span, .publicity-derived small { color: var(--muted); font-size: 8px; white-space: nowrap; }
-.publicity-numbers input, .publicity-derived input { box-sizing: border-box; width: 100%; min-width: 0; height: 22px; padding: 3px; border: 0; background: transparent; color: #d8e0e0; font: 10px "DM Mono"; text-align: right; }
-.publicity-numbers b, .publicity-derived > span b { color: #d8e0e0; font: 10px "DM Mono"; }
+.publicity-numbers label, .publicity-derived label { display: grid; gap: 3px; min-width: 0; text-align: center; }
+.publicity-numbers span, .publicity-derived > span, .publicity-derived small { color: var(--muted); font-size: 8px; white-space: nowrap; text-align: center; }
+.publicity-numbers input, .publicity-derived input { box-sizing: border-box; width: 100%; min-width: 0; height: 24px; padding: 3px; border: 1px solid transparent; border-radius: 4px; background: #202a2c; color: #aeb8ba; font: 12px "DM Mono"; text-align: center; }
+.publicity-numbers input:focus, .publicity-derived input:focus { border-color: var(--cyan); color: #dbe3e3; outline: 0; }
+.publicity-numbers b, .publicity-derived > span b { color: #aeb8ba; font: 12px "DM Mono"; text-align: center; }
 .publicity-derived { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.publicity-derived > span { flex: 0 0 auto; }
+.publicity-derived > span { flex: 0 0 auto; padding: 5px 6px; border: 1px solid var(--line); border-radius: 5px; background: #202a2c; }
 .publicity-derived > div { flex: 1 1 auto; }
 .publicity-rate { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #2f3352; color: #93c5fd; font-size: 13px; white-space: nowrap; }
 .publicity-rate svg { color: #b79cff; }
