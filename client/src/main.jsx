@@ -1430,11 +1430,14 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
   const dateValue = (value) => value ? new Date(value).getTime() : 0;
   const logisticsOrder = config.logistics?.order || [];
   const isNormalWallet = (row, wallet) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal" && config.accounts.walletModes?.[wallet] !== "Solo Depósito";
+  const isPaymentWallet = (wallet) => config.accounts.walletModes?.[wallet] === "Cobros + Retiros";
   const items = caja.accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => isNormalWallet(row, wallet)).map((wallet) => ({
     key: `${row.holder}::${wallet}`,
     holder: row.holder,
     wallet,
     state: stateFor(row, wallet),
+    balance: number(row.values?.[wallet]),
+    paymentWallet: isPaymentWallet(wallet),
     restart: row.walletRestartAt?.[wallet] || [stateFor(row, wallet).lastCollectionsAt, stateFor(row, wallet).lastWithdrawalsAt, row.walletBoxUpdatedAt?.[wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0],
   }))).sort((first, second) => {
     const firstIndex = logisticsOrder.indexOf(first.key);
@@ -1450,7 +1453,10 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
   }) ?? inUseIndexes[0];
   const route = [0, 1, 2].map((offset) => items[(currentIndex + offset) % items.length]);
   const currentItem = items[currentIndex];
-  const recommended = items.filter((item) => item.key !== currentItem.key).sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0] || currentItem;
+  const hasPaymentBalance = items.some((item) => item.paymentWallet && item.balance > 0);
+  const recommendationPool = hasPaymentBalance ? items : items.filter((item) => item.paymentWallet);
+  const recommended = recommendationPool.filter((item) => item.key !== currentItem.key).sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0] || recommendationPool[0] || currentItem;
+  const recommendationReason = !hasPaymentBalance && recommended.paymentWallet ? "Reinicio más antiguo de billetera de pagos" : "Reinicio más antiguo";
   const formatRestart = (value) => value ? new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "Sin reinicio";
   const markInUse = (target) => {
     const now = new Date().toISOString();
@@ -1472,7 +1478,7 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
   const moveRoute = (offset) => requestInUse(items[(currentIndex + offset + items.length) % items.length]);
 
   return <section className="panel wallet-route" aria-label="Seguimiento de billeteras">
-    <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>Reinicio más antiguo · {formatRestart(recommended.restart)}</small></div>
+    <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>{recommendationReason} · {formatRestart(recommended.restart)}</small></div>
     <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => requestInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
     <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : "clickable"}`} key={`${item.key}-${index}`} onClick={() => index > 0 && requestInUse(item)} role={index > 0 ? "button" : undefined} tabIndex={index > 0 ? 0 : undefined} onKeyDown={(event) => { if (index > 0 && (event.key === "Enter" || event.key === " ")) requestInUse(item); }}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
     {pendingWallet && <ConfirmDialog title="Cambiar billetera en uso" message={`¿Desea colocar en uso la billetera ${pendingWallet.holder} · ${pendingWallet.wallet}?`} confirmLabel="Colocar en uso" confirmIcon={<Check size={15} />} dialogIcon={<WalletCards size={21} />} onCancel={() => setPendingWallet(null)} onConfirm={() => { markInUse(pendingWallet); setPendingWallet(null); }} />}
