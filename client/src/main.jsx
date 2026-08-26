@@ -790,7 +790,9 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
         ? current
         : { collections: Boolean(current), withdrawals: false };
     state[flag] = !state[flag];
-    if (!state[flag]) state[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = new Date().toISOString();
+    const restartedAt = new Date().toISOString();
+    if (!state[flag]) state[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = restartedAt;
+    accounts[rowIndex].walletRestartAt = { ...(accounts[rowIndex].walletRestartAt || {}), [wallet]: restartedAt };
     accounts[rowIndex].verified = { ...(accounts[rowIndex].verified || {}), [wallet]: state };
     update({ accounts }, true);
   };
@@ -1677,8 +1679,10 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   const updateState = (item, flag) => {
     const state = stateFor(item.row, item.wallet);
     const nextState = { ...state, [flag]: !state[flag] };
-    if (!nextState[flag]) nextState[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = new Date().toISOString();
-    onUpdateAccounts(accounts.map((account) => account.holder !== item.holder ? account : { ...account, verified: { ...(account.verified || {}), [item.wallet]: nextState } }));
+    const restartedAt = new Date().toISOString();
+    if (!nextState[flag]) nextState[`last${flag === "collections" ? "Collections" : "Withdrawals"}At`] = restartedAt;
+    const nextAccounts = accounts.map((account) => account.holder !== item.holder ? account : { ...account, walletRestartAt: { ...(account.walletRestartAt || {}), [item.wallet]: restartedAt }, verified: { ...(account.verified || {}), [item.wallet]: nextState } });
+    onUpdateAccounts(nextAccounts);
   };
   return <main className="logistics-page">
     <section className="panel logistics-panel">
