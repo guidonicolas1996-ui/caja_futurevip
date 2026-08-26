@@ -26,5 +26,6 @@ app.delete('/api/traspasos/:id', handle((req) => deleteTransfer(req.params.id)))
 app.post('/api/caja/cerrar', handle((req) => closeCurrent(req.body, req.query.boxId)));
 
 const port = Number(process.env.PORT) || 3001;
-app.get('/api/health', (req, res) => res.json({ ok: true, storage: process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? 'supabase' : 'local' }));
-app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port} (${process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? 'supabase' : 'local'})`));
+const storage = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY ? 'supabase' : 'local';
+app.get('/api/health', (req, res) => res.json({ ok: true, storage }));
+app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port} (${storage})`));
