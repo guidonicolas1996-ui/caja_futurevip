@@ -210,16 +210,17 @@ export async function closeAllOpenExcept() {
   const dateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit' });
   const closed = [];
   spaces.forEach((space) => {
-    const current = space.cajas.at(-1);
-    if (!current || current.status !== 'ABIERTA') return;
-    const currentDate = dateFormatter.format(new Date(current.date));
-    if (current.shift === 'Noche' && currentDate === excludedDate) return;
     const config = normalizeConfig(space.config);
-    const accountsTotal = (current.accounts || []).flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0);
-    current.cashFinal = accountsTotal;
-    current.status = 'CERRADA';
-    current.closedAt = new Date().toISOString();
-    closed.push({ boxId: space.id, cajaId: current.id, shift: current.shift });
+    space.cajas.forEach((caja) => {
+      if (caja.status !== 'ABIERTA') return;
+      const currentDate = dateFormatter.format(new Date(caja.date));
+      if (caja.shift === 'Noche' && currentDate === excludedDate) return;
+      const accountsTotal = (caja.accounts || []).flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0);
+      caja.cashFinal = accountsTotal;
+      caja.status = 'CERRADA';
+      caja.closedAt = new Date().toISOString();
+      closed.push({ boxId: space.id, cajaId: caja.id, shift: caja.shift });
+    });
   });
   await writeSpaces(spaces);
   return { closed };
