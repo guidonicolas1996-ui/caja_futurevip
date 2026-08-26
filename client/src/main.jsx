@@ -1394,8 +1394,9 @@ function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
     Object.entries(values.expensesByCategory).forEach(([key, value]) => { total.expensesByCategory[key] = (total.expensesByCategory[key] || 0) + value; });
     return total;
   }, { expensesByCategory: {} });
-  const summaries = [...groups, totalGroup].map((group) => ({ ...group, values: summarize(group.rows) }));
-  const total = summaries[3].values;
+  const summaries = groups.map((group) => ({ ...group, values: summarize(group.rows) }));
+  const total = summarize(totalGroup.rows) || { expensesByCategory: {} };
+  summaries.push({ ...totalGroup, values: total });
   const statistics = config.statistics || { employees: 1, proportionalPercent: 100 };
   const employees = number(statistics.employees) || 1;
   const percent = number(statistics.proportionalPercent);
