@@ -689,10 +689,9 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
-  align-items: stretch;
+  align-items: start;
   min-width: 0;
-  min-height: 0;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -706,7 +705,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #182123;
-  overflow: visible;
+  overflow: hidden;
 }
 .advertising-card { position: relative; }
 .advertising-card { grid-column: 1; }
@@ -723,8 +722,8 @@ main {
 .notes-toggle input:checked + i::after { background: #c5fff1; transform: translateX(12px); }
 .advertising-card > .section-head { position: relative; inset: auto; z-index: 1; display: flex; padding: 10px 12px 9px; pointer-events: auto; border-bottom: 1px solid rgba(82,101,103,.3); }
 .advertising-card > .section-head .section-title { display: flex; }
-.advertising-content { position: relative; z-index: 2; width: 100%; min-width: 0; box-sizing: border-box; padding: 8px; display: grid; align-content: start; gap: 6px; }
-.advertising-row { display: grid; grid-template-columns: minmax(90px, .75fr) minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; min-width: 0; min-height: 42px; padding: 4px; border-top: 1px solid rgba(82,101,103,.22); }
+.advertising-content { position: relative; z-index: 2; display: grid; align-content: start; gap: 6px; width: 100%; min-width: 0; min-height: 94px; box-sizing: border-box; padding: 8px; }
+.advertising-row { display: grid; grid-template-columns: minmax(90px, .75fr) minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; width: 100%; min-width: 0; min-height: 42px; padding: 4px; border-top: 1px solid rgba(82,101,103,.22); }
 .advertising-row:first-child { border-top: 0; }
 .advertising-row > strong { display: flex; align-items: center; gap: 8px; height: 32px; margin-right: 12px; padding-right: 12px; border-right: 1px solid rgba(71, 85, 105, .6); color: #d8e0e0; font-size: 10px; white-space: nowrap; }
 .advertising-row > strong svg { color: #b79cff; flex: 0 0 auto; }
