@@ -804,6 +804,11 @@ main {
 .account-grid td:last-child {
   border-left-color: rgba(82, 101, 103, .2);
 }
+.account-grid .total-column,
+.account-grid .total-cell,
+.account-grid .grand-total {
+  min-width: 7ch;
+}
 .account-grid thead th {
   color: var(--muted);
   font-weight: 500;

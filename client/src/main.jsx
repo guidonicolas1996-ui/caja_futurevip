@@ -826,7 +826,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
               {wallets.map((wallet) => (
                 <th className={walletModeClass(config, wallet)} key={wallet}>{wallet}</th>
               ))}
-              <th>Total</th>
+              <th className="total-column">Total</th>
             </tr>
           </thead>
           <tbody>
