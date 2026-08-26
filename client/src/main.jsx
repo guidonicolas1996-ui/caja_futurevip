@@ -1301,15 +1301,7 @@ function ChipsSection({ caja, update }) {
         {caja.chips.map((chip, index) => (
           <div className="chip-row" key={chip.platform}>
             <b>{chip.platform}</b>
-            <AmountInput
-              value={chip.initial}
-              className="chip-initial-input"
-              onChange={(value) => {
-                const chips = structuredClone(caja.chips);
-                chips[index].initial = value;
-                update({ chips });
-              }}
-            />
+            <span className="readonly-amount chip-initial-input">{money(chip.initial)}</span>
             <AmountInput
               value={chip.final}
               onChange={(value) => {
@@ -1475,7 +1467,7 @@ function SummaryCard({ caja, calculations, update }) {
       <div className="metric-list">
         <div className="editable-summary-metric">
           <span>Caja inicial</span>
-          <AmountInput value={caja.cashInitial} onChange={(value) => update({ cashInitial: value })} />
+          <span className="readonly-amount">{money(caja.cashInitial)}</span>
         </div>
         {metric("Caja final", calculations.cashFinal)}
         {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
@@ -1500,7 +1492,7 @@ function SummaryCard({ caja, calculations, update }) {
               {metric("Sobrante / Faltante", calculations.shortage, "highlight")}
               <div className="editable-summary-metric">
                 <span>Caja inicial</span>
-                <AmountInput value={caja.cashInitial} onChange={(value) => update({ cashInitial: value })} />
+                <span className="readonly-amount">{money(caja.cashInitial)}</span>
               </div>
               {metric("Caja final", calculations.cashFinal)}
               {metric("Pre diferencia", calculations.preDifference)}
