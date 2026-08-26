@@ -751,13 +751,14 @@ main {
 @media (max-width: 1100px) { .advertising-panel { grid-template-columns: 1fr; } .advertising-card, .bonus-card, .chips-card { grid-column: auto; } .advertising-actions { padding: 12px 0 0; border-top: 1px solid var(--line); border-left: 0; } }
 @media (max-width: 700px) { .advertising-row { grid-template-columns: 1fr; gap: 7px; } .advertising-actions .accounts-header-actions { flex-wrap: wrap; } .advertising-actions .final-chip-fields { justify-content: flex-start; } }
 .quick-bonus-access {
-  display: grid;
+  display: flex;
   position: relative;
-  align-items: stretch;
-  align-content: center;
-  grid-auto-rows: max-content;
-  gap: 8px;
-  height: 116px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 9px;
+  box-sizing: border-box;
+  min-height: 116px;
+  height: 100%;
   padding: 14px;
   border: 0;
   border-radius: 0;
