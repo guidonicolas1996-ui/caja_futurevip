@@ -787,7 +787,7 @@ main {
 .publicity-chips-panel > .section-head { display: flex; align-items: center; padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
 .publicity-chip-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 12px; }
 .publicity-chip-list label { display: grid; gap: 4px; min-width: 0; color: #cbd5e1; font-size: 10px; font-weight: 600; }
-.publicity-chip-list .amount-input { width: 100%; height: 30px; }
+.publicity-chip-list .amount-input { width: 100%; height: 30px; border-color: var(--platform-accent, var(--line)); }
 @media (max-width: 1100px) { .publicity-layout { grid-template-columns: 1fr 1fr; } .publicity-panel { grid-column: 1 / -1; } }
 @media (max-width: 700px) { .publicity-layout { grid-template-columns: 1fr; } .publicity-panel { grid-column: auto; } .publicity-item { grid-template-columns: 1fr; gap: 7px; } .publicity-name { padding-bottom: 4px; border-bottom: 1px solid rgba(82,101,103,.3); } .publicity-rate { justify-self: start; } }
 @media (max-width: 700px) { .publicity-panel > .section-head .icon-button { left: auto; right: 10px; } }

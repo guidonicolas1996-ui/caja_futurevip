@@ -774,7 +774,7 @@ function AdvertisingSection({ caja, update, boxes, config, onViewBonuses, onAddM
   </section>;
 }
 
-function AdvertisingSectionRebuilt({ caja, update, boxes, onViewBonuses, onAddManualBonus, onNotify }) {
+function AdvertisingSectionRebuilt({ caja, update, boxes, config, onViewBonuses, onAddManualBonus, onNotify }) {
   const advertising = caja.advertising || {};
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...(advertising[name] || {}), ...patch } } });
   const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
@@ -804,7 +804,7 @@ function AdvertisingSectionRebuilt({ caja, update, boxes, onViewBonuses, onAddMa
   return <div className="publicity-layout" onClick={(event) => { if (event.target instanceof HTMLInputElement && event.target.closest(".publicity-panel")) event.target.select(); }}>
     <section className="panel publicity-panel"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="publicity-list">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const total = number(item.total); const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const response = number(item.new) + number(item.repeated) - total; return <div className="publicity-item" key={name}><strong className="publicity-name"><ReceiptText size={13} />{name}</strong><div className="publicity-numbers"><label><span>Total</span><input maxLength={3} inputMode="numeric" value={item.total ?? 0} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><span>Nuevos</span><input maxLength={3} inputMode="numeric" value={item.new ?? 0} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><span>Repetidos</span><input maxLength={3} inputMode="numeric" value={item.repeated ?? 0} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><span>S/Resp</span><b>{response}</b></label></div><div className="publicity-derived"><span>Derivados <b>{derived}</b></span><div>{boxes.map((box) => <label key={box.id}><small>{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] ?? 0} onChange={(event) => updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: Math.max(0, Number(String(event.target.value).replace(/\D/g, "").slice(0, 3)) || 0) } })} /></label>)}</div></div><strong className="publicity-rate"><ReceiptText size={11} />{total ? Math.round((derived / total) * 100) : 0}%</strong></div>; })}</div></section>
     <section className="panel publicity-bonus-panel"><QuickBonusAccess caja={caja} update={update} onViewBonuses={onViewBonuses} onAddManualBonus={onAddManualBonus} /></section>
-    <section className="panel publicity-chips-panel"><SectionHead icon={<Ticket size={16} />} title="Fichas Finales" /><div className="publicity-chip-list">{caja.chips.map((chip, index) => <label key={chip.platform}><span>Ficha Final ({chip.platform})</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /></label>)}</div></section>
+    <section className="panel publicity-chips-panel"><SectionHead icon={<Ticket size={16} />} title="Fichas Finales" /><div className="publicity-chip-list">{caja.chips.map((chip, index) => <label key={chip.platform} style={{ "--platform-accent": boxColorStyle(config.platformColors?.[chip.platform] || "teal")["--box-accent"] }}><span>Ficha Final ({chip.platform})</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /></label>)}</div></section>
   </div>;
 }
 
@@ -2224,7 +2224,7 @@ function App() {
         />
         <div className="dashboard-grid">
           <div className="content-column">
-            <AdvertisingSectionRebuilt caja={caja} update={update} boxes={boxes} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} />
+            <AdvertisingSectionRebuilt caja={caja} update={update} boxes={boxes} config={config} onViewBonuses={() => setBonusViewRequest((request) => request + 1)} onAddManualBonus={() => setBonusEditorRequest((request) => request + 1)} onNotify={notify} />
             <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
             <WalletRoute caja={caja} config={config} onUpdateAccounts={updateAccountsFromLogistics} />
             <div className="operations-grid">
