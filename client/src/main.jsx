@@ -1651,6 +1651,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   const dateValue = (value) => value ? new Date(value).getTime() : 0;
   const restartFor = (item) => {
     const state = stateFor(item.row, item.wallet);
+    if (item.row.walletRestartAt?.[item.wallet]) return item.row.walletRestartAt[item.wallet];
     if (state.lastRestartAt) return state.lastRestartAt;
     return [state.lastCollectionsAt, state.lastWithdrawalsAt, item.row.walletBoxUpdatedAt?.[item.wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0];
   };
@@ -1671,7 +1672,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   const updateRestart = (item, value) => {
     if (!value) return;
     const restart = new Date(value).toISOString();
-    onUpdateAccounts(accounts.map((account) => account.holder !== item.holder ? account : { ...account, verified: { ...(account.verified || {}), [item.wallet]: { ...stateFor(account, item.wallet), lastRestartAt: restart } } }));
+    onUpdateAccounts(accounts.map((account) => account.holder !== item.holder ? account : { ...account, walletRestartAt: { ...(account.walletRestartAt || {}), [item.wallet]: restart } }));
   };
   const updateState = (item, flag) => {
     const state = stateFor(item.row, item.wallet);
