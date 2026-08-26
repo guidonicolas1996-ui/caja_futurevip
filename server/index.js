@@ -28,8 +28,9 @@ app.post('/api/caja/cerrar', handle((req) => closeCurrent(req.body, req.query.bo
 
 const port = Number(process.env.PORT) || 3001;
 app.get('/api/health', async (req, res) => {
-  try { await getBoxes(); res.json({ ok: true, storage: 'supabase', apiVersion: '2026-08-26-reset' }); }
-  catch (error) { res.status(503).json({ ok: false, storage: 'supabase', error: error.message }); }
+  const environment = { supabaseUrl: Boolean(process.env.SUPABASE_URL?.trim()), serviceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) };
+  try { await getBoxes(); res.json({ ok: true, storage: 'supabase', apiVersion: '2026-08-26-reset', environment }); }
+  catch (error) { res.status(503).json({ ok: false, storage: 'supabase', apiVersion: '2026-08-26-reset', environment, error: error.message }); }
 });
 app.use('/api', (req, res) => res.status(404).json({ error: `Ruta de API no encontrada: ${req.method} ${req.path}. Verificá que el backend esté actualizado.` }));
 app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port} (supabase)`));
