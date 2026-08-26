@@ -758,10 +758,10 @@ main {
 .publicity-layout > .panel { min-width: 0; height: 100%; margin: 0; overflow: hidden; }
 .publicity-panel { min-height: 116px; }
 .publicity-panel { position: relative; }
-.publicity-panel > .section-head { display: flex; padding: 7px 12px 6px; border-bottom: 1px solid rgba(82,101,103,.3); }
+.publicity-panel > .section-head { display: flex; padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
 .publicity-panel > .section-head .section-title h2 { font-size: 13px; font-weight: 700; }
 .publicity-panel > .section-head .section-title svg { color: #a78bfa; }
-.publicity-panel > .section-head .icon-button { position: absolute; top: calc(50% + 10px); right: 9px; z-index: 3; transform: translateY(-50%); }
+.publicity-panel > .section-head .icon-button { position: absolute; top: calc(50% + 18px); right: 9px; z-index: 3; transform: translateY(-50%); }
 .publicity-list { display: grid; gap: 4px; padding: 8px 42px 8px 8px; }
 .publicity-item { display: grid; grid-template-columns: minmax(90px, .75fr) minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 7px; align-items: center; min-width: 0; min-height: 34px; padding: 3px 4px; border-top: 1px solid rgba(82,101,103,.22); }
 .publicity-item:first-child { border-top: 0; }
