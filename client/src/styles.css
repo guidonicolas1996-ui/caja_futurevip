@@ -283,6 +283,8 @@
 .logistics-row.collections { background: #34746d1c; }
 .logistics-row.withdrawals { background: #e8d47717; }
 .logistics-row.both { background: #b06a471c; }
+.logistics-row.today { background: rgba(236, 129, 127, .14); }
+.logistics-row.yesterday { background: rgba(245, 173, 105, .13); }
 .logistics-row > * { min-width: 0; padding: 5px 7px; }
 .logistics-row b, .logistics-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .logistics-row strong { color: var(--cyan); }
@@ -290,6 +292,10 @@
 .logistics-row time { color: #aab7b8; font: 9px "DM Mono"; white-space: nowrap; }
 .logistics-row time.today { color: var(--red); font-weight: 700; }
 .logistics-row time.yesterday { color: var(--orange); font-weight: 700; }
+.logistics-restart-input { width: 100%; min-width: 0; padding: 5px 6px; color: #aab7b8; background: transparent; border: 1px solid transparent; border-radius: 4px; font: 9px "DM Mono"; }
+.logistics-restart-input:hover, .logistics-restart-input:focus { border-color: var(--line); background: #202a2c; }
+.logistics-row.today .logistics-restart-input { color: var(--red); font-weight: 700; }
+.logistics-row.yesterday .logistics-restart-input { color: var(--orange); font-weight: 700; }
 .logistics-check { display: grid; place-items: center; padding: 0 !important; }
 .logistics-check input { position: absolute; opacity: 0; pointer-events: none; }
 .logistics-check span { width: 16px; height: 16px; border: 1px solid #718083; border-radius: 3px; cursor: pointer; }
