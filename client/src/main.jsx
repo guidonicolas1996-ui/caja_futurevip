@@ -1868,6 +1868,9 @@ function App() {
   const [boxes, setBoxes] = useState(null);
   const [boxHistories, setBoxHistories] = useState({});
   const [activeBoxId, setActiveBoxId] = useState(null);
+  const pendingSaveRef = React.useRef(null);
+  const saveTimerRef = React.useRef(null);
+  const saveInFlightRef = React.useRef(false);
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = caja?.status !== "ABIERTA";
@@ -1957,15 +1960,44 @@ function App() {
     if (result.error) return;
     setCaja(result.currents[activeBoxId]);
   };
+  const flushSave = async () => {
+    if (saveInFlightRef.current || !pendingSaveRef.current) return;
+    const queuedSave = pendingSaveRef.current;
+    pendingSaveRef.current = null;
+    saveInFlightRef.current = true;
+    try {
+      const savedCaja = await api(`${queuedSave.selectedIndex === 0 ? `/api/caja/actualizar?boxId=${queuedSave.boxId}` : `/api/caja/${queuedSave.cajaId}?boxId=${queuedSave.boxId}`}`, {
+        method: "PUT",
+        body: JSON.stringify(queuedSave.patch),
+      });
+      if (!pendingSaveRef.current) setCaja(savedCaja);
+    } catch (error) {
+      notify(error.message);
+    } finally {
+      saveInFlightRef.current = false;
+      if (pendingSaveRef.current) {
+        setSaving(true);
+        flushSave();
+      } else {
+        setSaving(false);
+      }
+    }
+  };
   const update = (patch, immediate = false) => {
     setCaja((current) => ({ ...current, ...patch }));
+    pendingSaveRef.current = {
+      patch: { ...(pendingSaveRef.current?.patch || {}), ...patch },
+      boxId: activeBoxId,
+      cajaId: caja?.id,
+      selectedIndex,
+    };
     setSaving(true);
-    clearTimeout(window.saveTimer);
-    const savePatch = () => api(`${selectedIndex === 0 ? `/api/caja/actualizar?boxId=${activeBoxId}` : `/api/caja/${caja.id}?boxId=${activeBoxId}`}`, {
-          method: "PUT",
-          body: JSON.stringify(patch),
-        }).then((savedCaja) => { setCaja(savedCaja); setSaving(false); }).catch((error) => { setSaving(false); notify(error.message); });
-    window.saveTimer = immediate ? savePatch() : setTimeout(savePatch, 350);
+    clearTimeout(saveTimerRef.current);
+    if (immediate) {
+      flushSave();
+    } else {
+      saveTimerRef.current = window.setTimeout(flushSave, 350);
+    }
   };
   const updateLogisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
