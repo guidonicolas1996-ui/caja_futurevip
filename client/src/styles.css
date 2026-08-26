@@ -789,6 +789,10 @@ main {
 .publicity-chip-list label { display: grid; align-content: center; gap: 4px; min-width: 0; color: #cbd5e1; font-size: 10px; font-weight: 600; text-align: center; }
 .publicity-chip-list .amount-input { width: 100%; height: 30px; border-color: var(--platform-accent, var(--line)); }
 .publicity-chip-list .amount-input input { text-align: center; }
+.publicity-chip-list small { display: block; margin-top: 1px; color: var(--muted); font: 11px "DM Mono"; text-align: right; }
+.publicity-chip-list small.positive { color: #34d399; }
+.publicity-chip-list small.negative { color: var(--red); }
+.publicity-chip-list small.neutral { color: var(--muted); }
 @media (max-width: 1100px) { .publicity-layout { grid-template-columns: 1fr 1fr; } .publicity-panel { grid-column: 1 / -1; } }
 @media (max-width: 700px) { .publicity-layout { grid-template-columns: 1fr; } .publicity-panel { grid-column: auto; } .publicity-item { grid-template-columns: 1fr; gap: 7px; } .publicity-name { padding-bottom: 4px; border-bottom: 1px solid rgba(82,101,103,.3); } .publicity-rate { justify-self: start; } }
 @media (max-width: 700px) { .publicity-panel > .section-head .icon-button { left: auto; right: 10px; } }
