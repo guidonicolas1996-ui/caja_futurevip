@@ -1488,7 +1488,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
     const setting = config.accounts.walletSettings[row.holder]?.[wallet] || { category: "Normal" };
     return { key: keyFor(row.holder, wallet), holder: row.holder, wallet, category: setting.category || "Normal", mode: config.accounts.walletModes?.[wallet] || "Cobros + Retiros", row };
   }));
-  const included = candidates.filter((item) => item.mode === "Cobros + Retiros" || logistics.added.includes(item.key));
+  const included = candidates.filter((item) => ["Cobros + Retiros", "Solo Cobros"].includes(item.mode) || logistics.added.includes(item.key));
   const orderIndex = (key) => logistics.order.indexOf(key);
   const ordered = included.slice().sort((first, second) => {
     const firstOrder = orderIndex(first.key);
@@ -1509,7 +1509,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
     const otherKeys = ordered.filter((item) => item.category !== category).map((item) => item.key);
     saveLogistics({ order: [...otherKeys, ...keys] });
   };
-  const addable = candidates.filter((item) => item.mode !== "Cobros + Retiros" && !logistics.added.includes(item.key));
+  const addable = candidates.filter((item) => !["Cobros + Retiros", "Solo Cobros"].includes(item.mode) && !logistics.added.includes(item.key));
   const addWallet = (event) => {
     const key = event.target.value;
     if (!key) return;
