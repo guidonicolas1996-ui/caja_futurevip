@@ -779,12 +779,12 @@ function AdvertisingSectionRebuilt({ caja, update, boxes, config, onViewBonuses,
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...(advertising[name] || {}), ...patch } } });
   const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
   const copySummary = async () => {
-    const lines = ["*Conteo de Publicidad*", ""];
-    ["Publicidad A", "Publicidad B"].forEach((name) => {
+    const lines = ["*CONTEO DE PUBLICIDAD:*", ""];
+    ["Publicidad A", "Publicidad B"].forEach((name, index) => {
       const item = advertising[name] || {};
       const total = number(item.total);
       const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0);
-      lines.push(`*${name}*`, `*Efectividad: ${total ? Math.round((derived / total) * 100) : 0}%*`, "", `*Llegados: ${total}*`, `Nuevos: ${number(item.new)}`, `Repetidos: ${number(item.repeated)}`, `S/Resp: ${number(item.new) + number(item.repeated) - total}`, "", `*Derivados: ${derived}*`, ...boxes.map((box) => `${box.title}: ${number(item.derived?.[box.id])}`), "");
+      lines.push(`*${name}*`, `*Efectividad: ${total ? Math.round((derived / total) * 100) : 0}%*`, "", `*Llegados: ${total}*`, `Nuevos: ${number(item.new)}`, `Repetidos: ${number(item.repeated)}`, `S/Resp: ${number(item.new) + number(item.repeated) - total}`, "", `*Derivados: ${derived}*`, ...boxes.map((box) => `${box.title}: ${number(item.derived?.[box.id])}`), "", ...(index === 0 ? ["---------------------", ""] : []));
     });
     const text = lines.join("\n");
     try {
