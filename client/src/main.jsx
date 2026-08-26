@@ -402,6 +402,17 @@ function MonthlyGoalConfig({ draft, update }) {
   </section>;
 }
 
+function MonthlyGoalProgress({ config }) {
+  const goal = config.monthlyGoal || {};
+  const finalGoal = Math.max(0, number(goal.final));
+  const achieved = Math.max(0, number(goal.achieved));
+  const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
+  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual">
+    <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
+    <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span>Objetivo actual {money(achieved)}</span><span>Objetivo final {money(finalGoal)}</span></div>
+  </section>;
+}
+
 function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, embedded = false }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
