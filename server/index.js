@@ -25,11 +25,11 @@ app.post('/api/traspasos', handle((req) => createTransfer(req.body)));
 app.put('/api/traspasos/:id', handle((req) => updateTransfer(req.params.id, req.body)));
 app.delete('/api/traspasos/:id', handle((req) => deleteTransfer(req.params.id)));
 app.post('/api/caja/cerrar', handle((req) => closeCurrent(req.body, req.query.boxId)));
-app.use('/api', (req, res) => res.status(404).json({ error: `Ruta de API no encontrada: ${req.method} ${req.path}. Verificá que el backend esté actualizado.` }));
 
 const port = Number(process.env.PORT) || 3001;
 app.get('/api/health', async (req, res) => {
-  try { await getBoxes(); res.json({ ok: true, storage: 'supabase' }); }
+  try { await getBoxes(); res.json({ ok: true, storage: 'supabase', apiVersion: '2026-08-26-reset' }); }
   catch (error) { res.status(503).json({ ok: false, storage: 'supabase', error: error.message }); }
 });
+app.use('/api', (req, res) => res.status(404).json({ error: `Ruta de API no encontrada: ${req.method} ${req.path}. Verificá que el backend esté actualizado.` }));
 app.listen(port, '0.0.0.0', () => console.log(`API de caja lista en http://localhost:${port} (supabase)`));
