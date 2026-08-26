@@ -1402,7 +1402,7 @@ function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
   const percent = number(statistics.proportionalPercent);
   const updateStatistics = (patch) => onConfigChange({ ...config, statistics: { ...statistics, ...patch } });
   const metricOptions = [{ key: "tips", label: "Propinas" }, { key: "found", label: "Encontrado" }, { key: "granted", label: "Bonos otorgados" }, { key: "expenses", label: "Salidas" }, { key: "ta", label: "Cargas T.A." }];
-  const chartRows = [...groups, totalGroup].map((group) => ({ label: group.shift, value: group.shift === "Total" ? total[chartMetric] : group.values[chartMetric] || 0 }));
+  const chartRows = summaries.map((group) => ({ label: group.shift, value: group.values?.[chartMetric] || 0 }));
   const maxChart = Math.max(...chartRows.map((row) => row.value), 1);
   const metrics = [{ label: "Propinas", key: "tips" }, { label: "Dinero encontrado", key: "found" }, { label: "Redondeo", key: "rounding" }, { label: "Bonos otorgados", key: "granted" }, { label: "Bonos recuperados", key: "recovered" }, { label: "Bonos netos", key: "bonusesNet" }, { label: "Traspasos", key: "transfers" }, { label: "Cargas T.A.", key: "ta" }, { label: "Caja inicial", key: "cashInitial" }, { label: "Caja final", key: "cashFinal" }, { label: "Saldo", key: "balance" }, { label: "Pre diferencia", key: "preDifference" }, { label: "Diferencia", key: "difference" }, { label: "Diferencia caja", key: "cashDifference" }, { label: "Diferencia real", key: "realDifference" }];
   return <main className="statistics-page">
