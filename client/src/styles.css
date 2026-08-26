@@ -621,8 +621,8 @@ main {
 .notes-toggle i::after { content: ""; position: absolute; width: 12px; height: 12px; top: 2px; left: 2px; border-radius: 50%; background: #718083; transition: transform 120ms ease, background 120ms ease; }
 .notes-toggle input:checked + i { background: #34746d; }
 .notes-toggle input:checked + i::after { background: #c5fff1; transform: translateX(12px); }
-.advertising-card > .section-head { position: absolute; inset: 0; z-index: 3; display: block; padding: 0; pointer-events: none; }
-.advertising-card > .section-head .section-title { display: none; }
+.advertising-card > .section-head { position: relative; inset: auto; z-index: 1; display: flex; padding: 10px 12px 9px; pointer-events: auto; border-bottom: 1px solid rgba(82,101,103,.3); }
+.advertising-card > .section-head .section-title { display: flex; }
 .advertising-content { position: relative; z-index: 2; align-self: stretch; width: 100%; min-width: 0; box-sizing: border-box; padding: 8px 46px 8px 8px; display: flex; flex-direction: column; justify-content: center; }
 .advertising-row { display: grid; grid-template-columns: 92px minmax(0, 1.1fr) minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px; border-top: 1px solid rgba(82,101,103,.22); }
 .advertising-row:first-child { border-top: 0; }
@@ -807,7 +807,7 @@ main {
 .account-grid .total-column,
 .account-grid .total-cell,
 .account-grid .grand-total {
-  min-width: 7ch;
+  min-width: 14ch;
 }
 .account-grid thead th {
   color: var(--muted);
