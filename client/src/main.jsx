@@ -1410,7 +1410,8 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
   };
   const dateValue = (value) => value ? new Date(value).getTime() : 0;
   const logisticsOrder = config.logistics?.order || [];
-  const items = caja.accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal").map((wallet) => ({
+  const isNormalWallet = (row, wallet) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal" && config.accounts.walletModes?.[wallet] !== "Solo Depósito";
+  const items = caja.accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => isNormalWallet(row, wallet)).map((wallet) => ({
     key: `${row.holder}::${wallet}`,
     holder: row.holder,
     wallet,
@@ -1436,7 +1437,7 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     const now = new Date().toISOString();
     const accounts = structuredClone(caja.accounts);
     accounts.forEach((row) => {
-      const normalWallets = config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false && (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === "Normal");
+      const normalWallets = config.accounts.wallets.filter((wallet) => isNormalWallet(row, wallet));
       normalWallets.forEach((wallet) => {
         const item = items.find((candidate) => candidate.holder === row.holder && candidate.wallet === wallet);
         if (!item) return;
