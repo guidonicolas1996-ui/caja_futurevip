@@ -258,11 +258,11 @@ function TransferBoxPicker({ label, boxes, value, excludeId, onChange }) {
   </div>;
 }
 
-function ConfirmDialog({ message, onConfirm, onCancel, title = "¿Eliminar registro?", confirmLabel = "Eliminar", confirmIcon = <Trash2 size={15} /> }) {
+function ConfirmDialog({ message, onConfirm, onCancel, title = "¿Eliminar registro?", confirmLabel = "Eliminar", confirmIcon = <Trash2 size={15} />, dialogIcon = <Trash2 size={21} /> }) {
   return (
     <div className="modal-backdrop confirm-backdrop" onClick={onCancel}>
           <div className="modal confirm-dialog" onClick={(event) => event.stopPropagation()}>
-              <div className="modal-icon"><Trash2 size={21} /></div>
+              <div className="modal-icon">{dialogIcon}</div>
             <h2>{title}</h2>
         <p>{message}</p>
         <div className="modal-actions">
@@ -1382,7 +1382,7 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>Reinicio más antiguo · {formatRestart(recommended.restart)}</small></div>
     <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => requestInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
     <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : "clickable"}`} key={`${item.key}-${index}`} onClick={() => index > 0 && requestInUse(item)} role={index > 0 ? "button" : undefined} tabIndex={index > 0 ? 0 : undefined} onKeyDown={(event) => { if (index > 0 && (event.key === "Enter" || event.key === " ")) requestInUse(item); }}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
-    {pendingWallet && <ConfirmDialog title="Cambiar billetera en uso" message={`¿Desea colocar en uso la billetera ${pendingWallet.holder} · ${pendingWallet.wallet}?`} confirmLabel="Colocar en uso" confirmIcon={<Check size={15} />} onCancel={() => setPendingWallet(null)} onConfirm={() => { markInUse(pendingWallet); setPendingWallet(null); }} />}
+    {pendingWallet && <ConfirmDialog title="Cambiar billetera en uso" message={`¿Desea colocar en uso la billetera ${pendingWallet.holder} · ${pendingWallet.wallet}?`} confirmLabel="Colocar en uso" confirmIcon={<Check size={15} />} dialogIcon={<WalletCards size={21} />} onCancel={() => setPendingWallet(null)} onConfirm={() => { markInUse(pendingWallet); setPendingWallet(null); }} />}
   </section>;
 }
 
@@ -1797,6 +1797,24 @@ function App() {
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = caja?.status !== "ABIERTA";
+  const isReadOnlyAction = (element) => Boolean(element.closest?.(".modal-close, .ghost-button, button[title^='Ver'], button[title^='Cerrar']"));
+  useEffect(() => {
+    const content = document.querySelector(".box-content");
+    if (!content) return undefined;
+    const applyReadOnly = () => {
+      content.querySelectorAll("input, textarea, select, button").forEach((element) => {
+        element.disabled = readOnly && !isReadOnlyAction(element);
+      });
+      content.querySelectorAll("[draggable]").forEach((element) => {
+        element.draggable = !readOnly;
+      });
+    };
+    applyReadOnly();
+    if (!readOnly) return undefined;
+    const observer = new MutationObserver(applyReadOnly);
+    observer.observe(content, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [readOnly, configurationOpen, statisticsOpen, logisticsOpen, historyOpen, bonusViewRequest, bonusEditorRequest]);
   useEffect(() => {
     setNotesEnabled(true);
   }, [caja?.id]);
@@ -2072,7 +2090,7 @@ function App() {
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
-        <fieldset className="box-content" disabled={readOnly}>
+        <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
@@ -2162,7 +2180,7 @@ function App() {
             </div>
           </div>
         </div></>}
-        </fieldset>
+        </div>
       </main>
       <SnapshotView caja={caja} calculations={calculations} snapshotRef={snapshotRef} config={config} boxes={boxes} activeBox={activeBox} />
       {confirm && (
