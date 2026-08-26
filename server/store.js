@@ -104,7 +104,7 @@ function normalizeConfig(config) {
   const sourceAvailability = accounts.availability || {};
   const availability = Object.fromEntries(holders.map((holder) => [holder, Object.fromEntries(wallets.map((wallet) => [wallet, sourceAvailability[holder]?.[wallet] !== false]))]));
   const sourceWalletSettings = accounts.walletSettings || {};
-  const walletSettings = Object.fromEntries(holders.map((holder) => [holder, Object.fromEntries(wallets.map((wallet) => { const legacySetting = sourceWalletSettings[wallet]; const setting = sourceWalletSettings[holder]?.[wallet] || (legacySetting && !legacySetting.category ? legacySetting : {}); return [wallet, { category: walletCategories.includes(setting.category) ? setting.category : 'Normal', boxId: setting.boxId || null }]; }))]));
+  const walletSettings = Object.fromEntries(holders.map((holder) => [holder, Object.fromEntries(wallets.map((wallet) => { const legacySetting = sourceWalletSettings[wallet]; const setting = sourceWalletSettings[holder]?.[wallet] || (legacySetting && !legacySetting.category ? legacySetting : {}); return [wallet, { category: walletCategories.includes(setting.category) ? setting.category : 'Normal', boxId: setting.boxId || null, alias: String(setting.alias || ''), cuil: String(setting.cuil || ''), password: String(setting.password || ''), note: String(setting.note || '') }]; }))]));
   const sourceWalletModes = accounts.walletModes || {};
   const walletModes = Object.fromEntries(wallets.map((wallet) => [wallet, ['Cobros + Retiros', 'Solo Cobros', 'Solo Depósito'].includes(sourceWalletModes[wallet]) ? sourceWalletModes[wallet] : 'Cobros + Retiros']));
   const sourceLogistics = config?.logistics || {};
