@@ -1272,7 +1272,15 @@ function ChipsSection({ caja, update }) {
         {caja.chips.map((chip, index) => (
           <div className="chip-row" key={chip.platform}>
             <b>{chip.platform}</b>
-            <div className="chip-initial-value">{money(chip.initial)}</div>
+            <AmountInput
+              value={chip.initial}
+              className="chip-initial-input"
+              onChange={(value) => {
+                const chips = structuredClone(caja.chips);
+                chips[index].initial = value;
+                update({ chips });
+              }}
+            />
             <AmountInput
               value={chip.final}
               onChange={(value) => {
@@ -1330,7 +1338,10 @@ function SummaryCard({ caja, calculations, update }) {
         </strong>
       </div>
       <div className="metric-list">
-        {metric("Caja inicial", calculations.cashInitial)}
+        <div className="editable-summary-metric">
+          <span>Caja inicial</span>
+          <AmountInput value={caja.cashInitial} onChange={(value) => update({ cashInitial: value })} />
+        </div>
         {metric("Caja final", calculations.cashFinal)}
         {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
         {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
@@ -1352,7 +1363,10 @@ function SummaryCard({ caja, calculations, update }) {
             <p>Detalle completo de los valores calculados para este turno.</p>
             <div className="advanced-summary-list">
               {metric("Sobrante / Faltante", calculations.shortage, "highlight")}
-              {metric("Caja inicial", calculations.cashInitial)}
+              <div className="editable-summary-metric">
+                <span>Caja inicial</span>
+                <AmountInput value={caja.cashInitial} onChange={(value) => update({ cashInitial: value })} />
+              </div>
               {metric("Caja final", calculations.cashFinal)}
               {metric("Pre diferencia", calculations.preDifference)}
               {metric("Diferencia", calculations.difference)}

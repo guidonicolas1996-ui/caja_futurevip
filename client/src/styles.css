@@ -244,6 +244,9 @@
 .api-error > div { max-width: 620px; }
 .api-error strong { display: block; color: #f1f7f5; font-size: 16px; }
 .api-error p { margin: 8px 0 16px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.editable-summary-metric { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.editable-summary-metric .amount-input { width: 112px; min-width: 0; }
+.chip-initial-input { width: 100%; min-width: 0; }
 @media (max-width: 700px) { .configuration-header { padding: 0 15px; } .configuration-header h1 { font-size: 18px; } .configuration-header .close-button { padding: 0 9px; font-size: 0; } .configuration-header .close-button svg { margin: 0; } .configuration-layout { display: block; padding: 20px 15px 40px; } .configuration-tabs { flex-direction: row; overflow-x: auto; margin-bottom: 24px; } .configuration-tabs button { flex: 0 0 auto; } .config-two-columns { grid-template-columns: 1fr; } .config-card, .config-list { padding: 16px; } .expense-config-row { flex-wrap: wrap; } .expense-config-row input { flex-basis: 100%; } }
 @media (max-width: 700px) { .config-target-bar { align-items: flex-start; flex-direction: column; gap: 9px; } .config-target-bar .box-selector { width: 100%; } }
 @media (max-width: 700px) { .wallet-config-row { grid-template-columns: 16px minmax(0, 1fr) 28px; } .wallet-config-row select { grid-column: 2; } .wallet-config-row select:nth-of-type(2) { grid-row: 3; } .wallet-config-row .delete-button { grid-column: 3; grid-row: 1; } }
