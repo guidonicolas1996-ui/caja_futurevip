@@ -706,7 +706,7 @@ main {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #182123;
-  overflow: hidden;
+  overflow: visible;
 }
 .advertising-card { position: relative; }
 .advertising-card { grid-column: 1; }
@@ -723,8 +723,8 @@ main {
 .notes-toggle input:checked + i::after { background: #c5fff1; transform: translateX(12px); }
 .advertising-card > .section-head { position: relative; inset: auto; z-index: 1; display: flex; padding: 10px 12px 9px; pointer-events: auto; border-bottom: 1px solid rgba(82,101,103,.3); }
 .advertising-card > .section-head .section-title { display: flex; }
-.advertising-content { position: relative; z-index: 2; align-self: stretch; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0; box-sizing: border-box; padding: 8px 46px 8px 8px; display: flex; flex-direction: column; justify-content: flex-start; }
-.advertising-row { display: grid; grid-template-columns: 92px minmax(0, 1.1fr) minmax(0, 1fr) auto; gap: 6px; align-items: center; padding: 4px; border-top: 1px solid rgba(82,101,103,.22); }
+.advertising-content { position: relative; z-index: 2; width: 100%; min-width: 0; box-sizing: border-box; padding: 8px; display: grid; align-content: start; gap: 6px; }
+.advertising-row { display: grid; grid-template-columns: minmax(90px, .75fr) minmax(0, 1.15fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; min-width: 0; min-height: 42px; padding: 4px; border-top: 1px solid rgba(82,101,103,.22); }
 .advertising-row:first-child { border-top: 0; }
 .advertising-row > strong { display: flex; align-items: center; gap: 8px; height: 32px; margin-right: 12px; padding-right: 12px; border-right: 1px solid rgba(71, 85, 105, .6); color: #d8e0e0; font-size: 10px; white-space: nowrap; }
 .advertising-row > strong svg { color: #b79cff; flex: 0 0 auto; }
@@ -736,12 +736,13 @@ main {
 .advertising-fields { grid-template-columns: repeat(4, minmax(38px, 1fr)); }
 .advertising-derived { grid-template-columns: repeat(2, minmax(38px, 1fr)); }
 .advertising-subgroup + .advertising-subgroup { position: relative; padding-left: 10px; border-left: 0; }
+.advertising-subgroup { min-width: 0; }
 .advertising-subgroup + .advertising-subgroup::before { content: ""; position: absolute; left: 0; top: 50%; width: 1px; height: 40px; margin: -20px 0 0; background: rgba(71, 85, 105, .6); }
 .advertising-fields label, .advertising-derived label { display: grid; gap: 3px; min-width: 0; }
 .advertising-fields small, .advertising-derived small { color: var(--muted); font-size: 8px; white-space: nowrap; }
 .advertising-derived .advertising-box-label { color: #fb923c !important; text-align: center; font-size: 11px; font-weight: 500; }
 .advertising-derived label:first-child .advertising-box-label { color: #a78bfa !important; }
-.advertising-fields input, .advertising-derived input { width: 38px; height: 22px; padding: 3px; border: 0; border-radius: 0; background: transparent; color: #d8e0e0; font: 10px "DM Mono"; text-align: right; }
+.advertising-fields input, .advertising-derived input { box-sizing: border-box; width: 100%; min-width: 0; height: 22px; padding: 3px; border: 0; border-radius: 0; background: transparent; color: #d8e0e0; font: 10px "DM Mono"; text-align: right; }
 .advertising-fields label + label, .advertising-derived label + label { padding-left: 5px; border-left: 1px solid rgba(82,101,103,.3); }
 .advertising-fields label:last-child b { height: 22px; padding: 4px; color: #d8e0e0; font: 10px "DM Mono"; }
 .advertising-actions { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; height: 100%; padding-left: 14px; border-left: 1px solid var(--line); }
@@ -749,7 +750,8 @@ main {
 .advertising-copy { position: absolute; top: 50%; right: 10px; z-index: 10; display: grid; padding: 6px; border: 1px solid rgba(71, 85, 105, .8); border-radius: 8px; background: #1e2338; color: #94a3b8; box-shadow: 0 10px 18px rgba(0,0,0,.3); pointer-events: auto; transform: translateY(-50%); }
 .advertising-copy:hover { color: #fff; }
 @media (max-width: 1100px) { .advertising-panel { grid-template-columns: 1fr; } .advertising-card, .bonus-card, .chips-card { grid-column: auto; } .advertising-actions { padding: 12px 0 0; border-top: 1px solid var(--line); border-left: 0; } }
-@media (max-width: 700px) { .advertising-row { grid-template-columns: 1fr; gap: 7px; } .advertising-actions .accounts-header-actions { flex-wrap: wrap; } .advertising-actions .final-chip-fields { justify-content: flex-start; } }
+@media (max-width: 900px) { .advertising-row { grid-template-columns: minmax(90px, .65fr) minmax(0, 1fr) minmax(0, 1fr); } .advertising-effectiveness { grid-column: 2 / -1; margin-left: 0; } }
+@media (max-width: 700px) { .advertising-row { grid-template-columns: 1fr; gap: 7px; } .advertising-row > strong { margin-right: 0; padding-right: 0; border-right: 0; } .advertising-effectiveness { grid-column: auto; } .advertising-actions .accounts-header-actions { flex-wrap: wrap; } .advertising-actions .final-chip-fields { justify-content: flex-start; } }
 .quick-bonus-access {
   display: flex;
   position: relative;
