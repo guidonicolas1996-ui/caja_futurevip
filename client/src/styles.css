@@ -2131,8 +2131,9 @@ select:focus {
 }
 .history-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
   gap: 5px;
 }
 .pending-notes {
