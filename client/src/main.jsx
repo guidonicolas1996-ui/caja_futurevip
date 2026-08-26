@@ -28,6 +28,7 @@ import {
   Settings2,
   Trash2,
   ReceiptText,
+  Target,
   Ticket,
   WalletCards,
   X,
@@ -389,6 +390,18 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
   </>;
 }
 
+function MonthlyGoalConfig({ draft, update }) {
+  const monthlyGoal = draft.monthlyGoal || { final: 0, achieved: 0 };
+  const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
+  return <section className="config-card monthly-goal-card">
+    <div className="config-list-head"><h3>Valores del objetivo</h3><span>Se actualizan manualmente</span></div>
+    <div className="monthly-goal-fields">
+      <label><span>Objetivo final</span><NumericInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
+      <label><span>Objetivo alcanzado</span><NumericInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /></label>
+    </div>
+  </section>;
+}
+
 function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, embedded = false }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
@@ -441,6 +454,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           <button className={tab === "accounts" ? "active" : ""} onClick={() => setTab("accounts")}><WalletCards size={17} /> Matriz de cuentas</button>
           <button className={tab === "expenses" ? "active" : ""} onClick={() => setTab("expenses")}><ReceiptText size={17} /> Gastos</button>
           <button className={tab === "platforms" ? "active" : ""} onClick={() => setTab("platforms")}><Ticket size={17} /> Control de fichas</button>
+          <button className={tab === "monthly-goal" ? "active" : ""} onClick={() => setTab("monthly-goal")}><Target size={17} /> Objetivo mensual</button>
         </nav>
         <main className="configuration-content">
           {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
@@ -452,6 +466,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
           {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas que aparecen en la matriz y en el control de fichas.</p></div><ConfigList title="Plataformas" items={draft.platforms} placeholder="Nombre de plataforma" onChange={(platforms) => setDraft({ ...draft, platforms })} /></>}
+          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivo mensual</span><h2>Seguimiento del objetivo</h2><p>Ingresá manualmente el objetivo final y el importe alcanzado durante el mes.</p></div><MonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           </>}
         </main>
       </div>
