@@ -71,7 +71,6 @@ async function readSpaces() {
   if (data?.spaces) {
     const spaces = data.spaces;
     spaces.updatedAt = data.updated_at;
-    if (normalizeSpaces(spaces)) await writeSpaces(spaces);
     return spaces;
   }
   throw new Error('La BDD no contiene el estado de la aplicación. No se crearán datos iniciales automáticamente.');
@@ -98,7 +97,7 @@ export async function deleteBox(id) { const spaces = await readSpaces(); if (spa
 export async function clearCajaData() { const spaces = await readSpaces(); const nextSpaces = spaces.map((space) => { const caja = blankCaja(0, null, space.config); caja.shift = 'Tarde'; caja.date = resetStartDate; return { ...space, cajas: [caja] }; }); nextSpaces.updatedAt = spaces.updatedAt; await writeSpaces(nextSpaces); return { resetStartDate, boxes: nextSpaces.map(({ id, title, color }) => ({ id, title, color })) }; }
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
-export async function getConfig(boxId) { const space = await getSpace(boxId); const normalized = normalizeConfig(space.config); if (JSON.stringify(normalized) !== JSON.stringify(space.config)) { space.config = normalized; const spaces = await readSpaces(); const index = spaces.findIndex((item) => item.id === space.id); spaces[index] = space; await writeSpaces(spaces); } return normalized; }
+export async function getConfig(boxId) { const space = await getSpace(boxId); return normalizeConfig(space.config); }
 export async function updateCurrent(patch, boxId) {
   const spaces = await readSpaces();
   const space = spaces.find((item) => item.id === boxId) || spaces[0];
