@@ -758,7 +758,7 @@ main {
 .publicity-layout > .panel { min-width: 0; height: 100%; margin: 0; overflow: hidden; }
 .publicity-panel { min-height: 116px; }
 .publicity-panel { position: relative; }
-.publicity-panel > .section-head, .publicity-chips-panel > .section-head { display: flex; align-items: center; height: 44px; min-height: 44px; box-sizing: border-box; padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
+.publicity-panel > .section-head, .publicity-chips-panel > .section-head { display: flex; align-items: center; height: 43px; min-height: 43px; box-sizing: border-box; padding: 10px 12px 9px; border-bottom: 1px solid rgba(82,101,103,.3); }
 .publicity-panel > .section-head .section-title h2 { font-size: 13px; font-weight: 700; }
 .publicity-panel > .section-head .section-title svg { color: #a78bfa; }
 .publicity-panel > .section-head .icon-button { position: absolute; top: calc(50% + 18px); right: 9px; z-index: 3; transform: translateY(-50%); }
