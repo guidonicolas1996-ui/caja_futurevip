@@ -122,7 +122,15 @@ const api = (url, options) =>
   fetch(`${import.meta.env.VITE_API_URL || ""}${url}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
-  }).then((r) => r.json());
+  }).then(async (response) => {
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      throw new Error("La API no está configurada: el servidor devolvió HTML en lugar de JSON. Revisá VITE_API_URL y que el backend esté desplegado.");
+    }
+    const result = await response.json();
+    if (!response.ok || result?.error) throw new Error(result?.error || `Error de API (${response.status})`);
+    return result;
+  });
 
 const boxColorStyle = (color) => {
   const palette = {
