@@ -120,24 +120,24 @@ const walletModeClass = (config, wallet) => ({
   "Solo Depósito": "wallet-mode-deposit",
 }[config.accounts.walletModes?.[wallet] || "Cobros + Retiros"]);
 const statisticsFor = (caja, config, activeBoxId) => {
-  const accounts = caja.accounts
-    .flatMap((row) => Object.entries(row.values).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
+  const accounts = (caja.accounts || [])
+    .flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
     .reduce((sum, value) => sum + number(value), 0);
-  const tips = caja.tips.reduce((sum, row) => sum + number(row.amount), 0);
-  const granted = caja.bonuses.reduce((sum, row) => sum + number(row.granted), 0);
-  const recovered = caja.bonuses.reduce((sum, row) => sum + number(row.recovered), 0);
-  const ta = caja.ta.reduce((sum, row) => sum + number(row.amount), 0);
+  const tips = (caja.tips || []).reduce((sum, row) => sum + number(row.amount), 0);
+  const granted = (caja.bonuses || []).reduce((sum, row) => sum + number(row.granted), 0);
+  const recovered = (caja.bonuses || []).reduce((sum, row) => sum + number(row.recovered), 0);
+  const ta = (caja.ta || []).reduce((sum, row) => sum + number(row.amount), 0);
   const found = (caja.foundMoney || []).reduce((sum, row) => sum + number(row.amount), 0);
   const rounding = number(caja.found);
   const expensesByCategory = config.expenses.reduce((result, category) => {
-    result[category.name] = caja.expenses.filter((row) => row.category === category.name).reduce((sum, row) => sum + number(row.amount), 0);
+    result[category.name] = (caja.expenses || []).filter((row) => row.category === category.name).reduce((sum, row) => sum + number(row.amount), 0);
     return result;
   }, {});
-  caja.expenses.forEach((row) => {
+  (caja.expenses || []).forEach((row) => {
     if (!(row.category in expensesByCategory)) expensesByCategory[row.category] = 0;
   });
   const expenses = Object.values(expensesByCategory).reduce((sum, value) => sum + value, 0);
-  const balance = caja.chips.reduce((sum, row) => sum + number(row.initial) - number(row.final), 0);
+  const balance = (caja.chips || []).reduce((sum, row) => sum + number(row.initial) - number(row.final), 0);
   const cashInitial = number(caja.cashInitial);
   const cashFinal = accounts;
   const preDifference = expenses + ta + cashFinal + granted - recovered;
@@ -1385,7 +1385,7 @@ function StatisticsPage({ history, config, activeBoxId, onConfigChange }) {
     if (name === "mes") return setRange(new Date(current.getFullYear(), current.getMonth(), 1), current);
     setRange(new Date(current.getFullYear(), current.getMonth() - 1, 1), new Date(current.getFullYear(), current.getMonth(), 0));
   };
-  const filtered = history.filter((caja) => { const date = new Date(caja.date); return date >= new Date(`${startDate}T00:00:00`) && date <= new Date(`${endDate}T23:59:59`); });
+  const filtered = (Array.isArray(history) ? history : []).filter((caja) => { const date = new Date(caja.date); return date >= new Date(`${startDate}T00:00:00`) && date <= new Date(`${endDate}T23:59:59`); });
   const groups = ["Mañana", "Tarde", "Noche"].map((shift) => ({ shift, rows: filtered.filter((caja) => caja.shift === shift) }));
   const totalGroup = { shift: "Total", rows: filtered };
   const summarize = (rows) => rows.reduce((total, caja) => {
