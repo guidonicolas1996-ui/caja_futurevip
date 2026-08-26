@@ -1651,7 +1651,8 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   const dateValue = (value) => value ? new Date(value).getTime() : 0;
   const restartFor = (item) => {
     const state = stateFor(item.row, item.wallet);
-    return [state.lastRestartAt, state.lastCollectionsAt, state.lastWithdrawalsAt, item.row.walletBoxUpdatedAt?.[item.wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0];
+    if (state.lastRestartAt) return state.lastRestartAt;
+    return [state.lastCollectionsAt, state.lastWithdrawalsAt, item.row.walletBoxUpdatedAt?.[item.wallet]].sort((first, second) => dateValue(second) - dateValue(first))[0];
   };
   const restartTone = (value) => {
     if (!value) return "";
