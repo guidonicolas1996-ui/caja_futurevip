@@ -1713,13 +1713,24 @@ select:focus {
   color: var(--cyan);
 }
 .bonus-editor-preview {
-  display: flex;
-  justify-content: space-between;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
   color: var(--muted);
   font-size: 10px;
+}
+.bonus-editor-preview-row,
+.bonus-editor-complete {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.bonus-editor-complete {
+  margin-bottom: 9px;
+  color: #d8e7e4;
+}
+.bonus-editor-complete b {
+  color: var(--cyan);
 }
 .bonus-editor-preview b {
   color: #d8e7e4;

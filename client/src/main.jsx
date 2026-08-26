@@ -1045,8 +1045,8 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
               ))}
             </div>
             <div className="bonus-editor-preview">
-              <span>Bono a agregar</span>
-              <b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b>
+              {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(editorAmount + editorAmount * (editorPercent / 100))}</b></div>}
+              <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
             </div>
             <div className="modal-actions">
               <button className="ghost-button" onClick={() => setEditorOpen(false)}>Cancelar</button>
