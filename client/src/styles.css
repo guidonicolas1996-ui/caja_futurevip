@@ -870,8 +870,9 @@ main {
 .quick-recent-bonus { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 9px; }
 .quick-recent-bonus.granted { color: var(--orange); }
 .quick-recent-bonus.recovered { color: var(--green); }
-.recent-bonus-value { display: flex; align-items: center; flex: 0 0 auto; gap: 5px; min-width: 0; white-space: nowrap; }
+.recent-bonus-value { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; gap: 4px; min-width: 0; white-space: nowrap; }
 .recent-bonus-time { color: var(--muted); font: 9px "DM Mono"; }
+.recent-bonus-value:has(input:focus) .recent-bonus-time { display: none; }
 .quick-recent-bonus input { width: 96px; padding: 0 0 2px; border: 0; border-bottom: 1px solid transparent; outline: 0; background: transparent; color: inherit; font: 9px "DM Mono"; text-align: right; }
 .quick-recent-bonus.granted input:focus { border-bottom-color: var(--orange); }
 .quick-recent-bonus.recovered input:focus { border-bottom-color: var(--green); }
@@ -919,6 +920,7 @@ main {
   padding-top: 5px;
   padding-bottom: 5px;
   font-size: 10px;
+  text-align: right;
 }
 .final-chip-field.has-value {
   color: #f4f8f8;
