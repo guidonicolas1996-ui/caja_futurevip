@@ -5,10 +5,11 @@ const n = (value) => Number(value) || 0;
 const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n(value));
 const time = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
 const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
-  const shiftDate = new Date(cajaDate);
   const bonusDate = new Date(createdAt);
-  const shiftStartAt = new Date(shiftDate.getFullYear(), shiftDate.getMonth(), shiftDate.getDate(), shiftStart);
-  const elapsed = (bonusDate - shiftStartAt) / 60000;
+  const minutes = bonusDate.getHours() * 60 + bonusDate.getMinutes();
+  if (shiftStart === 0 && minutes >= 16 * 60) return 0;
+  if (shiftStart === 16 && minutes < 8 * 60) return 3;
+  const elapsed = minutes - shiftStart * 60;
   return elapsed < 0 ? 0 : Math.min(3, Math.floor(elapsed / 120));
 };
 const shifts = { Noche: [0, "00:00 - 08:00"], Mañana: [8, "08:00 - 16:00"], Tarde: [16, "16:00 - 00:00"] };
