@@ -3793,8 +3793,8 @@ select:focus {
   text-align: center;
 }
 .bonus-modal .bonus-time-column .bonus-row {
-  grid-template-columns: minmax(48px, .8fr) minmax(52px, 1fr) repeat(3, 20px) !important;
-  gap: 4px !important;
+  grid-template-columns: minmax(58px, .82fr) minmax(106px, 1.48fr) repeat(3, 20px) !important;
+  gap: 3px !important;
   padding: 5px !important;
   border-radius: 6px;
   background: #202e30 !important;
@@ -3805,8 +3805,13 @@ select:focus {
 .bonus-modal .bonus-time-column .bonus-row .amount-input {
   height: 25px;
 }
+.bonus-modal .bonus-time-column .bonus-row .amount-input > span {
+  width: 12px;
+  min-width: 12px;
+  padding-left: 1px;
+}
 .bonus-modal .bonus-time-column .bonus-row .amount-input input {
-  padding: 4px 3px !important;
+  padding: 4px 5px 4px 1px !important;
   font-size: 10px;
 }
 .bonus-modal .bonus-time-column .bonus-row .bonus-toggle,
