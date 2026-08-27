@@ -2,8 +2,8 @@
   "name": "control-caja-server",
   "type": "module",
   "scripts": {
-    "dev": "node --watch index.js",
-    "start": "node index.js"
+    "dev": "node --env-file=.env --watch index.js",
+    "start": "node --env-file=.env index.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

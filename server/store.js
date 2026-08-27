@@ -51,10 +51,10 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => ({
   id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
   cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
   accountSections: structuredClone(previous?.accountSections || { deposits: false, shared: false }),
-  accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, walletBoxUpdatedAt: { ...(previousAccount?.walletBoxUpdatedAt ?? {}) }, walletRestartAt: { ...(previousAccount?.walletRestartAt ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
+  accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, holderId: config.accounts.holderEntities?.find((entity) => entity.name === holder)?.id, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletIds: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, config.accounts.walletEntities?.find((entity) => entity.name === wallet)?.id])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, walletBoxUpdatedAt: { ...(previousAccount?.walletBoxUpdatedAt ?? {}) }, walletRestartAt: { ...(previousAccount?.walletRestartAt ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
   bonuses: [], ta: [], tips: [], expenses: [], transfers: [], found: 0, foundMoney: [],
   advertising: previous?.shift === 'Tarde' ? blankAdvertising() : structuredClone(previous?.advertising || blankAdvertising()),
-  chips: config.platforms.map((platform) => { const previousChip = previous?.chips?.find((item) => item.platform === platform); const value = previousChip?.final ?? 0; return { platform, initial: value, final: value }; }),
+  chips: config.platforms.map((platform) => { const previousChip = previous?.chips?.find((item) => item.platform === platform); const value = previousChip?.final ?? 0; return { platform, platformId: config.platformEntities?.find((entity) => entity.name === platform)?.id, initial: value, final: value }; }),
   chipLoads: [],
 });
 async function writeSpaces(spaces, { allowSpaceDeletion = false } = {}) {
@@ -117,17 +117,18 @@ function normalizeConfig(config) {
   const monthlyGoal = { final: Math.max(0, Number(sourceMonthlyGoal.final) || 0), achieved: Math.max(0, Number(sourceMonthlyGoal.achieved) || 0) };
   const platforms = Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms;
   const platformColors = Object.fromEntries(platforms.map((platform, index) => [platform, colors.includes(config?.platformColors?.[platform]) ? config.platformColors[platform] : defaults.platformColors[platform] || colors[index % colors.length]]));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, platformColors, accounts: { holders, wallets, availability, walletSettings, walletModes }, expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, platforms };
+  const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, platformColors, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0);
   return source || { final: 0, achieved: 0 };
 }
 export async function getBoxes() { return (await readSpaces()).map(({ id, title, color }) => ({ id, title, color })); }
-export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = { ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }; const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
+export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = normalizeConfig({ ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
 export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
 export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next, { allowSpaceDeletion: true }); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
-export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = { Tarde: 'Mañana', Mañana: 'Noche', Noche: 'Tarde' }[oldest.shift] || 'Tarde'; const previousDate = new Date(new Date(oldest.date).getTime() - 8 * 60 * 60 * 1000).toISOString(); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
+export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; space.config = normalizeConfig(space.config); const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = { Tarde: 'Mañana', Mañana: 'Noche', Noche: 'Tarde' }[oldest.shift] || 'Tarde'; const previousDate = new Date(new Date(oldest.date).getTime() - 8 * 60 * 60 * 1000).toISOString(); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder || item.holderId === account.holderId); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
 export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }
@@ -201,11 +202,100 @@ export async function deleteTransfer(id) {
   spaces.forEach((space) => { const current = space.cajas.at(-1); const transfers = current.transfers || []; if (transfers.some((transfer) => transfer.id === id)) found = true; current.transfers = transfers.filter((transfer) => transfer.id !== id); });
   if (!found) throw new Error('Traspaso no encontrado'); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) };
 }
+function renameKeys(source, renames) {
+  if (!source || typeof source !== 'object' || Array.isArray(source)) return source;
+  return Object.fromEntries(Object.entries(source).map(([key, value]) => [renames[key] || key, value]));
+}
+function namesByIndex(previous, next) {
+  const renames = {};
+  (previous || []).forEach((name, index) => {
+    const nextName = next?.[index];
+    if (name && nextName && name !== nextName) renames[name] = nextName;
+  });
+  return renames;
+}
+function namesByEntity(previousEntities, nextEntities, previousNames, nextNames) {
+  if (!Array.isArray(previousEntities) || !previousEntities.length || !Array.isArray(nextEntities) || !nextEntities.length) return namesByIndex(previousNames, nextNames);
+  const nextById = new Map(nextEntities.filter((entity) => entity?.id).map((entity) => [entity.id, entity.name]));
+  return Object.fromEntries(previousEntities.map((entity) => [entity.name, nextById.get(entity.id)]).filter(([, name]) => name));
+}
+function assertRenameSafety(renames, previousNames, label) {
+  const targets = Object.values(renames).filter((name) => name);
+  if (new Set(targets).size !== targets.length) throw new Error(`No se guardó: el renombrado de ${label} genera nombres duplicados.`);
+  const previous = new Set(previousNames);
+  Object.entries(renames).forEach(([source, target]) => {
+    if (source !== target && previous.has(target) && !renames[target]) throw new Error(`No se guardó: no se puede renombrar ${label} "${source}" sobre "${target}" porque ese nombre ya tiene datos. Renombralo primero a otro nombre.`);
+  });
+}
+function assertUniqueNames(names, label) {
+  const meaningful = names.filter((name) => String(name || '').trim());
+  if (new Set(meaningful).size !== meaningful.length) throw new Error(`No se guardó: hay nombres repetidos en ${label}. Cada elemento debe conservar una identidad única.`);
+}
+function assertUniqueEntityIds(entities, label) {
+  const ids = entities.map((entity) => entity?.id).filter(Boolean);
+  if (new Set(ids).size !== ids.length) throw new Error(`No se guardó: hay IDs repetidos en ${label}. No se modificaron los datos.`);
+}
+function migrateConfigMaps(config, holderRenames, walletRenames, platformRenames) {
+  const next = structuredClone(config || {});
+  const accounts = next.accounts || {};
+  accounts.availability = Object.fromEntries(Object.entries(accounts.availability || {}).map(([holder, values]) => [holderRenames[holder] || holder, renameKeys(values, walletRenames)]));
+  accounts.walletSettings = Object.fromEntries(Object.entries(accounts.walletSettings || {}).map(([holder, values]) => [holderRenames[holder] || holder, renameKeys(values, walletRenames)]));
+  accounts.walletModes = renameKeys(accounts.walletModes, walletRenames);
+  next.platformColors = renameKeys(next.platformColors, platformRenames);
+  next.accounts = accounts;
+  if (next.logistics) {
+    const keyRename = (key) => {
+      const [holder, wallet] = String(key).split('::');
+      return `${holderRenames[holder] || holder}::${walletRenames[wallet] || wallet}`;
+    };
+    next.logistics = Object.fromEntries(Object.entries(next.logistics).map(([name, values]) => [name, Array.isArray(values) ? values.map(keyRename) : values]));
+  }
+  return next;
+}
+function migrateHistoricalReferences(spaces, holderRenames, walletRenames, platformRenames, config) {
+  const resolvedPlatformRenames = { ...platformRenames };
+  spaces.forEach((space) => space.cajas.forEach((caja) => {
+    (caja.chips || []).forEach((chip, index) => {
+      if (!config.platformEntities.some((entity) => entity.name === chip.platform) && config.platforms[index]) resolvedPlatformRenames[chip.platform] = config.platforms[index];
+    });
+  }));
+  spaces.forEach((space) => space.cajas.forEach((caja) => {
+    (caja.accounts || []).forEach((account) => {
+      const previousHolder = account.holder;
+      account.holder = holderRenames[previousHolder] || previousHolder;
+      account.holderId = config.accounts.holderEntities.find((entity) => entity.name === account.holder)?.id || account.holderId;
+      account.values = renameKeys(account.values, walletRenames);
+      account.walletBoxes = renameKeys(account.walletBoxes, walletRenames);
+      account.walletBoxUpdatedAt = renameKeys(account.walletBoxUpdatedAt, walletRenames);
+      account.walletRestartAt = renameKeys(account.walletRestartAt, walletRenames);
+      account.verified = renameKeys(account.verified, walletRenames);
+      account.notes = renameKeys(account.notes, walletRenames);
+      account.walletIds = { ...renameKeys(account.walletIds, walletRenames), ...Object.fromEntries(config.accounts.walletEntities.map((entity) => [entity.name, entity.id])) };
+    });
+    (caja.foundMoney || []).forEach((record) => {
+      record.holder = holderRenames[record.holder] || record.holder;
+      record.wallet = walletRenames[record.wallet] || record.wallet;
+      record.holderId = config.accounts.holderEntities.find((entity) => entity.name === record.holder)?.id || record.holderId;
+      record.walletId = config.accounts.walletEntities.find((entity) => entity.name === record.wallet)?.id || record.walletId;
+    });
+    (caja.chips || []).forEach((chip) => { chip.platform = resolvedPlatformRenames[chip.platform] || chip.platform; chip.platformId = config.platformEntities.find((entity) => entity.name === chip.platform)?.id || chip.platformId; });
+    (caja.chipLoads || []).forEach((load) => { load.platform = resolvedPlatformRenames[load.platform] || load.platform; load.platformId = config.platformEntities.find((entity) => entity.name === load.platform)?.id || load.platformId; });
+  }));
+}
 export async function updateConfig(config, boxId) {
-  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const normalized = normalizeConfig(config); spaces.forEach((targetSpace) => { targetSpace.config = { ...normalizeConfig(targetSpace.config), monthlyGoal: normalized.monthlyGoal }; }); space.config = normalized;
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const previousConfig = normalizeConfig(space.config); const nextAccounts = config?.accounts || {}; const nextPlatforms = Array.isArray(config?.platforms) ? config.platforms : previousConfig.platforms;
+  assertUniqueNames(nextAccounts.holders || previousConfig.accounts.holders, 'titulares'); assertUniqueNames(nextAccounts.wallets || previousConfig.accounts.wallets, 'billeteras'); assertUniqueNames(nextPlatforms, 'plataformas');
+  assertUniqueEntityIds(nextAccounts.holderEntities || previousConfig.accounts.holderEntities, 'titulares'); assertUniqueEntityIds(nextAccounts.walletEntities || previousConfig.accounts.walletEntities, 'billeteras'); assertUniqueEntityIds(config?.platformEntities || previousConfig.platformEntities, 'plataformas');
+  const holderRenames = namesByEntity(previousConfig.accounts.holderEntities, nextAccounts.holderEntities, previousConfig.accounts.holders, nextAccounts.holders); const walletRenames = namesByEntity(previousConfig.accounts.walletEntities, nextAccounts.walletEntities, previousConfig.accounts.wallets, nextAccounts.wallets); const platformRenames = namesByEntity(previousConfig.platformEntities, config?.platformEntities, previousConfig.platforms, nextPlatforms);
+  assertRenameSafety(holderRenames, previousConfig.accounts.holders, 'titulares'); assertRenameSafety(walletRenames, previousConfig.accounts.wallets, 'billeteras'); assertRenameSafety(platformRenames, previousConfig.platforms, 'plataformas');
+  const normalized = normalizeConfig(migrateConfigMaps(config, holderRenames, walletRenames, platformRenames));
+  migrateHistoricalReferences([space], holderRenames, walletRenames, platformRenames, normalized);
+  spaces.forEach((targetSpace) => { targetSpace.config = { ...normalizeConfig(targetSpace.config), monthlyGoal: normalized.monthlyGoal }; }); space.config = normalized;
   const current = space.cajas.at(-1); const existing = new Map(current.accounts.map((account) => [account.holder, account]));
-  current.accounts = normalized.accounts.holders.map((holder) => { const account = existing.get(holder); return { holder, values: Object.fromEntries(normalized.accounts.wallets.map((wallet) => [wallet, account?.values?.[wallet] ?? 0])), walletBoxes: account?.walletBoxes || {}, walletBoxUpdatedAt: account?.walletBoxUpdatedAt || {}, walletRestartAt: account?.walletRestartAt || {}, verified: account?.verified || {}, notes: account?.notes || {} }; });
-  current.chips = normalized.platforms.map((platform) => ({ platform, initial: current.chips.find((chip) => chip.platform === platform)?.initial ?? 0, final: current.chips.find((chip) => chip.platform === platform)?.final ?? 0 }));
+  const configuredHolderIds = new Set(normalized.accounts.holderEntities.map((entity) => entity.id));
+  const configuredPlatformIds = new Set(normalized.platformEntities.map((entity) => entity.id));
+  current.accounts = [...normalized.accounts.holders.map((holder) => { const account = existing.get(holder); return { holder, holderId: normalized.accounts.holderEntities.find((entity) => entity.name === holder)?.id, values: { ...(account?.values || {}), ...Object.fromEntries(normalized.accounts.wallets.map((wallet) => [wallet, account?.values?.[wallet] ?? 0])) }, walletIds: { ...(account?.walletIds || {}), ...Object.fromEntries(normalized.accounts.walletEntities.map((entity) => [entity.name, entity.id])) }, walletBoxes: account?.walletBoxes || {}, walletBoxUpdatedAt: account?.walletBoxUpdatedAt || {}, walletRestartAt: account?.walletRestartAt || {}, verified: account?.verified || {}, notes: account?.notes || {} }; }), ...current.accounts.filter((account) => !configuredHolderIds.has(account.holderId) && !normalized.accounts.holders.includes(account.holder))];
+  current.chips = [...normalized.platforms.map((platform) => { const chip = current.chips.find((item) => item.platform === platform); return { platform, platformId: normalized.platformEntities.find((entity) => entity.name === platform)?.id, initial: chip?.initial ?? 0, final: chip?.final ?? 0 }; }), ...current.chips.filter((chip) => !configuredPlatformIds.has(chip.platformId) && !normalized.platforms.includes(chip.platform))];
   current.expenses = current.expenses.map((expense) => ({ ...expense, category: normalized.expenses.some((item) => item.name === expense.category) ? expense.category : normalized.expenses[0]?.name || 'Gasto' }));
   space.cajas[space.cajas.length - 1] = current; await writeSpaces(spaces); return { config: normalized, current };
 }

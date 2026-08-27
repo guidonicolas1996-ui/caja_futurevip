@@ -335,13 +335,19 @@ function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTran
   );
 }
 
-function ConfigList({ title, items, onChange, placeholder, sortable = false, onItemChange }) {
+function ConfigList({ title, items, onChange, placeholder, sortable = false, onItemChange, entities = [], onEntitiesChange }) {
   const [dragIndex, setDragIndex] = useState(null);
   const reorder = (targetIndex) => {
     if (dragIndex === null || dragIndex === targetIndex) return;
     const next = [...items];
     const [moved] = next.splice(dragIndex, 1);
     next.splice(targetIndex, 0, moved);
+    if (onEntitiesChange) {
+      const nextEntities = [...entities];
+      const [movedEntity] = nextEntities.splice(dragIndex, 1);
+      nextEntities.splice(targetIndex, 0, movedEntity);
+      onEntitiesChange(nextEntities);
+    }
     onChange(next);
     setDragIndex(null);
   };
@@ -351,24 +357,24 @@ function ConfigList({ title, items, onChange, placeholder, sortable = false, onI
       {items.map((item, index) => (
         <div className={`config-list-row ${sortable ? "sortable" : ""}`} key={index} draggable={sortable} onDragStart={() => setDragIndex(index)} onDragOver={(event) => { if (sortable) event.preventDefault(); }} onDrop={() => sortable && reorder(index)} onDragEnd={() => setDragIndex(null)}>
           {sortable && <span className="drag-handle" title="Arrastrar para reordenar"><GripVertical size={15} /></span>}
-          <input value={item} placeholder={placeholder} onChange={(event) => { const next = [...items]; next[index] = event.target.value; onItemChange ? onItemChange(index, event.target.value) : onChange(next); }} />
-          <button className="delete-button" title={`Eliminar ${title.toLowerCase()}`} onClick={() => onChange(items.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button>
+          <input value={item} placeholder={placeholder} onChange={(event) => { const next = [...items]; next[index] = event.target.value; if (onItemChange) onItemChange(index, event.target.value); else onChange(next); if (onEntitiesChange && entities[index]) onEntitiesChange(entities.map((entity, entityIndex) => entityIndex === index ? { ...entity, name: event.target.value } : entity)); }} />
+          <button className="delete-button" title={`Eliminar ${title.toLowerCase()}`} onClick={() => { onChange(items.filter((_, itemIndex) => itemIndex !== index)); if (onEntitiesChange) onEntitiesChange(entities.filter((_, entityIndex) => entityIndex !== index)); }}><Trash2 size={15} /></button>
         </div>
       ))}
-      <button className="config-add" onClick={() => onChange([...items, ""])}><Plus size={15} /> Agregar</button>
+      <button className="config-add" onClick={() => { onChange([...items, ""]); if (onEntitiesChange) onEntitiesChange([...entities, { id: `entity-${crypto.randomUUID()}`, name: "" }]); }}><Plus size={15} /> Agregar</button>
     </div>
   );
 }
 
-function PlatformConfigList({ platforms, platformColors, onPlatformsChange, onColorChange }) {
+function PlatformConfigList({ platforms, platformColors, platformEntities = [], onPlatformsChange, onEntitiesChange, onColorChange }) {
   const colorNames = { teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" };
-  return <div className="config-list platform-config-list"><div className="config-list-head"><h3>Plataformas</h3><span>{platforms.length} elementos</span></div>{platforms.map((platform, index) => <div className="platform-config-row" key={index}><i className={`box-swatch ${platformColors[platform] || "teal"}`} /><input value={platform} placeholder="Nombre de plataforma" onChange={(event) => { const next = [...platforms]; const previous = next[index]; next[index] = event.target.value; onPlatformsChange(next); if (previous !== event.target.value) onColorChange(event.target.value, platformColors[previous] || "teal", previous); }} /><select value={platformColors[platform] || "teal"} aria-label={`Color de ${platform}`} onChange={(event) => onColorChange(platform, event.target.value)}>{Object.entries(colorNames).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><button className="delete-button" title="Eliminar plataforma" onClick={() => onPlatformsChange(platforms.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onPlatformsChange([...platforms, ""])}><Plus size={15} /> Agregar plataforma</button></div>;
+  return <div className="config-list platform-config-list"><div className="config-list-head"><h3>Plataformas</h3><span>{platforms.length} elementos</span></div>{platforms.map((platform, index) => <div className="platform-config-row" key={platformEntities[index]?.id || index}><i className={`box-swatch ${platformColors[platform] || "teal"}`} /><input value={platform} placeholder="Nombre de plataforma" onChange={(event) => { const next = [...platforms]; const previous = next[index]; next[index] = event.target.value; onPlatformsChange(next); if (onEntitiesChange && platformEntities[index]) onEntitiesChange(platformEntities.map((entity, entityIndex) => entityIndex === index ? { ...entity, name: event.target.value } : entity)); if (previous !== event.target.value) onColorChange(event.target.value, platformColors[previous] || "teal", previous); }} /><select value={platformColors[platform] || "teal"} aria-label={`Color de ${platform}`} onChange={(event) => onColorChange(platform, event.target.value)}>{Object.entries(colorNames).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><button className="delete-button" title="Eliminar plataforma" onClick={() => { onPlatformsChange(platforms.filter((_, itemIndex) => itemIndex !== index)); if (onEntitiesChange) onEntitiesChange(platformEntities.filter((_, entityIndex) => entityIndex !== index)); }}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => { onPlatformsChange([...platforms, ""]); if (onEntitiesChange) onEntitiesChange([...platformEntities, { id: `platform-${crypto.randomUUID()}`, name: "" }]); }}><Plus size={15} /> Agregar plataforma</button></div>;
 }
 
-function WalletConfigList({ wallets, modes, onChange, onModeChange }) {
+function WalletConfigList({ wallets, modes, walletEntities = [], onChange, onEntitiesChange, onModeChange }) {
   const [dragIndex, setDragIndex] = useState(null);
-  const reorder = (targetIndex) => { if (dragIndex === null || dragIndex === targetIndex) return; const next = [...wallets]; const [moved] = next.splice(dragIndex, 1); next.splice(targetIndex, 0, moved); onChange(next); setDragIndex(null); };
-  return <div className="config-list wallet-config-list"><div className="config-list-head"><h3>Billeteras</h3><span>{wallets.length} elementos</span></div>{wallets.map((wallet, index) => <div className="wallet-config-row" key={index} draggable onDragStart={() => setDragIndex(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(index)} onDragEnd={() => setDragIndex(null)}><span className="drag-handle" title="Arrastrar para reordenar"><GripVertical size={15} /></span><input value={wallet} placeholder="Nombre de billetera" onChange={(event) => { const next = [...wallets]; const previous = next[index]; next[index] = event.target.value; onChange(next); if (previous !== event.target.value) onModeChange(event.target.value, modes[previous] || "Cobros + Retiros"); }} /><select aria-label={`Tipo de ${wallet}`} value={modes[wallet] || "Cobros + Retiros"} onChange={(event) => onModeChange(wallet, event.target.value)}><option>Cobros + Retiros</option><option>Solo Cobros</option><option>Solo Depósito</option></select><button className="delete-button" title="Eliminar billetera" onClick={() => onChange(wallets.filter((_, itemIndex) => itemIndex !== index))}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onChange([...wallets, ""])}><Plus size={15} /> Agregar billetera</button></div>;
+  const reorder = (targetIndex) => { if (dragIndex === null || dragIndex === targetIndex) return; const next = [...wallets]; const [moved] = next.splice(dragIndex, 1); next.splice(targetIndex, 0, moved); if (onEntitiesChange) { const nextEntities = [...walletEntities]; const [movedEntity] = nextEntities.splice(dragIndex, 1); nextEntities.splice(targetIndex, 0, movedEntity); onEntitiesChange(nextEntities); } onChange(next); setDragIndex(null); };
+  return <div className="config-list wallet-config-list"><div className="config-list-head"><h3>Billeteras</h3><span>{wallets.length} elementos</span></div>{wallets.map((wallet, index) => <div className="wallet-config-row" key={walletEntities[index]?.id || index} draggable onDragStart={() => setDragIndex(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(index)} onDragEnd={() => setDragIndex(null)}><span className="drag-handle" title="Arrastrar para reordenar"><GripVertical size={15} /></span><input value={wallet} placeholder="Nombre de billetera" onChange={(event) => { const next = [...wallets]; const previous = next[index]; next[index] = event.target.value; onChange(next); if (onEntitiesChange && walletEntities[index]) onEntitiesChange(walletEntities.map((entity, entityIndex) => entityIndex === index ? { ...entity, name: event.target.value } : entity)); if (previous !== event.target.value) onModeChange(event.target.value, modes[previous] || "Cobros + Retiros"); }} /><select aria-label={`Tipo de ${wallet}`} value={modes[wallet] || "Cobros + Retiros"} onChange={(event) => onModeChange(wallet, event.target.value)}><option>Cobros + Retiros</option><option>Solo Cobros</option><option>Solo Depósito</option></select><button className="delete-button" title="Eliminar billetera" onClick={() => { onChange(wallets.filter((_, itemIndex) => itemIndex !== index)); if (onEntitiesChange) onEntitiesChange(walletEntities.filter((_, entityIndex) => entityIndex !== index)); }}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => { onChange([...wallets, ""]); if (onEntitiesChange) onEntitiesChange([...walletEntities, { id: `wallet-${crypto.randomUUID()}`, name: "" }]); }}><Plus size={15} /> Agregar billetera</button></div>;
 }
 
 function AccountsConfig({ draft, boxes, updateAccounts }) {
@@ -396,8 +402,8 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
   const updateTargetSetting = (patch) => updateWalletSetting(settingsTarget.holder, settingsTarget.wallet, patch);
   return <>
     <div className="config-two-columns">
-      <ConfigList title="Titulares" items={draft.accounts.holders} placeholder="Nombre del titular" sortable onChange={(holders) => updateAccounts({ holders })} onItemChange={renameHolder} />
-      <WalletConfigList wallets={draft.accounts.wallets} modes={walletModes} onChange={updateWallets} onModeChange={(wallet, mode) => updateAccounts({ walletModes: { ...walletModes, [wallet]: mode } })} />
+      <ConfigList title="Titulares" items={draft.accounts.holders} entities={draft.accounts.holderEntities} onEntitiesChange={(holderEntities) => updateAccounts({ holderEntities })} placeholder="Nombre del titular" sortable onChange={(holders) => updateAccounts({ holders })} onItemChange={renameHolder} />
+      <WalletConfigList wallets={draft.accounts.wallets} walletEntities={draft.accounts.walletEntities} onEntitiesChange={(walletEntities) => updateAccounts({ walletEntities })} modes={walletModes} onChange={updateWallets} onModeChange={(wallet, mode) => updateAccounts({ walletModes: { ...walletModes, [wallet]: mode } })} />
     </div>
     <section className="config-card"><div className="config-list-head"><h3>Billeteras utilizables por titular</h3><span>Activá y configurá cada cuenta</span></div><div className="availability-table"><div className="availability-row availability-head" style={{ "--wallet-count": draft.accounts.wallets.length }}><b>Titular</b>{draft.accounts.wallets.map((wallet) => <span key={wallet}>{wallet}</span>)}</div>{draft.accounts.holders.map((holder, index) => <div className="availability-row" style={{ "--wallet-count": draft.accounts.wallets.length }} key={index}><b>{holder || "Sin nombre"}</b>{draft.accounts.wallets.map((wallet) => { const setting = walletSettings[holder]?.[wallet] || { category: "Normal" }; const enabled = availability[holder]?.[wallet] !== false; return <div className="account-config-cell" key={wallet}><label className="toggle-cell"><input type="checkbox" checked={enabled} onChange={() => { const nextAvailability = structuredClone(availability); nextAvailability[holder] = { ...(nextAvailability[holder] || {}), [wallet]: !enabled }; updateAccounts({ availability: nextAvailability }); }} /><span /></label><button type="button" className="account-settings-button" title={`Configurar ${holder} · ${wallet}`} onClick={() => setSettingsTarget({ holder, wallet })}><Settings2 size={14} /></button></div>; })}</div>)}</div></section>
     {settingsTarget && <div className="modal-backdrop" onClick={() => setSettingsTarget(null)}><div className="modal account-settings-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSettingsTarget(null)} title="Cerrar"><X size={18} /></button><div className="modal-icon"><Settings2 size={21} /></div><h2>{settingsTarget.holder} · {settingsTarget.wallet}</h2><p>Datos disponibles para copiar desde la caja.</p><div className="account-settings-fields"><label><span>Alias</span><input value={targetSetting.alias || ""} onChange={(event) => updateTargetSetting({ alias: event.target.value })} /></label><label><span>CUIL</span><input value={targetSetting.cuil || ""} onChange={(event) => updateTargetSetting({ cuil: event.target.value })} /></label><label><span>Contraseña</span><input value={targetSetting.password || ""} onChange={(event) => updateTargetSetting({ password: event.target.value })} /></label><label><span>Tipo de billetera</span><select value={targetSetting.category || "Normal"} onChange={(event) => updateTargetSetting({ category: event.target.value })}><option>Normal</option><option>Depósitos</option><option>Compartidas</option></select></label><label className="account-settings-note"><span>Nota</span><textarea rows="4" value={targetSetting.note || ""} onChange={(event) => updateTargetSetting({ note: event.target.value })} /></label></div><div className="modal-actions"><button className="close-button" onClick={() => setSettingsTarget(null)}>Listo <Check size={16} /></button></div></div></div>}
@@ -427,7 +433,7 @@ function MonthlyGoalProgress({ config, boxColor }) {
   </section>;
 }
 
-function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, embedded = false }) {
+function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, onNotify, embedded = false }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
   const [draft, setDraft] = useState(structuredClone(config));
@@ -446,7 +452,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
       if (cancelled) return;
       setDraft(nextConfig);
       setLoadingConfig(false);
-    });
+    }).catch((error) => { if (!cancelled) { setLoadingConfig(false); onNotify?.(error.message); } });
     return () => { cancelled = true; };
   }, [configBoxId]);
   useEffect(() => {
@@ -459,6 +465,8 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
     const timer = window.setTimeout(async () => {
       try {
         await onSaveRef.current(draft, configBoxId);
+      } catch (error) {
+        onNotify?.(error.message);
       } finally {
         setSaving(false);
       }
@@ -490,7 +498,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
             <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
-          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /></>}
+          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /></>}
           {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivo mensual</span><h2>Seguimiento del objetivo</h2><p>Ingresá manualmente el objetivo final y el importe alcanzado durante el mes.</p></div><MonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           </>}
         </main>
@@ -2243,7 +2251,7 @@ function App() {
         </div>
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
