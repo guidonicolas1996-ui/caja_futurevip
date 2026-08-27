@@ -3793,8 +3793,8 @@ select:focus {
   text-align: center;
 }
 .bonus-modal .bonus-time-column .bonus-row {
-  grid-template-columns: minmax(58px, .82fr) minmax(106px, 1.48fr) repeat(3, 20px) !important;
-  gap: 3px !important;
+  grid-template-columns: 44px minmax(60px, 1fr) repeat(3, 20px) !important;
+  gap: 2px !important;
   padding: 5px !important;
   border-radius: 6px;
   background: #202e30 !important;
