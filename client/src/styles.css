@@ -3844,9 +3844,9 @@ select:focus {
 }
 .bonus-modal .bonus-row {
   display: grid;
-  grid-template-columns: minmax(68px, 1fr) minmax(92px, 1.35fr) repeat(3, 24px) !important;
+  grid-template-columns: minmax(58px, .82fr) minmax(106px, 1.48fr) repeat(3, 24px) !important;
   align-content: start;
-  gap: 6px !important;
+  gap: 3px !important;
   width: auto;
   min-width: 0;
   padding: 8px !important;
@@ -3866,12 +3866,17 @@ select:focus {
   max-width: none !important;
   height: 28px;
 }
+.bonus-modal .bonus-row .amount-input > span {
+  width: 12px;
+  min-width: 12px;
+  padding-left: 1px;
+}
 .bonus-modal .bonus-row .amount-input input {
   width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
   flex: 1 1 auto !important;
-  padding: 5px 7px !important;
+  padding: 5px 5px 5px 1px !important;
 }
 .bonus-modal .bonus-row .bonus-toggle,
 .bonus-modal .bonus-row .note-button,
