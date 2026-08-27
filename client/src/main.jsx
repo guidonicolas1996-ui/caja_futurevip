@@ -989,6 +989,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const [open, setOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorAmount, setEditorAmount] = useState(0);
+  const [editorWithdrawal, setEditorWithdrawal] = useState(0);
   const [editorPercent, setEditorPercent] = useState(0);
   const [noteId, setNoteId] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
@@ -1044,12 +1045,13 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   };
   const openBonusEditor = () => {
     setEditorAmount(0);
+    setEditorWithdrawal(0);
     setEditorPercent(0);
     setRecoveredMode(false);
     setEditorOpen(true);
   };
   const addEditedBonus = () => {
-    if (!editorAmount) return;
+    if (!editorAmount || (recoveredMode && !editorWithdrawal)) return;
     const amount = Math.round(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1) * 100) / 100;
     if (!amount) return;
     update({
@@ -1115,6 +1117,10 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
 
  y confirmá el bono.</p>
             <div className="bonus-editor-fields">
+              {recoveredMode && <label className="bonus-editor-withdrawal">
+                <span>Monto a retirar</span>
+                <AmountInput value={editorWithdrawal} onChange={setEditorWithdrawal} />
+              </label>}
               <label>
                 <span>Valor</span>
                 <AmountInput value={editorAmount} onChange={setEditorAmount} />
@@ -1141,8 +1147,15 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
               ))}
             </div>
             <div className="bonus-editor-preview">
-              {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(editorAmount + editorAmount * (editorPercent / 100))}</b></div>}
-              <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+              {recoveredMode
+                ? <>
+                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(editorWithdrawal - editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                </>
+                : <>
+                  {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(editorAmount + editorAmount * (editorPercent / 100))}</b></div>}
+                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                </>}
             </div>
             <div className="modal-actions">
               <button className="ghost-button" onClick={() => setEditorOpen(false)}>Cancelar</button>

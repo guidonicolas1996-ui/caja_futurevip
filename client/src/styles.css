@@ -1824,6 +1824,9 @@ select:focus {
   display: block;
   margin-bottom: 6px;
 }
+.bonus-editor-fields .bonus-editor-withdrawal {
+  grid-column: 1 / -1;
+}
 .bonus-editor-fields .amount-input,
 .percent-input {
   height: 32px;
