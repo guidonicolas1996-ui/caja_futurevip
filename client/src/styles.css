@@ -871,7 +871,7 @@ main {
 .quick-recent-bonus.granted { color: var(--orange); }
 .quick-recent-bonus.recovered { color: var(--green); }
 .recent-bonus-value { display: flex; align-items: center; justify-content: flex-end; flex: 0 0 auto; gap: 4px; min-width: 0; white-space: nowrap; }
-.recent-bonus-time { position: relative; z-index: 1; margin-right: -16px; color: var(--muted); font: 9px "DM Mono"; pointer-events: none; }
+.recent-bonus-time { position: relative; z-index: 1; margin-right: -28px; color: var(--muted); font: 9px "DM Mono"; pointer-events: none; }
 .recent-bonus-value:has(input:focus) .recent-bonus-time { display: none; }
 .quick-recent-bonus input { width: 96px; padding: 0 0 2px; border: 0; border-bottom: 1px solid transparent; outline: 0; background: transparent; color: inherit; font: 9px "DM Mono"; text-align: right; }
 .quick-recent-bonus.granted input:focus { border-bottom-color: var(--orange); }
