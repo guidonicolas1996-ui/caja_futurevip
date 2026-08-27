@@ -1217,7 +1217,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                   onFocus={(event) => { event.currentTarget.value = formatNumberInput(amount); event.currentTarget.select(); }}
                   onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); if (!value) { removeBonus(bonusIndex); return; } event.currentTarget.value = money(value); editBonus(bonusIndex, isRecovered ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 }); }}
                   onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
-                /><span className="recent-bonus-time">- {formatMovementTime(bonus.createdAt)}</span></div>
+                /></div>
             </div>
           );
         })}
