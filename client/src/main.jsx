@@ -1471,7 +1471,10 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
         if (!item) return;
         const previous = stateFor(row, wallet);
         const nextState = { ...previous, collections: item.key === target.key };
-        if (previous.collections && item.key !== target.key) nextState.lastCollectionsAt = now;
+        if (previous.collections !== nextState.collections) {
+          if (previous.collections) nextState.lastCollectionsAt = now;
+          row.walletRestartAt = { ...(row.walletRestartAt || {}), [wallet]: now };
+        }
         row.verified = { ...(row.verified || {}), [wallet]: nextState };
       });
     });
