@@ -834,8 +834,9 @@ main {
   color: var(--green);
 }
 .quick-bonus-access .bonus-toggle {
-  width: 24px;
-  height: 24px;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
 }
 .bonus-quick .bonus-toggle:not(.checked) {
   border-color: var(--orange);
@@ -854,8 +855,9 @@ main {
   color: #102322;
 }
 .quick-bonus-access .icon-button {
-  width: 24px;
-  height: 24px;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
 }
 .quick-bonus-net { color: #f4f8f8; white-space: nowrap; font: 10px "DM Mono"; }
 .quick-bonus-net b { margin-left: 3px; color: #f4f8f8; font: 10px "DM Mono"; }
@@ -3086,7 +3088,8 @@ select:focus {
   font-size: 10px;
 }
 .bonus-quick .bonus-toggle {
-  flex: 0 0 24px;
+  width: 30px;
+  flex: 0 0 30px;
   height: 29px;
 }
 .bonus-type {
