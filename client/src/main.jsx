@@ -1929,6 +1929,17 @@ function App() {
   const readOnly = caja?.status !== "ABIERTA";
   const isReadOnlyAction = (element) => Boolean(element.closest?.(".modal-close, .ghost-button, button[title^='Ver'], button[title^='Cerrar']"));
   useEffect(() => {
+    const preventInputDrag = (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target.matches("input, textarea, select, option")) {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("dragstart", preventInputDrag);
+    return () => document.removeEventListener("dragstart", preventInputDrag);
+  }, []);
+  useEffect(() => {
     const content = document.querySelector(".box-content");
     if (!content) return undefined;
     const applyReadOnly = () => {
