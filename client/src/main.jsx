@@ -413,7 +413,7 @@ function MonthlyGoalConfig({ draft, update }) {
   const monthlyGoal = draft.monthlyGoal || { final: 0, achieved: 0 };
   const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
   return <section className="config-card monthly-goal-card">
-    <div className="config-list-head"><h3>Valores del objetivo</h3><span>Se actualizan manualmente</span></div>
+    <div className="config-list-head"><h3>Objetivo de Depósitos General</h3><span>Se actualiza manualmente</span></div>
     <div className="monthly-goal-fields">
       <label><span>Objetivo final</span><AmountInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
       <label><span>Objetivo alcanzado</span><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /></label>
@@ -427,9 +427,12 @@ function MonthlyGoalProgress({ config, boxColor }) {
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
   const colors = boxColorStyle(boxColor);
-  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo mensual" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
-    <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
-    <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(finalGoal)}</span></div>
+  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
+    <div className="goal-bar-header"><span>Objetivo de Depósitos General</span></div>
+    <div className="goal-bar-body">
+      <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
+      <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(finalGoal)}</span></div>
+    </div>
   </section>;
 }
 
@@ -438,7 +441,7 @@ function BonusMonthlyGoalConfig({ draft, update }) {
   const updateValue = (name, value) => update({ bonusGoal: { ...bonusGoal, [name]: number(value) } });
   const updatePercent = (shift, value) => update({ bonusGoal: { ...bonusGoal, percentages: { ...(bonusGoal.percentages || {}), [shift]: Math.max(0, Math.min(100, number(value))) } } });
   return <section className="config-card monthly-goal-card bonus-goal-card">
-    <div className="config-list-head"><h3>Objetivos de Bonos Mensual</h3><span>Se calcula solo con bonos netos</span></div>
+    <div className="config-list-head"><h3>Objetivo de Bonos Mensual</h3><span>Se calcula solo con bonos netos</span></div>
     <div className="monthly-goal-fields bonus-goal-fields">
       <label><span>Objetivo total</span><AmountInput value={bonusGoal.total} onChange={(value) => updateValue("total", value)} /></label>
       <div className="bonus-goal-percentages">
@@ -453,35 +456,31 @@ function BonusMonthlyGoalConfig({ draft, update }) {
 function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   if (!config || !caja) return null;
   const goal = config.bonusGoal || { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } };
+  const monthItems = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
+  const sameDateItems = monthItems.filter((item) => {
+    const itemDate = new Date(item.date);
+    const currentDate = new Date(caja.date);
+    return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth() && itemDate.getDate() === currentDate.getDate();
+  });
+  const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
+  const dayBonusNet = sameDateItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
+  const shiftBonusNet = (shift) => sameDateItems.reduce((sum, item) => sum + (item.bonuses || []).reduce((itemSum, bonus) => {
+    const hour = new Date(bonus.createdAt).getHours();
+    const bonusShift = hour >= 0 && hour < 8 ? "Noche" : hour < 16 ? "Mañana" : "Tarde";
+    return itemSum + (bonusShift === shift ? number(bonus.granted) - number(bonus.recovered) : 0);
+  }, 0), 0);
   const totalTarget = Math.max(0, number(goal.total));
   const currentMonth = new Date(caja.date);
-  const monthCajas = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
-  const monthItems = monthCajas.filter((item) => {
-    const date = new Date(item.date);
-    return date.getFullYear() === currentMonth.getFullYear() && date.getMonth() === currentMonth.getMonth();
-  });
-  const bonusNetFor = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
-  const shiftForBonus = (createdAt) => {
-    const hour = new Date(createdAt).getHours();
-    if (hour >= 0 && hour < 8) return "Noche";
-    if (hour < 16) return "Mañana";
-    return "Tarde";
-  };
-  const bonusNetByShift = (shift) => monthItems.reduce((sum, item) => sum + (item.bonuses || []).reduce((itemSum, bonus) => itemSum + (shiftForBonus(bonus.createdAt) === shift ? number(bonus.granted) - number(bonus.recovered) : 0), 0), 0);
-  const achieved = monthItems.reduce((sum, item) => sum + bonusNetFor(item), 0);
-  const percentage = totalTarget > 0 ? (achieved / totalTarget) * 100 : 0;
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const dailyTarget = totalTarget > 0 ? totalTarget / daysInMonth : 0;
-  const dailyAchieved = achieved;
-  const shiftPercentages = goal.percentages || { Noche: 33, Mañana: 33, Tarde: 34 };
   const currentShift = caja.shift;
-  const currentShiftPercent = number(shiftPercentages[currentShift] || 0);
-  const currentShiftTarget = totalTarget * (currentShiftPercent / 100);
-  const currentShiftAchieved = bonusNetByShift(currentShift);
-  const currentShiftPercentage = currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0;
+  const currentPercent = number(goal.percentages?.[currentShift] || 0);
+  const currentShiftTarget = dailyTarget * (currentPercent / 100);
+  const currentShiftAchieved = shiftBonusNet(currentShift);
+  const monthTarget = totalTarget;
+  const monthAchieved = monthItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
   const colors = boxColorStyle(boxColor);
-
-  const renderBar = (label, value, target, percent, accentText) => (
+  const renderBar = (label, value, target, percent) => (
     <div className="bonus-goal-row" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
       <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
       <div className="bonus-goal-main">
@@ -490,10 +489,10 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
       </div>
     </div>
   );
-
   return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos">
-    {renderBar("OBJETIVO DEL DÍA", dailyAchieved, dailyTarget, totalTarget > 0 ? (dailyAchieved / dailyTarget) * 100 : 0, "daily")}
-    {renderBar(`OBJETIVO DEL TURNO · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftPercentage, "shift")}
+    {renderBar("Objetivo de Bonos Mensual", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0)}
+    {renderBar("Objetivo de Bonos del Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
+    {renderBar(`Objetivo del Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
   </div>;
 }
 
@@ -563,7 +562,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
           {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /></>}
-          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Meta general y bonos mensuales</h2><p>Configurá el objetivo mensual original y, aparte, la meta exclusiva de bonos por caja.</p></div><MonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
+          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y la meta exclusiva de bonos por caja para ese mes.</p></div><MonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           </>}
         </main>
       </div>
