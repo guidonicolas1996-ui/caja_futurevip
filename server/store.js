@@ -172,6 +172,28 @@ export async function updateCaja(id, patch, boxId) {
   return space.cajas[index];
 }
 export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); const updatedAt = new Date().toISOString(); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) { account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: updatedAt }; } }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
+export async function resetNightShiftRecovery(boxId) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  const cutoff = new Date('2026-08-26T16:00:00.000Z').getTime();
+  const kept = space.cajas.filter((caja) => {
+    const cajaTime = new Date(caja.date).getTime();
+    if (cajaTime > cutoff) return false;
+    if (caja.shift !== 'Noche') return true;
+    const date = new Date(caja.date);
+    return !(date.getFullYear() === 2026 && date.getMonth() === 7 && date.getDate() === 26);
+  });
+  if (!kept.length) throw new Error('No se encontró el punto de corte para restaurar el historial.');
+  const previous = kept.at(-1);
+  const next = blankCaja(previous.id + 1, previous, space.config);
+  next.shift = 'Noche';
+  next.date = new Date('2026-08-30T00:00:00.000Z').toISOString();
+  next.status = 'ABIERTA';
+  delete next.closedAt;
+  space.cajas = [...kept, next];
+  await writeSpaces(spaces);
+  return next;
+}
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
   const value = Number(amount) || 0;
@@ -304,27 +326,4 @@ function walletBelongsToBox(row, wallet, config, boxId) {
   return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
 export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; space.cajas.push(blankCaja(current.id + 1, current, space.config)); await writeSpaces(spaces); return space.cajas.at(-1); }
-export async function closeCurrentAndOpenNightSkip(boxId) {
-  const spaces = await readSpaces();
-  const space = spaces.find((item) => item.id === boxId) || spaces[0];
-  const config = normalizeConfig(space.config);
-  const current = { ...space.cajas.at(-1) };
-  const source = current.accounts || [];
-  const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0);
-  if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada');
-  current.cashFinal = accountsTotal;
-  current.status = 'CERRADA';
-  current.closedAt = new Date().toISOString();
-  const nextDate = new Date(current.date);
-  nextDate.setDate(nextDate.getDate() + 4);
-  const next = blankCaja(current.id + 1, current, space.config);
-  next.shift = 'Noche';
-  next.date = nextDate.toISOString();
-  next.notes = '';
-  next.nextNotes = current.nextNotes ?? '';
-  space.cajas[space.cajas.length - 1] = current;
-  space.cajas.push(next);
-  await writeSpaces(spaces);
-  return next;
-}
 export { billeteras, titulares, plataformas };

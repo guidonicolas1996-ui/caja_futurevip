@@ -511,6 +511,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
 function SummaryHeader({
   caja,
   onClose,
+  onResetNightShift,
   saving,
   onPrevious,
   onNext,
@@ -578,6 +579,14 @@ function SummaryHeader({
           disabled={capturing}
         >
           <Camera size={17} />
+        </button>
+        <button
+          className="ghost-button"
+          onClick={onResetNightShift}
+          disabled={readOnly || caja.status === "CERRADA"}
+          title="Deja todo hasta Tarde 26/08, borra Noche 26/08 y crea Noche 30/08"
+        >
+          Reset 26→30
         </button>
         <button
           className="close-button"
@@ -2180,15 +2189,20 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
-  const skipToNight = () =>
-    api(`/api/caja/cerrar-y-saltar-noche?boxId=${activeBoxId}`, { method: "POST" }).then((next) => {
+  const resetNightShift = async () => {
+    const confirmed = window.confirm("Se va a dejar todo hasta Tarde 26/08, borrar la noche del 26/08 y crear la noche del 30/08. ¿Continuar?");
+    if (!confirmed) return;
+    try {
+      const next = await api(`/api/caja/reparar-noche-26?boxId=${activeBoxId}`, { method: "POST" });
+      const nextHistory = await api(`/api/caja/historial?boxId=${activeBoxId}`);
       setCaja(next);
-      setHistory([next, ...history]);
+      setHistory(nextHistory);
       setSelectedIndex(0);
-      setConfirm(false);
-      const nightDate = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(next.date));
-      notify(`Caja cerrada. Se abrió el turno noche del ${nightDate}`);
-    });
+      notify("Historial reparado: quedó hasta Tarde 26/08, se borró Noche 26/08 y se creó Noche 30/08.");
+    } catch (error) {
+      notify(error.message || "No se pudo ejecutar la reparación temporal.");
+    }
+  };
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
@@ -2196,14 +2210,6 @@ function App() {
       return;
     }
     close();
-  };
-  const confirmCloseAndSkip = () => {
-    if (calculations.shortage !== 0) {
-      setConfirm(false);
-      setCloseWarning(true);
-      return;
-    }
-    skipToNight();
   };
   const downloadSnapshot = async () => {
     if (capturing) return;
@@ -2256,6 +2262,7 @@ function App() {
         onPrevious={() => navigate(1)}
         onNext={() => navigate(-1)}
         onClose={() => setConfirm(true)}
+        onResetNightShift={resetNightShift}
         onSnapshot={downloadSnapshot}
         capturing={capturing}
         onConfigure={() => setConfigurationOpen(true)}
@@ -2391,9 +2398,6 @@ function App() {
                 onClick={() => setConfirm(false)}
               >
                 Cancelar
-              </button>
-              <button className="ghost-button" onClick={confirmCloseAndSkip}>
-                Cerrar y abrir Noche
               </button>
               <button className="close-button" onClick={confirmClose}>
                 Confirmar cierre <ArrowRight size={16} />
