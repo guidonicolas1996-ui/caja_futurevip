@@ -93,6 +93,7 @@ const parseNumberInput = (value) => {
 };
 const formatNumberInput = (value) => {
   const parsed = parseNumberInput(value);
+  if (parsed === 0) return "0";
   return parsed
     ? new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(parsed)
     : "";
@@ -711,7 +712,8 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
   useEffect(() => {
     if (!focused.current) {
       if (hasExplicitValue) {
-        setInputValue(numericOnly ? (isFocused ? String(normalizedValue) : formatNumberInput(normalizedValue)) : formatNumberInput(value));
+        const displayValue = numericOnly ? String(normalizedValue) : formatNumberInput(value);
+        setInputValue(displayValue);
       } else {
         setInputValue("");
       }
@@ -767,7 +769,8 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
             start: digitCountBefore(event.target.value, start),
             end: digitCountBefore(event.target.value, end),
           };
-          setInputValue(normalizedValue ? String(normalizedValue) : "");
+          const numericText = hasExplicitValue ? String(normalizedValue) : "";
+          setInputValue(numericText);
         }
       }}
       onClick={(event) => {
@@ -795,7 +798,8 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
         selectAllPending.current = false;
         selectAllHandled.current = false;
         setIsFocused(false);
-        setInputValue(numericOnly ? formatNumberInput(inputValue) : formatNumberInput(inputValue));
+        const formattedValue = numericOnly ? (number(inputValue) === 0 ? "0" : formatNumberInput(inputValue)) : formatNumberInput(inputValue);
+        setInputValue(formattedValue);
       }}
     />
   );
@@ -805,7 +809,7 @@ function AmountInput({ value, onChange, placeholder = "0,00", className = "", se
     <div className={`amount-input ${className}`}>
       <span>$</span>
       <NumericInput
-        value={value || ""}
+        value={value ?? ""}
         placeholder={placeholder}
         onChange={onChange}
         selectAllOnFirstClick={selectAllOnFirstClick}
