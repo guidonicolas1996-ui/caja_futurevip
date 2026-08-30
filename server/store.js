@@ -52,7 +52,7 @@ const defaultConfig = () => ({
   accounts: { holders: titulares, wallets: billeteras, availability: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, true]))])), walletSettings: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, { category: 'Normal', boxId: null }]))])), walletModes: Object.fromEntries(billeteras.map((wallet) => [wallet, 'Cobros + Retiros'])) },
   logistics: { order: [], hidden: [], added: [] },
   statistics: { employees: 1, proportionalPercent: 100 },
-  monthlyGoal: { final: 0, achieved: 0 },
+  monthlyGoal: { final: 0, achieved: 0, shiftPercentages: { Noche: 33.33, Mañana: 33.33, Tarde: 33.33 } },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
