@@ -175,13 +175,10 @@ export async function setWalletAssignment({ holder, wallet, boxId }) { const spa
 export async function resetNightShiftRecovery(boxId) {
   const spaces = await readSpaces();
   const space = spaces.find((item) => item.id === boxId) || spaces[0];
-  const cutoff = new Date('2026-08-26T16:00:00.000Z').getTime();
   const kept = space.cajas.filter((caja) => {
-    const cajaTime = new Date(caja.date).getTime();
-    if (cajaTime > cutoff) return false;
-    if (caja.shift !== 'Noche') return true;
     const date = new Date(caja.date);
-    return !(date.getFullYear() === 2026 && date.getMonth() === 7 && date.getDate() === 26);
+    const isTargetNight = caja.shift === 'Noche' && date.getFullYear() === 2026 && date.getMonth() === 7 && date.getDate() === 26;
+    return !isTargetNight;
   });
   if (!kept.length) throw new Error('No se encontró el punto de corte para restaurar el historial.');
   const previous = kept.at(-1);
