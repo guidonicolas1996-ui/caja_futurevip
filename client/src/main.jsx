@@ -461,39 +461,40 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
     return date.getFullYear() === currentMonth.getFullYear() && date.getMonth() === currentMonth.getMonth();
   });
   const bonusNetFor = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
-  const achieved = monthItems.reduce((sum, item) => sum + bonusNetFor(item), 0);
-  const percentage = totalTarget > 0 ? (achieved / totalTarget) * 100 : 0;
-  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const dailyTarget = totalTarget > 0 ? totalTarget / daysInMonth : 0;
   const shiftForBonus = (createdAt) => {
     const hour = new Date(createdAt).getHours();
     if (hour >= 0 && hour < 8) return "Noche";
     if (hour < 16) return "Mañana";
     return "Tarde";
   };
-  const shiftTotals = { Noche: 0, Mañana: 0, Tarde: 0 };
-  monthItems.forEach((item) => {
-    (item.bonuses || []).forEach((bonus) => {
-      const shift = shiftForBonus(bonus.createdAt);
-      shiftTotals[shift] += number(bonus.granted) - number(bonus.recovered);
-    });
-  });
+  const bonusNetByShift = (shift) => monthItems.reduce((sum, item) => sum + (item.bonuses || []).reduce((itemSum, bonus) => itemSum + (shiftForBonus(bonus.createdAt) === shift ? number(bonus.granted) - number(bonus.recovered) : 0), 0), 0);
+  const achieved = monthItems.reduce((sum, item) => sum + bonusNetFor(item), 0);
+  const percentage = totalTarget > 0 ? (achieved / totalTarget) * 100 : 0;
+  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+  const dailyTarget = totalTarget > 0 ? totalTarget / daysInMonth : 0;
+  const dailyAchieved = achieved;
   const shiftPercentages = goal.percentages || { Noche: 33, Mañana: 33, Tarde: 34 };
+  const currentShift = caja.shift;
+  const currentShiftPercent = number(shiftPercentages[currentShift] || 0);
+  const currentShiftTarget = totalTarget * (currentShiftPercent / 100);
+  const currentShiftAchieved = bonusNetByShift(currentShift);
+  const currentShiftPercentage = currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0;
   const colors = boxColorStyle(boxColor);
-  return <section className="monthly-goal-progress bonus-goal-progress" aria-label="Progreso del objetivo de bonos" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
-    <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
-    <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(totalTarget)}</span></div>
-    <div className="bonus-goal-detail">
-      <div className="bonus-goal-meta-block"><span>Objetivo del día</span><strong>{money(dailyTarget)}</strong></div>
-      <div className="bonus-goal-meta-block bonus-goal-shifts">
-        {Object.entries(shiftPercentages).map(([shift, percent]) => {
-          const target = totalTarget * (number(percent) / 100);
-          const value = shiftTotals[shift] || 0;
-          return <span key={shift}><b>{shift}</b> {Math.round(number(percent))}% · {money(target)} · {money(value)}</span>;
-        })}
+
+  const renderBar = (label, value, target, percent, accentText) => (
+    <div className="bonus-goal-row" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
+      <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
+      <div className="bonus-goal-main">
+        <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>
+        <div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div>
       </div>
     </div>
-  </section>;
+  );
+
+  return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos">
+    {renderBar("OBJETIVO DEL DÍA", dailyAchieved, dailyTarget, totalTarget > 0 ? (dailyAchieved / dailyTarget) * 100 : 0, "daily")}
+    {renderBar(`OBJETIVO DEL TURNO · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftPercentage, "shift")}
+  </div>;
 }
 
 function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, onNotify, embedded = false }) {
