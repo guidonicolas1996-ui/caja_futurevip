@@ -633,10 +633,10 @@ main {
   content: "";
   position: absolute;
   inset: -18% -10% -18% -10%;
-  background: radial-gradient(circle at 20% 20%, rgba(174, 134, 255, 0.22), transparent 30%),
-              radial-gradient(circle at 80% 30%, rgba(255, 105, 140, 0.16), transparent 30%),
-              radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.04), transparent 50%);
-  filter: blur(26px);
+  background: radial-gradient(circle at 18% 24%, rgba(159, 121, 255, 0.28), transparent 28%),
+              radial-gradient(circle at 72% 36%, rgba(202, 149, 255, 0.18), transparent 30%),
+              radial-gradient(circle at 52% 100%, rgba(233, 209, 148, 0.12), transparent 42%);
+  filter: blur(28px);
   pointer-events: none;
   z-index: 0;
 }
