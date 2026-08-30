@@ -624,17 +624,17 @@ main {
   gap: 0;
   margin: -11px 0 20px;
   overflow: hidden;
-  border: 1px solid rgba(198, 180, 255, 0.15);
+  border: 1px solid var(--bonus-line, rgba(198, 180, 255, 0.15));
   border-radius: 9px;
-  background: linear-gradient(105deg, rgba(30, 24, 41, 0.96), rgba(16, 18, 25, 0.9));
+  background: linear-gradient(105deg, var(--bonus-soft, #37331f), rgba(17, 23, 25, 0.82));
   box-shadow: inset 0 0 0 1px rgba(191, 176, 255, 0.04);
 }
 .bonus-goal-panel::before {
   content: "";
   position: absolute;
   inset: -20% -12% -20% -12%;
-  background: radial-gradient(circle at 20% 20%, rgba(145, 117, 255, 0.18), transparent 28%),
-              radial-gradient(circle at 80% 28%, rgba(126, 107, 185, 0.14), transparent 30%),
+  background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--bonus-accent, #c2a0ed) 38%, transparent), transparent 28%),
+              radial-gradient(circle at 80% 28%, color-mix(in srgb, var(--bonus-glow, #3c2d50) 55%, transparent), transparent 30%),
               radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.03), transparent 48%);
   filter: blur(24px);
   pointer-events: none;
