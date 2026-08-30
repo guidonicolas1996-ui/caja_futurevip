@@ -592,120 +592,26 @@ main {
 .monthly-goal-fields { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 14px; }
 .monthly-goal-fields label { display: grid; gap: 7px; color: var(--muted); font-size: 10px; }
 .monthly-goal-fields .amount-input { width: 100%; }
-.bonus-monthly-goal-progress {
-  margin: -10px 0 18px;
-  padding: 0;
-}
-.bonus-goal-split {
-  display: grid;
-  grid-template-columns: 1.15fr 1.4fr;
-  gap: 12px;
-}
-.bonus-goal-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px 10px;
-  background: linear-gradient(105deg, var(--goal-soft, #37331f), rgba(17, 23, 25, .82));
-  border: 1px solid var(--goal-line, rgba(232, 212, 119, .28));
-  border-radius: 9px;
-}
-.bonus-goal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 10px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.bonus-goal-header strong {
-  color: var(--goal-accent, #e8d477);
-  font: 700 18px "DM Mono";
-  letter-spacing: -0.04em;
-}
-.bonus-goal-track,
-.bonus-goal-mini-track {
-  position: relative;
-  height: 7px;
-  overflow: hidden;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--goal-soft, #37331f) 72%, #111719);
-}
-.bonus-goal-track span,
-.bonus-goal-mini-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--goal-accent), color-mix(in srgb, var(--goal-accent) 60%, white), var(--goal-accent));
-  box-shadow: 0 0 12px var(--goal-glow);
-  transition: width 180ms ease;
-}
-.bonus-goal-figures,
-.bonus-goal-turn-values {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 10px;
-  color: var(--muted);
-}
-.bonus-goal-figures b,
-.bonus-goal-turn-values b {
-  color: #dfe5c0;
-  font: 700 16px "DM Mono";
-}
-.bonus-goal-figures span,
-.bonus-goal-turn-values span {
-  color: #f0edc2;
-  font-weight: 700;
-}
-.bonus-goal-daily {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 10px;
-  padding-top: 4px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
-.bonus-goal-daily small {
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.bonus-goal-daily strong {
-  color: var(--goal-accent, #e8d477);
-  font: 700 16px "DM Mono";
-}
-.bonus-goal-turns {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-.bonus-goal-turn {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.bonus-goal-turn-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 10px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.bonus-goal-turn-line span {
-  color: #dfe5c0;
-}
+.bonus-goal-card { margin-top: 16px; }
+.bonus-goal-fields { display: grid; grid-template-columns: 1fr; }
+.bonus-goal-percentages { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)); gap: 10px; }
+.bonus-goal-percentages label { display: grid; gap: 7px; }
+.bonus-goal-percentages input { width: 100%; padding: 8px 9px; border-radius: 7px; border: 1px solid var(--line); background: rgba(15, 19, 22, 0.75); color: #edf0f1; }
+.bonus-goal-progress { margin-top: 0; margin-bottom: 20px; display: flex; flex-wrap: wrap; }
+.bonus-goal-detail { display: grid; grid-template-columns: minmax(140px, 200px) minmax(0, 1fr); gap: 12px; width: 100%; margin-top: 10px; }
+.bonus-goal-meta-block { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 8px 9px; border-radius: 7px; border: 1px solid var(--goal-line, rgba(232, 212, 119, .28)); background: rgba(17, 23, 25, 0.42); }
+.bonus-goal-meta-block span { color: var(--muted); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; }
+.bonus-goal-meta-block strong { color: #edf0f1; font-size: 14px; }
+.bonus-goal-shifts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.bonus-goal-shifts span { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 999px; background: rgba(255,255,255,.04); color: #d7d7cf; font-size: 10px; }
+.bonus-goal-shifts b { color: var(--goal-accent, #e8d477); font-weight: 700; }
 @media (max-width: 700px) {
   .monthly-goal-progress { align-items: stretch; flex-direction: column; gap: 8px; }
   .monthly-goal-values { justify-content: space-between; gap: 7px; }
   .monthly-goal-values span { font-size: 9px; }
   .monthly-goal-fields { grid-template-columns: 1fr; }
-  .bonus-goal-split { grid-template-columns: 1fr; }
+  .bonus-goal-detail { grid-template-columns: 1fr; }
+  .bonus-goal-percentages { grid-template-columns: 1fr; }
 }
 .eyebrow {
   color: var(--muted);

@@ -52,7 +52,8 @@ const defaultConfig = () => ({
   accounts: { holders: titulares, wallets: billeteras, availability: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, true]))])), walletSettings: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, { category: 'Normal', boxId: null }]))])), walletModes: Object.fromEntries(billeteras.map((wallet) => [wallet, 'Cobros + Retiros'])) },
   logistics: { order: [], hidden: [], added: [] },
   statistics: { employees: 1, proportionalPercent: 100 },
-  monthlyGoal: { final: 0, achieved: 0, shiftPercentages: { Noche: 33.33, Mañana: 33.33, Tarde: 33.33 } },
+  monthlyGoal: { final: 0, achieved: 0 },
+  bonusGoal: { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
@@ -162,10 +163,19 @@ function normalizeConfig(config) {
   const statistics = { employees: Math.max(1, Number(sourceStatistics.employees) || 1), proportionalPercent: sourceStatistics.proportionalPercent === undefined ? 100 : Math.min(100, Math.max(0, Number(sourceStatistics.proportionalPercent) || 0)) };
   const sourceMonthlyGoal = config?.monthlyGoal || {};
   const monthlyGoal = { final: Math.max(0, Number(sourceMonthlyGoal.final) || 0), achieved: Math.max(0, Number(sourceMonthlyGoal.achieved) || 0) };
+  const sourceBonusGoal = config?.bonusGoal || {};
+  const bonusGoal = {
+    total: Math.max(0, Number(sourceBonusGoal.total) || 0),
+    percentages: {
+      Noche: Math.min(100, Math.max(0, Number(sourceBonusGoal.percentages?.Noche) || 33)),
+      Mañana: Math.min(100, Math.max(0, Number(sourceBonusGoal.percentages?.Mañana) || 33)),
+      Tarde: Math.min(100, Math.max(0, Number(sourceBonusGoal.percentages?.Tarde) || 34)),
+    },
+  };
   const platforms = Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms;
   const platformColors = Object.fromEntries(platforms.map((platform, index) => [platform, colors.includes(config?.platformColors?.[platform]) ? config.platformColors[platform] : defaults.platformColors[platform] || colors[index % colors.length]]));
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, platformColors, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0);
