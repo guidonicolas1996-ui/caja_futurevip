@@ -441,7 +441,8 @@ function BonusMonthlyGoalConfig({ draft, update }) {
   const updateValue = (name, value) => update({ bonusGoal: { ...bonusGoal, [name]: number(value) } });
   const updatePercent = (shift, value) => update({ bonusGoal: { ...bonusGoal, percentages: { ...(bonusGoal.percentages || {}), [shift]: Math.max(0, Math.min(100, number(value))) } } });
   return <section className="config-card monthly-goal-card bonus-goal-card">
-    <div className="config-list-head"><h3>Objetivo de Bonos Mensual</h3><span>Se calcula solo con bonos netos</span></div>
+    <div className="config-list-head"><h3>Obj. Bonos Mes
+</h3><span>Se calcula solo con bonos netos</span></div>
     <div className="monthly-goal-fields bonus-goal-fields">
       <label><span>Objetivo total</span><AmountInput value={bonusGoal.total} onChange={(value) => updateValue("total", value)} /></label>
       <div className="bonus-goal-percentages">
@@ -490,9 +491,10 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
     </div>
   );
   return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos">
-    {renderBar("Objetivo de Bonos Mensual", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0)}
-    {renderBar("Objetivo de Bonos del Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
-    {renderBar(`Objetivo del Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
+    {renderBar("Obj. Bonos Mes
+", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0)}
+    {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
+    {renderBar(`Obj. Bonos Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
   </div>;
 }
 
