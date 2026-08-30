@@ -13,11 +13,16 @@ const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
 const nextShift = { Noche: 'Mañana', Mañana: 'Tarde', Tarde: 'Noche' };
-const shiftStartOffsetMs = 8 * 60 * 60 * 1000;
-const nextShiftDate = (previous = null) => {
-  if (!previous?.date) return new Date().toISOString();
-  return new Date(new Date(previous.date).getTime() + shiftStartOffsetMs).toISOString();
-};
+const previousShiftFor = { Noche: 'Tarde', Mañana: 'Noche', Tarde: 'Mañana' };
+const shiftOrder = ['Noche', 'Mañana', 'Tarde'];
+
+function shiftDateFor(dateValue, shift, direction = 1) {
+  const base = new Date(dateValue ?? Date.now());
+  const day = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  const offset = direction > 0 ? (shift === 'Tarde' ? 1 : 0) : (shift === 'Noche' ? -1 : 0);
+  day.setDate(day.getDate() + offset);
+  return day.toISOString();
+}
 
 const blankAdvertising = () => ({ 'Publicidad A': { total: 0, new: 0, repeated: 0, derived: {} }, 'Publicidad B': { total: 0, new: 0, repeated: 0, derived: {} } });
 function normalizeAdvertising(advertising) {
@@ -52,16 +57,53 @@ const defaultConfig = () => ({
   platforms: plataformas,
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
 });
-const blankCaja = (id, previous = null, config = defaultConfig()) => ({
-  id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: nextShiftDate(previous),
-  cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
-  accountSections: structuredClone(previous?.accountSections || { deposits: false, shared: false }),
-  accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, holderId: config.accounts.holderEntities?.find((entity) => entity.name === holder)?.id, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletIds: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, config.accounts.walletEntities?.find((entity) => entity.name === wallet)?.id])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, walletBoxUpdatedAt: { ...(previousAccount?.walletBoxUpdatedAt ?? {}) }, walletRestartAt: { ...(previousAccount?.walletRestartAt ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
-  bonuses: [], ta: [], tips: [], expenses: [], transfers: [], found: 0, foundMoney: [],
-  advertising: previous?.shift === 'Tarde' ? blankAdvertising() : structuredClone(previous?.advertising || blankAdvertising()),
-  chips: config.platforms.map((platform) => { const previousChip = previous?.chips?.find((item) => item.platform === platform); const value = previousChip?.final ?? 0; return { platform, platformId: config.platformEntities?.find((entity) => entity.name === platform)?.id, initial: value, final: value }; }),
-  chipLoads: [],
-});
+const blankCaja = (id, previous = null, config = defaultConfig()) => {
+  const shift = previous ? nextShift[previous.shift] || shiftOrder[0] : shiftOrder[id % shiftOrder.length] || shiftOrder[0];
+  const date = previous ? shiftDateFor(previous.date, previous.shift, 1) : new Date().toISOString();
+  return {
+    id,
+    status: 'ABIERTA',
+    shift,
+    date,
+    cashInitial: previous?.cashFinal ?? 0,
+    nextNotes: previous?.nextNotes ?? '',
+    notes: '',
+    accountSections: structuredClone(previous?.accountSections || { deposits: false, shared: false }),
+    accounts: config.accounts.holders.map((holder) => {
+      const previousAccount = previous?.accounts?.find((account) => account.holder === holder);
+      return {
+        holder,
+        holderId: config.accounts.holderEntities?.find((entity) => entity.name === holder)?.id,
+        values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])),
+        walletIds: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, config.accounts.walletEntities?.find((entity) => entity.name === wallet)?.id])),
+        walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) },
+        walletBoxUpdatedAt: { ...(previousAccount?.walletBoxUpdatedAt ?? {}) },
+        walletRestartAt: { ...(previousAccount?.walletRestartAt ?? {}) },
+        verified: structuredClone(previousAccount?.verified ?? {}),
+        notes: { ...(previousAccount?.notes ?? {}) },
+      };
+    }),
+    bonuses: [],
+    ta: [],
+    tips: [],
+    expenses: [],
+    transfers: [],
+    found: 0,
+    foundMoney: [],
+    advertising: previous?.shift === 'Tarde' ? blankAdvertising() : structuredClone(previous?.advertising || blankAdvertising()),
+    chips: config.platforms.map((platform) => {
+      const previousChip = previous?.chips?.find((item) => item.platform === platform);
+      const value = previousChip?.final ?? 0;
+      return {
+        platform,
+        platformId: config.platformEntities?.find((entity) => entity.name === platform)?.id,
+        initial: value,
+        final: value,
+      };
+    }),
+    chipLoads: [],
+  };
+};
 async function writeSpaces(spaces, { allowSpaceDeletion = false } = {}) {
   const database = requireSupabase();
   if (!Array.isArray(spaces) || spaces.length === 0 || spaces.some((space) => !space?.id || !space?.config || !Array.isArray(space.cajas) || space.cajas.length === 0)) {
@@ -133,7 +175,7 @@ export async function getBoxes() { return (await readSpaces()).map(({ id, title,
 export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = normalizeConfig({ ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
 export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
 export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next, { allowSpaceDeletion: true }); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
-export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; space.config = normalizeConfig(space.config); const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = { Tarde: 'Mañana', Mañana: 'Noche', Noche: 'Tarde' }[oldest.shift] || 'Tarde'; const previousDate = new Date(new Date(oldest.date).getTime() - 8 * 60 * 60 * 1000).toISOString(); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder || item.holderId === account.holderId); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
+export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; space.config = normalizeConfig(space.config); const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = previousShiftFor[oldest.shift] || 'Tarde'; const previousDate = shiftDateFor(oldest.date, oldest.shift, -1); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder || item.holderId === account.holderId); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
 export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }
@@ -308,5 +350,5 @@ function walletBelongsToBox(row, wallet, config, boxId) {
   const setting = config.accounts.walletSettings?.[row.holder]?.[wallet];
   return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
-export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; space.cajas.push(blankCaja(current.id + 1, current, space.config)); await writeSpaces(spaces); return space.cajas.at(-1); }
+export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; const nextCaja = blankCaja(current.id + 1, current, space.config); space.cajas.push(nextCaja); await writeSpaces(spaces); return nextCaja; }
 export { billeteras, titulares, plataformas };
