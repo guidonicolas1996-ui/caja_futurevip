@@ -626,15 +626,15 @@ main {
   overflow: hidden;
   border: 1px solid var(--bonus-line, rgba(198, 180, 255, 0.15));
   border-radius: 9px;
-  background: linear-gradient(105deg, var(--bonus-soft, #37331f), rgba(17, 23, 25, 0.82));
+  background: linear-gradient(105deg, color-mix(in srgb, var(--bonus-soft, #1d302f) 88%, rgba(12, 17, 18, 0.88)), rgba(17, 23, 25, 0.82));
   box-shadow: inset 0 0 0 1px rgba(191, 176, 255, 0.04);
 }
 .bonus-goal-panel::before {
   content: "";
   position: absolute;
   inset: -20% -12% -20% -12%;
-  background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--bonus-accent, #c2a0ed) 38%, transparent), transparent 28%),
-              radial-gradient(circle at 80% 28%, color-mix(in srgb, var(--bonus-glow, #3c2d50) 55%, transparent), transparent 30%),
+  background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--bonus-accent, #72d7ca) 36%, transparent), transparent 28%),
+              radial-gradient(circle at 80% 28%, color-mix(in srgb, var(--bonus-glow, #244344) 60%, transparent), transparent 30%),
               radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.03), transparent 48%);
   filter: blur(24px);
   pointer-events: none;
@@ -649,10 +649,10 @@ main {
   align-items: center;
   min-height: 54px;
   padding: 10px 12px;
-  background: rgba(36, 30, 44, 0.76);
+  background: var(--goal-row-bg, rgba(36, 30, 44, 0.76));
 }
 .bonus-goal-row:first-child {
-  border-bottom: 1px solid rgba(198, 180, 255, 0.09);
+  border-bottom: 1px solid var(--goal-row-border, rgba(198, 180, 255, 0.09));
 }
 .bonus-goal-lower-row {
   display: grid;
@@ -1012,6 +1012,9 @@ main {
   text-align: left;
   color: #f4f8f8;
 }
+.final-chip-field .amount-input input::placeholder {
+  color: var(--muted);
+}
 .final-chip-field .amount-input.zero-value input {
   color: var(--muted);
 }
@@ -1022,7 +1025,7 @@ main {
   border-color: var(--platform-accent, #f4f8f8);
   color: #f4f8f8;
 }
-.final-chip-field.has-value .amount-input:not(.zero-value) input {
+.final-chip-field .amount-input.non-zero-value input {
   color: #f4f8f8;
 }
 @media (max-width: 700px) {

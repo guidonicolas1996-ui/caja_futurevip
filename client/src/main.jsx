@@ -493,7 +493,7 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
     const glow = aboveThreshold ? "rgba(245, 85, 85, 0.55)" : colors["--box-glow"];
     const line = aboveThreshold ? "rgba(245, 85, 85, 0.42)" : colors["--box-line"];
     return (
-      <div className="bonus-goal-row" style={{ "--goal-accent": accent, "--goal-soft": colors["--box-soft"], "--goal-glow": glow, "--goal-line": line }}>
+      <div className="bonus-goal-row" style={{ "--goal-accent": accent, "--goal-soft": colors["--box-soft"], "--goal-glow": glow, "--goal-line": line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": line }}>
         <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
         <div className="bonus-goal-main">
           <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>
@@ -686,8 +686,9 @@ function SectionHead({ icon, title, meta, action }) {
 }
 function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "", onKeyDown, inputProps = {}, numericOnly = false, selectAllOnFirstClick = false }) {
   const normalizedValue = numericOnly ? Math.max(0, Math.trunc(number(value))) : number(value);
+  const hasExplicitValue = value !== null && value !== undefined && value !== "";
   const [inputValue, setInputValue] = useState(
-    normalizedValue ? (numericOnly ? String(normalizedValue) : formatNumberInput(value)) : "",
+    hasExplicitValue ? (numericOnly ? String(normalizedValue) : formatNumberInput(value)) : "",
   );
   const focused = React.useRef(false);
   const inputRef = React.useRef(null);
@@ -709,9 +710,13 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
 
   useEffect(() => {
     if (!focused.current) {
-      setInputValue(normalizedValue ? (numericOnly ? (isFocused ? String(normalizedValue) : formatNumberInput(normalizedValue)) : formatNumberInput(value)) : "");
+      if (hasExplicitValue) {
+        setInputValue(numericOnly ? (isFocused ? String(normalizedValue) : formatNumberInput(normalizedValue)) : formatNumberInput(value));
+      } else {
+        setInputValue("");
+      }
     }
-  }, [value, numericOnly, normalizedValue, isFocused]);
+  }, [value, numericOnly, normalizedValue, isFocused, hasExplicitValue]);
   useEffect(() => {
     if (!isFocused || !selectionRef.current) return undefined;
     const selection = selectionRef.current;
@@ -750,7 +755,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
         if (selectAll) {
           selectAllPending.current = false;
           selectAllHandled.current = true;
-          const formattedValue = normalizedValue ? String(normalizedValue) : "";
+          const formattedValue = hasExplicitValue ? String(normalizedValue) : "";
           selectionRef.current = { start: 0, end: formattedValue.length };
           setInputValue(formattedValue);
           return;
