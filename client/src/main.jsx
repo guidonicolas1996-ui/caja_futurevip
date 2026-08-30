@@ -511,6 +511,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
 function SummaryHeader({
   caja,
   onClose,
+  onNewCaja,
   saving,
   onPrevious,
   onNext,
@@ -585,6 +586,13 @@ function SummaryHeader({
           disabled={readOnly || caja.status === "CERRADA"}
         >
           <LockKeyhole size={16} /> Cerrar caja
+        </button>
+        <button
+          className="close-button"
+          onClick={onNewCaja}
+          disabled={readOnly || caja.status === "CERRADA"}
+        >
+          <LockKeyhole size={16} /> New Caja
         </button>
       </div>
     </header>
@@ -1902,8 +1910,8 @@ function App() {
   const [history, setHistory] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [confirm, setConfirm] = useState(false);
-  const [closeWarning, setCloseWarning] = useState(false);
+  const [confirm, setConfirm] = useState(null);
+  const [closeWarning, setCloseWarning] = useState(null);
   const [createPreviousOpen, setCreatePreviousOpen] = useState(false);
   const [creatingPrevious, setCreatingPrevious] = useState(false);
   const [createPreviousError, setCreatePreviousError] = useState("");
@@ -2169,24 +2177,27 @@ function App() {
       </div>
     );
   if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
-  const close = () =>
+  const close = (override = {}) =>
     api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
-      body: JSON.stringify(caja),
+      body: JSON.stringify({ ...caja, ...override }),
     }).then((next) => {
+      const closedShift = override.shift || caja.shift;
+      const closedDate = override.date ? new Date(override.date) : new Date(caja.date);
       setCaja(next);
       setHistory([next, ...history]);
       setSelectedIndex(0);
-      setConfirm(false);
-      notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
+      setConfirm(null);
+      setCloseWarning(null);
+      notify(`Cerrada Caja del turno ${closedShift} / ${closedDate.toLocaleDateString("es-AR")}`);
     });
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
-      setConfirm(false);
-      setCloseWarning(true);
+      setConfirm(null);
+      setCloseWarning({ override: confirm?.override || {} });
       return;
     }
-    close();
+    close(confirm?.override || {});
   };
   const downloadSnapshot = async () => {
     if (capturing) return;
@@ -2238,7 +2249,8 @@ function App() {
         readOnly={readOnly}
         onPrevious={() => navigate(1)}
         onNext={() => navigate(-1)}
-        onClose={() => setConfirm(true)}
+        onClose={() => setConfirm({ override: {} })}
+        onNewCaja={() => setConfirm({ override: { shift: "Noche", date: new Date("2026-08-30T00:00:00-03:00").toISOString() } })}
         onSnapshot={downloadSnapshot}
         capturing={capturing}
         onConfigure={() => setConfigurationOpen(true)}
@@ -2357,13 +2369,13 @@ function App() {
       {confirm && (
         <div className="modal-backdrop">
           <div className="modal">
-            <button className="modal-close" onClick={() => setConfirm(false)}>
+            <button className="modal-close" onClick={() => setConfirm(null)}>
               <X size={18} />
             </button>
             <div className="modal-icon">
               <LockKeyhole size={22} />
             </div>
-            <h2>¿Cerrar esta caja?</h2>
+            <h2>{confirm.override?.shift === "Noche" && confirm.override?.date ? "¿Cerrar esta caja como Noche 30/08?" : "¿Cerrar esta caja?"}</h2>
             <p>
               La caja quedará congelada y se abrirá automáticamente el turno
               siguiente con los saldos heredados.
@@ -2371,7 +2383,7 @@ function App() {
             <div className="modal-actions">
               <button
                 className="ghost-button"
-                onClick={() => setConfirm(false)}
+                onClick={() => setConfirm(null)}
               >
                 Cancelar
               </button>
@@ -2385,7 +2397,7 @@ function App() {
       {closeWarning && (
         <div className="modal-backdrop">
           <div className="modal">
-            <button className="modal-close" onClick={() => setCloseWarning(false)}>
+            <button className="modal-close" onClick={() => setCloseWarning(null)}>
               <X size={18} />
             </button>
             <div className="modal-icon">
@@ -2398,10 +2410,10 @@ function App() {
               </strong> de {calculations.shortage < 0 ? "faltante" : "sobrante"}. ¿Estás seguro de cerrar la caja?
             </p>
             <div className="modal-actions">
-              <button className="ghost-button" onClick={() => setCloseWarning(false)}>
+              <button className="ghost-button" onClick={() => setCloseWarning(null)}>
                 Cancelar
               </button>
-              <button className="close-button" onClick={() => { setCloseWarning(false); close(); }}>
+              <button className="close-button" onClick={() => { setCloseWarning(null); close(closeWarning.override || {}); }}>
                 Cerrar caja <ArrowRight size={16} />
               </button>
             </div>
