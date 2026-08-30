@@ -501,8 +501,10 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   };
   return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos">
     {renderBar("Obj. Bonos Mes", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0)}
-    {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
-    {renderBar(`Obj. Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
+    <div className="bonus-goal-lower-row">
+      {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
+      {renderBar(`Obj. Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
+    </div>
   </div>;
 }
 

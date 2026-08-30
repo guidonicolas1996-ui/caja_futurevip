@@ -639,17 +639,17 @@ main {
 .bonus-goal-row:first-child {
   border-bottom: 1px solid rgba(198, 180, 255, 0.09);
 }
-.bonus-goal-row:nth-child(2),
-.bonus-goal-row:nth-child(3) {
-  width: 50%;
+.bonus-goal-lower-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
-  float: left;
-  box-sizing: border-box;
 }
-.bonus-goal-row:nth-child(2) {
-  border-right: 1px solid rgba(198, 180, 255, 0.09);
+.bonus-goal-lower-row .bonus-goal-row {
+  border: 0;
+  border-radius: 0;
+  min-height: 54px;
 }
-.bonus-goal-row:nth-child(3) {
+.bonus-goal-lower-row .bonus-goal-row + .bonus-goal-row {
   border-left: 1px solid rgba(198, 180, 255, 0.09);
 }
 .bonus-goal-label { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
@@ -664,9 +664,9 @@ main {
   .monthly-goal-values span { font-size: 9px; }
   .monthly-goal-fields { grid-template-columns: 1fr; }
   .bonus-goal-panel { grid-template-columns: 1fr; }
-  .bonus-goal-row { width: 100% !important; float: none; border-left: 0; border-right: 0; }
-  .bonus-goal-row:nth-child(2),
-  .bonus-goal-row:nth-child(3) { width: 100%; border-right: 0; border-left: 0; }
+  .bonus-goal-lower-row { grid-template-columns: 1fr; }
+  .bonus-goal-lower-row .bonus-goal-row + .bonus-goal-row { border-left: 0; border-top: 1px solid rgba(198, 180, 255, 0.09); }
+  .bonus-goal-row { grid-template-columns: 1fr; }
   .bonus-goal-main { flex-direction: column; align-items: stretch; }
   .bonus-goal-percentages { grid-template-columns: 1fr; }
 }
