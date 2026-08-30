@@ -13,6 +13,11 @@ const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
 const nextShift = { Noche: 'Mañana', Mañana: 'Tarde', Tarde: 'Noche' };
+const shiftStartOffsetMs = 8 * 60 * 60 * 1000;
+const nextShiftDate = (previous = null) => {
+  if (!previous?.date) return new Date().toISOString();
+  return new Date(new Date(previous.date).getTime() + shiftStartOffsetMs).toISOString();
+};
 
 const blankAdvertising = () => ({ 'Publicidad A': { total: 0, new: 0, repeated: 0, derived: {} }, 'Publicidad B': { total: 0, new: 0, repeated: 0, derived: {} } });
 function normalizeAdvertising(advertising) {
@@ -48,7 +53,7 @@ const defaultConfig = () => ({
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
 });
 const blankCaja = (id, previous = null, config = defaultConfig()) => ({
-  id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: new Date().toISOString(),
+  id, status: 'ABIERTA', shift: nextShift[previous?.shift] || ['Noche', 'Mañana', 'Tarde'][id % 3], date: nextShiftDate(previous),
   cashInitial: previous?.cashFinal ?? 0, nextNotes: previous?.nextNotes ?? '', notes: '',
   accountSections: structuredClone(previous?.accountSections || { deposits: false, shared: false }),
   accounts: config.accounts.holders.map((holder) => { const previousAccount = previous?.accounts?.find((account) => account.holder === holder); return { holder, holderId: config.accounts.holderEntities?.find((entity) => entity.name === holder)?.id, values: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, previousAccount?.values?.[wallet] ?? 0])), walletIds: Object.fromEntries(config.accounts.wallets.map((wallet) => [wallet, config.accounts.walletEntities?.find((entity) => entity.name === wallet)?.id])), walletBoxes: { ...(previousAccount?.walletBoxes ?? {}) }, walletBoxUpdatedAt: { ...(previousAccount?.walletBoxUpdatedAt ?? {}) }, walletRestartAt: { ...(previousAccount?.walletRestartAt ?? {}) }, verified: structuredClone(previousAccount?.verified ?? {}), notes: { ...(previousAccount?.notes ?? {}) } }; }),
