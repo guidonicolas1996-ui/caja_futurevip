@@ -2180,6 +2180,15 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
+  const skipToNight = () =>
+    api(`/api/caja/cerrar-y-saltar-noche?boxId=${activeBoxId}`, { method: "POST" }).then((next) => {
+      setCaja(next);
+      setHistory([next, ...history]);
+      setSelectedIndex(0);
+      setConfirm(false);
+      const nightDate = new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit" }).format(new Date(next.date));
+      notify(`Caja cerrada. Se abrió el turno noche del ${nightDate}`);
+    });
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
@@ -2187,6 +2196,14 @@ function App() {
       return;
     }
     close();
+  };
+  const confirmCloseAndSkip = () => {
+    if (calculations.shortage !== 0) {
+      setConfirm(false);
+      setCloseWarning(true);
+      return;
+    }
+    skipToNight();
   };
   const downloadSnapshot = async () => {
     if (capturing) return;
@@ -2374,6 +2391,9 @@ function App() {
                 onClick={() => setConfirm(false)}
               >
                 Cancelar
+              </button>
+              <button className="ghost-button" onClick={confirmCloseAndSkip}>
+                Cerrar y abrir Noche
               </button>
               <button className="close-button" onClick={confirmClose}>
                 Confirmar cierre <ArrowRight size={16} />

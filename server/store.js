@@ -304,4 +304,27 @@ function walletBelongsToBox(row, wallet, config, boxId) {
   return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
 export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; space.cajas.push(blankCaja(current.id + 1, current, space.config)); await writeSpaces(spaces); return space.cajas.at(-1); }
+export async function closeCurrentAndOpenNightSkip(boxId) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  const config = normalizeConfig(space.config);
+  const current = { ...space.cajas.at(-1) };
+  const source = current.accounts || [];
+  const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0);
+  if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada');
+  current.cashFinal = accountsTotal;
+  current.status = 'CERRADA';
+  current.closedAt = new Date().toISOString();
+  const nextDate = new Date(current.date);
+  nextDate.setDate(nextDate.getDate() + 4);
+  const next = blankCaja(current.id + 1, current, space.config);
+  next.shift = 'Noche';
+  next.date = nextDate.toISOString();
+  next.notes = '';
+  next.nextNotes = current.nextNotes ?? '';
+  space.cajas[space.cajas.length - 1] = current;
+  space.cajas.push(next);
+  await writeSpaces(spaces);
+  return next;
+}
 export { billeteras, titulares, plataformas };
