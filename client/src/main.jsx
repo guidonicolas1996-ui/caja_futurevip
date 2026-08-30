@@ -476,13 +476,16 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const totalTarget = Math.max(0, number(goal.total));
   const currentMonth = new Date(caja.date);
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const dailyTarget = totalTarget > 0 ? totalTarget / daysInMonth : 0;
+  const currentDay = currentMonth.getDate();
+  const monthTarget = totalTarget;
+  const monthAchieved = monthItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
+  const remainingGoal = Math.max(0, monthTarget - monthAchieved);
+  const remainingDays = Math.max(1, daysInMonth - currentDay + 1);
+  const dailyTarget = remainingGoal > 0 ? remainingGoal / remainingDays : 0;
   const currentShift = caja.shift;
   const currentPercent = number(goal.percentages?.[currentShift] || 0);
   const currentShiftTarget = dailyTarget * (currentPercent / 100);
   const currentShiftAchieved = shiftBonusNet(currentShift);
-  const monthTarget = totalTarget;
-  const monthAchieved = monthItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
   const colors = boxColorStyle(boxColor);
   const renderBar = (label, value, target, percent) => {
     const aboveThreshold = percent >= 85;
