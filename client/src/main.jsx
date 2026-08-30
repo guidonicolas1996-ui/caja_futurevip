@@ -511,7 +511,6 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
 function SummaryHeader({
   caja,
   onClose,
-  onNewCaja,
   saving,
   onPrevious,
   onNext,
@@ -586,13 +585,6 @@ function SummaryHeader({
           disabled={readOnly || caja.status === "CERRADA"}
         >
           <LockKeyhole size={16} /> Cerrar caja
-        </button>
-        <button
-          className="close-button"
-          onClick={onNewCaja}
-          disabled={readOnly || caja.status === "CERRADA"}
-        >
-          <LockKeyhole size={16} /> New Caja
         </button>
       </div>
     </header>
@@ -2177,25 +2169,17 @@ function App() {
       </div>
     );
   if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
-  const close = (override = {}) =>
+  const close = () =>
     api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
-      body: JSON.stringify({ ...caja, ...override }),
+      body: JSON.stringify(caja),
     }).then((next) => {
       setCaja(next);
       setHistory([next, ...history]);
       setSelectedIndex(0);
       setConfirm(false);
-      notify(`Cerrada Caja del turno ${override.shift || caja.shift} / ${new Date(override.date || caja.date).toLocaleDateString("es-AR")}`);
+      notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
-  const closeForSpecialTurn = () => {
-    const targetDate = new Date("2026-08-29T15:00:00-03:00").toISOString();
-    close({
-      shift: "Tarde",
-      date: targetDate,
-      closedAt: new Date().toISOString(),
-    });
-  };
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
@@ -2255,7 +2239,6 @@ function App() {
         onPrevious={() => navigate(1)}
         onNext={() => navigate(-1)}
         onClose={() => setConfirm(true)}
-        onNewCaja={closeForSpecialTurn}
         onSnapshot={downloadSnapshot}
         capturing={capturing}
         onConfigure={() => setConfigurationOpen(true)}
