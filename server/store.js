@@ -303,5 +303,26 @@ function walletBelongsToBox(row, wallet, config, boxId) {
   const setting = config.accounts.walletSettings?.[row.holder]?.[wallet];
   return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
-export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal, shift: patch.shift || space.cajas.at(-1).shift, date: patch.date ? new Date(patch.date).toISOString() : space.cajas.at(-1).date }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; space.cajas.push(blankCaja(current.id + 1, current, space.config)); await writeSpaces(spaces); return space.cajas.at(-1); }
+export async function closeCurrent(patch = {}, boxId) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  const config = normalizeConfig(space.config);
+  const source = patch.accounts || space.cajas.at(-1).accounts;
+  const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0);
+  const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal };
+  if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada');
+  const forcedShift = typeof patch.shift === 'string' && patch.shift.trim() ? patch.shift.trim() : null;
+  const forcedDate = patch.date ? new Date(patch.date).toISOString() : null;
+  current.shift = forcedShift || current.shift;
+  current.date = forcedDate || current.date;
+  current.status = 'CERRADA';
+  current.closedAt = new Date().toISOString();
+  space.cajas[space.cajas.length - 1] = current;
+  const next = blankCaja(current.id + 1, current, space.config);
+  if (forcedShift) next.shift = forcedShift;
+  if (forcedDate) next.date = forcedDate;
+  space.cajas.push(next);
+  await writeSpaces(spaces);
+  return space.cajas.at(-1);
+}
 export { billeteras, titulares, plataformas };
