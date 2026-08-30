@@ -511,7 +511,6 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
 function SummaryHeader({
   caja,
   onClose,
-  onResetNightShift,
   saving,
   onPrevious,
   onNext,
@@ -579,14 +578,6 @@ function SummaryHeader({
           disabled={capturing}
         >
           <Camera size={17} />
-        </button>
-        <button
-          className="ghost-button"
-          onClick={onResetNightShift}
-          disabled={readOnly || caja.status === "CERRADA"}
-          title="Deja todo hasta Tarde 26/08, borra Noche 26/08 y crea Noche 30/08"
-        >
-          Reset 26→30
         </button>
         <button
           className="close-button"
@@ -2189,20 +2180,6 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
-  const resetNightShift = async () => {
-    const confirmed = window.confirm("Se va a dejar todo hasta Tarde 26/08, borrar la noche del 26/08 y crear la noche del 30/08. ¿Continuar?");
-    if (!confirmed) return;
-    try {
-      const next = await api(`/api/caja/reparar-noche-26?boxId=${activeBoxId}`, { method: "POST" });
-      const nextHistory = await api(`/api/caja/historial?boxId=${activeBoxId}`);
-      setCaja(next);
-      setHistory(nextHistory);
-      setSelectedIndex(0);
-      notify("Historial reparado: quedó hasta Tarde 26/08, se borró Noche 26/08 y se creó Noche 30/08.");
-    } catch (error) {
-      notify(error.message || "No se pudo ejecutar la reparación temporal.");
-    }
-  };
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
@@ -2262,7 +2239,6 @@ function App() {
         onPrevious={() => navigate(1)}
         onNext={() => navigate(-1)}
         onClose={() => setConfirm(true)}
-        onResetNightShift={resetNightShift}
         onSnapshot={downloadSnapshot}
         capturing={capturing}
         onConfigure={() => setConfigurationOpen(true)}

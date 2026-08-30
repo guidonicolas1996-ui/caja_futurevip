@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, resetNightShiftRecovery, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
+import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
 
 const app = express();
 app.use(cors());
@@ -20,7 +20,6 @@ app.get('/api/configuracion', handle((req) => getConfig(req.query.boxId)));
 app.put('/api/configuracion', handle((req) => updateConfig(req.body, req.query.boxId)));
 app.put('/api/caja/actualizar', handle((req) => updateCurrent(req.body, req.query.boxId)));
 app.put('/api/caja/asignacion-billetera', handle((req) => setWalletAssignment(req.body)));
-app.post('/api/caja/reparar-noche-26', handle((req) => resetNightShiftRecovery(req.query.boxId)));
 app.put('/api/caja/:id', handle((req) => updateCaja(req.params.id, req.body, req.query.boxId)));
 app.post('/api/traspasos', handle((req) => createTransfer(req.body)));
 app.put('/api/traspasos/:id', handle((req) => updateTransfer(req.params.id, req.body)));

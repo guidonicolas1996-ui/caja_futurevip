@@ -172,25 +172,6 @@ export async function updateCaja(id, patch, boxId) {
   return space.cajas[index];
 }
 export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); const updatedAt = new Date().toISOString(); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) { account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: updatedAt }; } }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
-export async function resetNightShiftRecovery(boxId) {
-  const spaces = await readSpaces();
-  const space = spaces.find((item) => item.id === boxId) || spaces[0];
-  const kept = space.cajas.filter((caja) => {
-    const date = new Date(caja.date);
-    const isTargetNight = caja.shift === 'Noche' && date.getFullYear() === 2026 && date.getMonth() === 7 && date.getDate() === 26;
-    return !isTargetNight;
-  });
-  if (!kept.length) throw new Error('No se encontró el punto de corte para restaurar el historial.');
-  const previous = kept.at(-1);
-  const next = blankCaja(previous.id + 1, previous, space.config);
-  next.shift = 'Noche';
-  next.date = new Date('2026-08-30T00:00:00.000Z').toISOString();
-  next.status = 'ABIERTA';
-  delete next.closedAt;
-  space.cajas = [...kept, next];
-  await writeSpaces(spaces);
-  return next;
-}
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
   const value = Number(amount) || 0;
