@@ -584,7 +584,7 @@ main {
   background-size: 220% 100%;
   box-shadow: 0 0 12px var(--goal-glow);
   animation: monthly-goal-electric 2.2s linear infinite;
-  transition: width 180ms ease;
+  transition: width 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 .monthly-goal-values {
   display: flex;
@@ -599,6 +599,7 @@ main {
   color: var(--goal-accent, #e8d477);
   font: 700 24px "DM Mono";
   line-height: 1;
+  transition: color 180ms ease;
 }
 .monthly-goal-values i { color: #7f806b; font-style: normal; }
 .monthly-goal-values .monthly-goal-achieved { color: #c5c39f; }

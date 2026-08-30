@@ -427,7 +427,11 @@ function MonthlyGoalProgress({ config, boxColor }) {
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
   const colors = boxColorStyle(boxColor);
-  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
+  const aboveThreshold = percentage >= 85;
+  const accent = aboveThreshold ? "#d9b74a" : colors["--box-accent"];
+  const glow = aboveThreshold ? "rgba(217, 183, 74, 0.55)" : colors["--box-glow"];
+  const line = aboveThreshold ? "rgba(217, 183, 74, 0.42)" : colors["--box-line"];
+  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": accent, "--goal-soft": colors["--box-soft"], "--goal-glow": glow, "--goal-line": line }}>
     <div className="goal-bar-header"><span>Objetivo de Depósitos General</span></div>
     <div className="goal-bar-body">
       <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
@@ -481,15 +485,21 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const monthTarget = totalTarget;
   const monthAchieved = monthItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
   const colors = boxColorStyle(boxColor);
-  const renderBar = (label, value, target, percent) => (
-    <div className="bonus-goal-row" style={{ "--goal-accent": colors["--box-accent"], "--goal-soft": colors["--box-soft"], "--goal-glow": colors["--box-glow"], "--goal-line": colors["--box-line"] }}>
-      <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
-      <div className="bonus-goal-main">
-        <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>
-        <div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div>
+  const renderBar = (label, value, target, percent) => {
+    const aboveThreshold = percent >= 85;
+    const accent = aboveThreshold ? "#f55555" : colors["--box-accent"];
+    const glow = aboveThreshold ? "rgba(245, 85, 85, 0.55)" : colors["--box-glow"];
+    const line = aboveThreshold ? "rgba(245, 85, 85, 0.42)" : colors["--box-line"];
+    return (
+      <div className="bonus-goal-row" style={{ "--goal-accent": accent, "--goal-soft": colors["--box-soft"], "--goal-glow": glow, "--goal-line": line }}>
+        <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
+        <div className="bonus-goal-main">
+          <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>
+          <div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos">
     {renderBar("Obj. Bonos Mes", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0)}
     {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
