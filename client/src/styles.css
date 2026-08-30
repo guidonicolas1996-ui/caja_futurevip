@@ -634,24 +634,23 @@ main {
   align-items: center;
   min-height: 54px;
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(198, 180, 255, 0.09);
   background: linear-gradient(105deg, rgba(56, 49, 71, 0.9), rgba(17, 23, 25, .82));
 }
-.bonus-goal-row:last-child {
-  border-bottom: 0;
+.bonus-goal-row:first-child {
+  border-bottom: 1px solid rgba(198, 180, 255, 0.09);
 }
 .bonus-goal-row:nth-child(2),
 .bonus-goal-row:nth-child(3) {
-  display: inline-grid;
   width: 50%;
   min-width: 0;
-  vertical-align: top;
+  float: left;
+  box-sizing: border-box;
 }
 .bonus-goal-row:nth-child(2) {
   border-right: 1px solid rgba(198, 180, 255, 0.09);
 }
 .bonus-goal-row:nth-child(3) {
-  float: right;
+  border-left: 1px solid rgba(198, 180, 255, 0.09);
 }
 .bonus-goal-label { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
 .bonus-goal-label span { color: var(--muted); font-family: "DM Mono"; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -665,9 +664,9 @@ main {
   .monthly-goal-values span { font-size: 9px; }
   .monthly-goal-fields { grid-template-columns: 1fr; }
   .bonus-goal-panel { grid-template-columns: 1fr; }
-  .bonus-goal-row { grid-template-columns: 1fr; width: 100% !important; float: none; }
+  .bonus-goal-row { width: 100% !important; float: none; border-left: 0; border-right: 0; }
   .bonus-goal-row:nth-child(2),
-  .bonus-goal-row:nth-child(3) { width: 100%; border-right: 0; float: none; }
+  .bonus-goal-row:nth-child(3) { width: 100%; border-right: 0; border-left: 0; }
   .bonus-goal-main { flex-direction: column; align-items: stretch; }
   .bonus-goal-percentages { grid-template-columns: 1fr; }
 }
