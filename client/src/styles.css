@@ -1009,6 +1009,7 @@ main {
   padding-bottom: 5px;
   font-size: 10px;
   text-align: right;
+  color: var(--muted);
 }
 .final-chip-field.has-value {
   color: #f4f8f8;
