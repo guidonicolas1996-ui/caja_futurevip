@@ -176,6 +176,20 @@ export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) {
 export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
 export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next, { allowSpaceDeletion: true }); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
 export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; space.config = normalizeConfig(space.config); const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = previousShiftFor[oldest.shift] || 'Tarde'; const previousDate = shiftDateFor(oldest.date, oldest.shift, -1); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder || item.holderId === account.holderId); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
+export async function removeCurrentNightTurn(boxId) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  if (!space.cajas.length) throw new Error('No hay turnos para borrar.');
+  const current = space.cajas.at(-1);
+  if (!current || current.shift !== 'Noche') throw new Error('Este botón sólo aplica al turno nocturno activo.');
+  if (space.cajas.length < 2) throw new Error('No se puede borrar el único turno activo disponible.');
+  const previous = space.cajas[space.cajas.length - 2];
+  previous.status = 'ABIERTA';
+  previous.closedAt = null;
+  space.cajas = space.cajas.slice(0, -1);
+  await writeSpaces(spaces);
+  return previous;
+}
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
 export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }

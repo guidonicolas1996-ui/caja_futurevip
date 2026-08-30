@@ -2180,6 +2180,19 @@ function App() {
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
     });
+  const removeCurrentNight = async () => {
+    if (!caja || caja.shift !== "Noche") return;
+    try {
+      const next = await api(`/api/caja/eliminar-noche?boxId=${activeBoxId}`, { method: "DELETE" });
+      setCaja(next);
+      const refreshedHistory = await api(`/api/caja/historial?boxId=${activeBoxId}`);
+      setHistory(refreshedHistory);
+      setSelectedIndex(0);
+      notify("Turno noche eliminado. Quedó activo el turno de tarde del mismo día.");
+    } catch (error) {
+      notify(error.message);
+    }
+  };
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
@@ -2256,6 +2269,11 @@ function App() {
             <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setConfigurationOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
             <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setConfigurationOpen(false); setStatisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
+            {caja?.shift === "Noche" && (
+              <button className="history-trigger" onClick={removeCurrentNight} title="Eliminar el turno noche activo y pasar al turno de tarde del mismo día">
+                <Clock3 size={16} /> Borrar turno noche
+              </button>
+            )}
             <button className="history-trigger" disabled={readOnly} onClick={() => { setConfigurationOpen(!configurationOpen); setStatisticsOpen(false); setLogisticsOpen(false); }}><Settings2 size={16} /> {configurationOpen ? "Caja" : "Configurar"}</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
