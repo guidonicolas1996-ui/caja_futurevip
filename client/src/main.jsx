@@ -1949,9 +1949,9 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             }, {});
             return Object.keys(chipData).length > 0 ? (
               <div key={section.section} className="statistics-section">
-                <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: "12px", marginBottom: "8px" }}>{section.section}</h3>
+                <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
                 {Object.entries(chipData).map(([platform, value]) => (
-                  <div key={platform} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                  <div key={platform}>
                     <span>Carga de Fichas {platform}</span>
                     <b>{money(value)}</b>
                   </div>
@@ -1969,9 +1969,9 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             }, {});
             return Object.keys(transferData).length > 0 ? (
               <div key={section.section} className="statistics-section">
-                <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: "12px", marginBottom: "8px" }}>{section.section}</h3>
+                <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
                 {Object.entries(transferData).map(([route, value]) => (
-                  <div key={route} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                  <div key={route}>
                     <span>{route}</span>
                     <b>{money(value)}</b>
                   </div>
@@ -1984,9 +1984,9 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             const withoutEmpty = Object.entries(expensesObj).filter(([_, val]) => val !== 0);
             return (
               <div key={section.section} className="statistics-section">
-                <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: "12px", marginBottom: "8px" }}>{section.section}</h3>
+                <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
                 {withoutEmpty.length > 0 ? withoutEmpty.map(([category, value]) => (
-                  <div key={category} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                  <div key={category}>
                     <span>{category || "Sin Categoría"}</span>
                     <b>{money(value)}</b>
                   </div>
@@ -1997,14 +1997,14 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         }
         return (
           <div key={section.section} className="statistics-section">
-            <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: section === metricsConfig[0] ? "0" : "12px", marginBottom: "8px" }}>{section.section}</h3>
+            <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
             {section.metrics.map((metric) => {
               let displayValue = group.values[metric.key];
               if (metric.isAverage && group.rows.length > 0) {
                 displayValue = displayValue / group.rows.length;
               }
               return (
-                <div key={metric.key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                <div key={metric.key}>
                   <span>{metric.label}</span>
                   <b>{money(displayValue)}</b>
                 </div>
