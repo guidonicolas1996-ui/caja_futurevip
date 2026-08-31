@@ -2199,21 +2199,21 @@ select:focus {
 .cell-control.collections .account-amount input {
   border-color: var(--green);
   color: var(--green);
-  background: linear-gradient(to right, rgba(245, 173, 105, 0), rgba(131, 213, 162, 0.10));
+  background: linear-gradient(to right, rgba(245, 173, 105, 0), rgba(131, 213, 162, 0.10) 70%);
   padding-left: 3px !important;
 }
 .cell-control.withdrawals .account-amount,
 .cell-control.withdrawals .account-amount input {
   border-color: var(--orange);
   color: var(--orange);
-  background: linear-gradient(to right, rgba(245, 173, 105, 0), rgba(245, 173, 105, 0.10));
+  background: linear-gradient(to right, rgba(245, 173, 105, 0), rgba(245, 173, 105, 0.10) 70%);
   padding-left: 3px !important;
 }
 .cell-control.both .account-amount,
 .cell-control.both .account-amount input {
   border-color: var(--red);
   color: var(--red);
-  background: linear-gradient(to right, rgba(245, 173, 105, 0), rgba(239, 136, 136, 0.10));
+  background: linear-gradient(to right, rgba(245, 173, 105, 0), rgba(239, 136, 136, 0.10) 70%);
   padding-left: 3px !important;
 }
 .cell-control.wallet-category-assigned:not(.collections):not(.withdrawals):not(.both) .account-amount,
