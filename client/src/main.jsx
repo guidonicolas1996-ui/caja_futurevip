@@ -93,7 +93,7 @@ const parseNumberInput = (value) => {
 };
 const formatNumberInput = (value) => {
   const parsed = parseNumberInput(value);
-  if (parsed === 0) return "";
+  if (parsed === 0) return "0";
   return parsed
     ? new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(parsed)
     : "";
@@ -113,17 +113,6 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
   return cashDifference - bonuses + transferAdjustment;
 };
   const formatMovementTime = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
-  const isShiftOutOfTime = (shift) => {
-    const now = new Date();
-    const hour = now.getHours();
-    const minute = now.getMinutes();
-    const currentMinutes = hour * 60 + minute;
-    
-    if (shift === "Noche") return currentMinutes >= 8 * 60; // Si es >= 08:00, está fuera
-    if (shift === "Mañana") return currentMinutes < 8 * 60 || currentMinutes >= 16 * 60; // Si es < 08:00 o >= 16:00, está fuera
-    if (shift === "Tarde") return currentMinutes < 16 * 60; // Si es < 16:00, está fuera
-    return false;
-  };
   const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
     const bonusDate = new Date(createdAt);
     const minutes = bonusDate.getHours() * 60 + bonusDate.getMinutes();
@@ -417,7 +406,7 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
       <ConfigList title="Titulares" items={draft.accounts.holders} entities={draft.accounts.holderEntities} onEntitiesChange={(holderEntities) => updateAccounts({ holderEntities })} placeholder="Nombre del titular" sortable onChange={(holders) => updateAccounts({ holders })} onItemChange={renameHolder} />
       <WalletConfigList wallets={draft.accounts.wallets} walletEntities={draft.accounts.walletEntities} onEntitiesChange={(walletEntities) => updateAccounts({ walletEntities })} modes={walletModes} onChange={updateWallets} onModeChange={(wallet, mode) => updateAccounts({ walletModes: { ...walletModes, [wallet]: mode } })} />
     </div>
-    <section className="config-card"><div className="config-list-head"><h3>Billeteras utilizables por titular</h3><span>Activá y configurá cada cuenta</span></div><div className="availability-table"><div className="availability-row availability-head" style={{ "--wallet-count": draft.accounts.wallets.length }}><b>Titular</b>{draft.accounts.wallets.map((wallet) => <span key={wallet}>{wallet}</span>)}</div>{draft.accounts.holders.map((holder, index) => <div className="availability-row" style={{ "--wallet-count": draft.accounts.wallets.length }} key={index}><b>{holder || "Sin nombre"}</b>{draft.accounts.wallets.map((wallet) => { const setting = walletSettings[holder]?.[wallet] || { category: "Normal" }; const enabled = availability[holder]?.[wallet] !== false; return <div className="account-config-cell" style={{ backgroundColor: enabled ? "rgb(114, 215, 201)" : "transparent" }} key={wallet}><label className="toggle-cell"><input type="checkbox" checked={enabled} onChange={() => { const nextAvailability = structuredClone(availability); nextAvailability[holder] = { ...(nextAvailability[holder] || {}), [wallet]: !enabled }; updateAccounts({ availability: nextAvailability }); }} /><span /></label><button type="button" className="account-settings-button" title={`Configurar ${holder} · ${wallet}`} onClick={() => setSettingsTarget({ holder, wallet })}><Settings2 size={14} /></button></div>; })}</div>)}</div></section>
+    <section className="config-card"><div className="config-list-head"><h3>Billeteras utilizables por titular</h3><span>Activá y configurá cada cuenta</span></div><div className="availability-table"><div className="availability-row availability-head" style={{ "--wallet-count": draft.accounts.wallets.length }}><b>Titular</b>{draft.accounts.wallets.map((wallet) => <span key={wallet}>{wallet}</span>)}</div>{draft.accounts.holders.map((holder, index) => <div className="availability-row" style={{ "--wallet-count": draft.accounts.wallets.length }} key={index}><b>{holder || "Sin nombre"}</b>{draft.accounts.wallets.map((wallet) => { const setting = walletSettings[holder]?.[wallet] || { category: "Normal" }; const enabled = availability[holder]?.[wallet] !== false; return <div className="account-config-cell" key={wallet}><label className="toggle-cell"><input type="checkbox" checked={enabled} onChange={() => { const nextAvailability = structuredClone(availability); nextAvailability[holder] = { ...(nextAvailability[holder] || {}), [wallet]: !enabled }; updateAccounts({ availability: nextAvailability }); }} /><span /></label><button type="button" className="account-settings-button" title={`Configurar ${holder} · ${wallet}`} onClick={() => setSettingsTarget({ holder, wallet })}><Settings2 size={14} /></button></div>; })}</div>)}</div></section>
     {settingsTarget && <div className="modal-backdrop" onClick={() => setSettingsTarget(null)}><div className="modal account-settings-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSettingsTarget(null)} title="Cerrar"><X size={18} /></button><div className="modal-icon"><Settings2 size={21} /></div><h2>{settingsTarget.holder} · {settingsTarget.wallet}</h2><p>Datos disponibles para copiar desde la caja.</p><div className="account-settings-fields"><label><span>Alias</span><input value={targetSetting.alias || ""} onChange={(event) => updateTargetSetting({ alias: event.target.value })} /></label><label><span>CUIL</span><input value={targetSetting.cuil || ""} onChange={(event) => updateTargetSetting({ cuil: event.target.value })} /></label><label><span>Contraseña</span><input value={targetSetting.password || ""} onChange={(event) => updateTargetSetting({ password: event.target.value })} /></label><label><span>Tipo de billetera</span><select value={targetSetting.category || "Normal"} onChange={(event) => updateTargetSetting({ category: event.target.value })}><option>Normal</option><option>Depósitos</option><option>Compartidas</option></select></label><label className="account-settings-note"><span>Nota</span><textarea rows="4" value={targetSetting.note || ""} onChange={(event) => updateTargetSetting({ note: event.target.value })} /></label></div><div className="modal-actions"><button className="close-button" onClick={() => setSettingsTarget(null)}>Listo <Check size={16} /></button></div></div></div>}
   </>;
 }
@@ -462,7 +451,7 @@ function BonusMonthlyGoalConfig({ draft, update }) {
       <label><span>Objetivo total</span><AmountInput value={bonusGoal.total} onChange={(value) => updateValue("total", value)} /></label>
       <div className="bonus-goal-percentages">
         {Object.keys(bonusGoal.percentages || {}).map((shift) => (
-          <label key={shift}><span>{shift}</span><input type="number" value={bonusGoal.percentages?.[shift] ?? ""} min="0" max="100" onChange={(event) => updatePercent(shift, event.target.value)} /></label>
+          <label key={shift}><span>{shift}</span><input type="number" value={bonusGoal.percentages?.[shift] ?? 0} min="0" max="100" onChange={(event) => updatePercent(shift, event.target.value)} /></label>
         ))}
       </div>
     </div>
@@ -925,7 +914,7 @@ function AdvertisingSectionRebuilt({ caja, update, boxes, config, onViewBonuses,
     onNotify("Copiado al portapapeles");
   };
   return <div className="publicity-layout" onClick={(event) => { if (event.target instanceof HTMLInputElement && event.target.closest(".publicity-panel")) event.target.select(); }}>
-    <section className="panel publicity-panel"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="publicity-list">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const total = number(item.total); const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const response = number(item.new) + number(item.repeated) - total; return <div className="publicity-item" key={name}><strong className="publicity-name"><ReceiptText size={13} />{name}</strong><div className="publicity-numbers"><label><span>Total</span><input maxLength={3} inputMode="numeric" value={item.total || ""} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><span>Nuevos</span><input maxLength={3} inputMode="numeric" value={item.new || ""} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><span>Repetidos</span><input maxLength={3} inputMode="numeric" value={item.repeated || ""} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><span>S/Resp</span><b>{response}</b></label></div><div className="publicity-derived"><span>Derivados <b>{derived}</b></span><div>{boxes.map((box) => <label key={box.id}><small>{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] || ""} onChange={(event) => { const cleaned = String(event.target.value).replace(/\D/g, "").slice(0, 3); const numValue = cleaned === "" ? "" : Math.max(0, Number(cleaned)); updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: numValue } }); }} /></label>)}</div></div><strong className="publicity-rate"><ReceiptText size={11} />{total ? Math.round((derived / total) * 100) : 0}%</strong></div>; })}</div></section>
+    <section className="panel publicity-panel"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="publicity-list">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const total = number(item.total); const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const response = number(item.new) + number(item.repeated) - total; return <div className="publicity-item" key={name}><strong className="publicity-name"><ReceiptText size={13} />{name}</strong><div className="publicity-numbers"><label><span>Total</span><input maxLength={3} inputMode="numeric" value={item.total ?? 0} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><span>Nuevos</span><input maxLength={3} inputMode="numeric" value={item.new ?? 0} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><span>Repetidos</span><input maxLength={3} inputMode="numeric" value={item.repeated ?? 0} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><span>S/Resp</span><b>{response}</b></label></div><div className="publicity-derived"><span>Derivados <b>{derived}</b></span><div>{boxes.map((box) => <label key={box.id}><small>{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] ?? 0} onChange={(event) => updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: Math.max(0, Number(String(event.target.value).replace(/\D/g, "").slice(0, 3)) || 0) } })} /></label>)}</div></div><strong className="publicity-rate"><ReceiptText size={11} />{total ? Math.round((derived / total) * 100) : 0}%</strong></div>; })}</div></section>
     <section className="panel publicity-bonus-panel"><QuickBonusAccess caja={caja} update={update} onViewBonuses={onViewBonuses} onAddManualBonus={onAddManualBonus} /></section>
     <section className="panel publicity-chips-panel"><SectionHead icon={<Ticket size={16} />} title="Fichas Finales" /><div className="publicity-chip-list">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); return <label key={chip.platform} style={{ "--platform-accent": boxColorStyle(config.platformColors?.[chip.platform] || "teal")["--box-accent"] }}><span>Ficha Final ({chip.platform})</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>{money(balance)}</small></label>; })}</div></section>
   </div>;
@@ -1269,12 +1258,12 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
             <div className="bonus-editor-preview">
               {recoveredMode
                 ? <>
-                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(number(editorWithdrawal) - number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1))}</b></div>
-                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1))}</b></div>
+                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(editorWithdrawal - editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
                 </>
                 : <>
-                  {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(number(editorAmount) + number(editorAmount) * (number(editorPercent) / 100))}</b></div>}
-                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1))}</b></div>
+                  {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(editorAmount + editorAmount * (editorPercent / 100))}</b></div>}
+                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
                 </>}
             </div>
             <div className="modal-actions">
@@ -1969,7 +1958,7 @@ function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, ac
   return (
     <div ref={snapshotRef} className="snapshot-export" style={boxColorStyle(activeBox?.color)}>
       <div className="snapshot-title">
-        <h1><strong>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</strong>{isShiftOutOfTime(caja.shift) && <span style={{ color: "rgb(255, 0, 0)", marginLeft: "1em", fontSize: "1em" }}>CAJA FUERA DE TURNO</span>}</h1>
+        <h1><strong>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</strong></h1>
         <p>{capitalizedDate}</p>
       </div>
       <div className="snapshot-summary">
@@ -2361,7 +2350,7 @@ function App() {
       <main>
         <div className="page-title">
           <div className="current-shift-heading">
-            <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}{isShiftOutOfTime(caja.shift) && <span style={{ color: "rgb(255, 0, 0)", marginLeft: "0.5em", fontSize: "0.8em" }}>CAJA FUERA DE TURNO</span>}</h1>
+            <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</h1>
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
