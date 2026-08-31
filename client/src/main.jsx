@@ -1944,16 +1944,16 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         const accentColor = combinedView ? "#ffffff" : box.color ? boxColorStyle(box.color)["--box-accent"] : "#72d7ca";
         if (section.dynamic) {
           if (section.section === "Cargas de Fichas") {
-            const chipData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.ta || []).reduce((acc, ta) => {
-              acc["Fichas"] = (acc["Fichas"] || 0) + number(ta.amount);
+            const chipData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.chips || []).reduce((acc, chip) => {
+              acc[chip.platform] = (acc[chip.platform] || 0) + number(chip.initial);
               return acc;
             }, {});
             return Object.keys(chipData).length > 0 ? (
               <div key={section.section} className="statistics-section">
                 <h3 style={{ color: accentColor }}>{section.section}</h3>
-                {Object.entries(chipData).map(([label, value]) => (
-                  <div key={label}>
-                    <span>Carga de Fichas {label}</span>
+                {Object.entries(chipData).map(([platform, value]) => (
+                  <div key={platform}>
+                    <span>Carga de Fichas {platform}</span>
                     <b>{money(value)}</b>
                   </div>
                 ))}

@@ -2745,6 +2745,11 @@ select:focus {
   font-size: 10px;
   white-space: nowrap;
 }
+.statistics-boxes label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
 .statistics-boxes input,
 .statistics-combined input {
   appearance: none;
@@ -2752,54 +2757,60 @@ select:focus {
   width: 38px;
   height: 20px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
   cursor: pointer;
   position: relative;
   transition: background 0.3s ease, border-color 0.3s ease;
   flex-shrink: 0;
   vertical-align: middle;
 }
-.statistics-boxes label:has(input:checked) {
-  color: inherit !important;
-}
-.statistics-boxes input:checked {
-  background: currentColor;
+.statistics-boxes input {
   border-color: currentColor;
-}
-.statistics-combined input:checked {
-  background: white;
-  border-color: white;
 }
 .statistics-boxes input::before {
   content: "";
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.4);
   top: 2px;
   left: 2px;
   transition: left 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.statistics-boxes input:checked {
+  background: currentColor;
+  border-color: currentColor;
+  background: color-mix(in srgb, currentColor 60%, transparent);
 }
 .statistics-boxes input:checked::before {
-  left: 20px;
+  left: 22px;
   background: white;
+}
+.statistics-combined input {
+  border-color: rgba(255, 255, 255, 0.3);
 }
 .statistics-combined input::before {
   content: "";
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.4);
   top: 2px;
   left: 2px;
   transition: left 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.statistics-combined input:checked {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: white;
 }
 .statistics-combined input:checked::before {
-  left: 20px;
-  background: rgba(0, 0, 0, 0.6);
+  left: 22px;
+  background: white;
 }
 .statistics-combined {
   min-height: 30px;
