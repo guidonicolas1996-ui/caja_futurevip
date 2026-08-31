@@ -1866,7 +1866,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   const [endDate, setEndDate] = useState(dateKey(today));
   const [chartMetric, setChartMetric] = useState("tips");
   const [selectedBar, setSelectedBar] = useState(null);
-  const [selectedBoxIds, setSelectedBoxIds] = useState([activeBoxId]);
+  const [selectedBoxIds, setSelectedBoxIds] = useState(boxes.map(b => b.id));
   const [combinedView, setCombinedView] = useState(true);
   const setRange = (start, end) => { setStartDate(dateKey(start)); setEndDate(dateKey(end)); setSelectedBar(null); };
   const shortcut = (name) => {
@@ -1938,21 +1938,22 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
     }
   ];
   return <main className="statistics-page">
-    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined"><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
-    {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id}><h2 className="statistics-box-title" style={{ borderBottom: `3px solid var(--box-accent)`, paddingBottom: "8px" }}>{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => {
+    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id} style={{ color: boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined" style={{ color: "white" }}><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
+    {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id} style={combinedView ? {} : boxColorStyle(box.color)}><h2 className="statistics-box-title" style={{ borderBottom: `3px solid ${combinedView ? "#ffffff" : boxColorStyle(box.color)["--box-accent"]}`, paddingBottom: "8px" }}>{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => {
       const renderMetricSection = (section) => {
+        const accentColor = combinedView ? "#ffffff" : box.color ? boxColorStyle(box.color)["--box-accent"] : "#72d7ca";
         if (section.dynamic) {
           if (section.section === "Cargas de Fichas") {
-            const chipData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.chips || []).reduce((acc, chip) => {
-              acc[chip.platform] = (acc[chip.platform] || 0) + (number(chip.initial) - number(chip.final));
+            const chipData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.ta || []).reduce((acc, ta) => {
+              acc["Fichas"] = (acc["Fichas"] || 0) + number(ta.amount);
               return acc;
             }, {});
             return Object.keys(chipData).length > 0 ? (
               <div key={section.section} className="statistics-section">
-                <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
-                {Object.entries(chipData).map(([platform, value]) => (
-                  <div key={platform}>
-                    <span>Carga de Fichas {platform}</span>
+                <h3 style={{ color: accentColor }}>{section.section}</h3>
+                {Object.entries(chipData).map(([label, value]) => (
+                  <div key={label}>
+                    <span>Carga de Fichas {label}</span>
                     <b>{money(value)}</b>
                   </div>
                 ))}
@@ -1969,7 +1970,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             }, {});
             return Object.keys(transferData).length > 0 ? (
               <div key={section.section} className="statistics-section">
-                <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
+                <h3 style={{ color: accentColor }}>{section.section}</h3>
                 {Object.entries(transferData).map(([route, value]) => (
                   <div key={route}>
                     <span>{route}</span>
@@ -1984,7 +1985,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             const withoutEmpty = Object.entries(expensesObj).filter(([_, val]) => val !== 0);
             return (
               <div key={section.section} className="statistics-section">
-                <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
+                <h3 style={{ color: accentColor }}>{section.section}</h3>
                 {withoutEmpty.length > 0 ? withoutEmpty.map(([category, value]) => (
                   <div key={category}>
                     <span>{category || "Sin Categoría"}</span>
@@ -1997,16 +1998,18 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         }
         return (
           <div key={section.section} className="statistics-section">
-            <h3 style={{ color: "var(--box-accent)" }}>{section.section}</h3>
+            <h3 style={{ color: accentColor }}>{section.section}</h3>
             {section.metrics.map((metric) => {
               let displayValue = group.values[metric.key];
               if (metric.isAverage && group.rows.length > 0) {
                 displayValue = displayValue / group.rows.length;
               }
+              const isAverageMetric = metric.isAverage;
+              const valueColor = isAverageMetric ? (displayValue >= 0 ? "#6dd5a8" : "#ef8888") : undefined;
               return (
                 <div key={metric.key}>
                   <span>{metric.label}</span>
-                  <b>{money(displayValue)}</b>
+                  <b style={{ color: valueColor }}>{money(displayValue)}</b>
                 </div>
               );
             })}
