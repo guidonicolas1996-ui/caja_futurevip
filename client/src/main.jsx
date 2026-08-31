@@ -784,7 +784,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
       onChange={(event) => {
         const nextValue = numericOnly ? event.target.value.replace(/\D/g, "") : event.target.value;
         setInputValue(nextValue);
-        onChange(numericOnly ? Number(nextValue) || 0 : parseNumberInput(nextValue));
+        onChange(numericOnly ? (nextValue === "" ? "" : Number(nextValue)) : parseNumberInput(nextValue));
       }}
       onBlur={() => {
         const input = inputRef.current;
@@ -798,7 +798,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
         selectAllPending.current = false;
         selectAllHandled.current = false;
         setIsFocused(false);
-        const formattedValue = numericOnly ? (number(inputValue) === 0 ? "0" : formatNumberInput(inputValue)) : formatNumberInput(inputValue);
+        const formattedValue = numericOnly ? (inputValue === "" ? "" : formatNumberInput(inputValue)) : formatNumberInput(inputValue);
         setInputValue(formattedValue);
       }}
     />
@@ -857,7 +857,11 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
 function AdvertisingSection({ caja, update, boxes, config, onViewBonuses, onAddManualBonus, onNotify, notesEnabled, onNotesEnabledChange }) {
   const advertising = caja.advertising || { "Publicidad A": { total: 0, new: 0, repeated: 0, derived: {} }, "Publicidad B": { total: 0, new: 0, repeated: 0, derived: {} } };
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...advertising[name], ...patch } } });
-  const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
+  const updateValue = (name, field, value) => {
+    const cleaned = String(value).replace(/\D/g, "").slice(0, 3);
+    const numValue = cleaned === "" ? "" : Math.max(0, Number(cleaned));
+    updateAdvertising(name, { [field]: numValue });
+  };
     const copySummary = async () => {
     const text = ["*Conteo de Publi:*", "", ...["Publicidad A", "Publicidad B"].flatMap((name) => {
       const item = advertising[name] || {};
@@ -881,7 +885,11 @@ function AdvertisingSection({ caja, update, boxes, config, onViewBonuses, onAddM
 function AdvertisingSectionRebuilt({ caja, update, boxes, config, onViewBonuses, onAddManualBonus, onNotify }) {
   const advertising = caja.advertising || {};
   const updateAdvertising = (name, patch) => update({ advertising: { ...advertising, [name]: { ...(advertising[name] || {}), ...patch } } });
-  const updateValue = (name, field, value) => updateAdvertising(name, { [field]: Math.max(0, Number(String(value).replace(/\D/g, "").slice(0, 3)) || 0) });
+  const updateValue = (name, field, value) => {
+    const cleaned = String(value).replace(/\D/g, "").slice(0, 3);
+    const numValue = cleaned === "" ? "" : Math.max(0, Number(cleaned));
+    updateAdvertising(name, { [field]: numValue });
+  };
   const copySummary = async () => {
     const lines = ["*CONTEO DE PUBLICIDAD:*", ""];
     ["Publicidad A", "Publicidad B"].forEach((name, index) => {
