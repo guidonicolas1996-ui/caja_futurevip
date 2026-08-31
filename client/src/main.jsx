@@ -441,7 +441,7 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
       for (const box of boxes) {
         const config = await api(`/api/configuracion?boxId=${box.id}`);
         const platforms = config.platforms || [];
-        boxPlatforms[box.id] = { title: box.title, platforms };
+        boxPlatforms[box.id] = { title: box.title, platforms, color: box.color };
       }
       setPlatformsByBox(boxPlatforms);
     } catch (error) {
@@ -460,6 +460,21 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
     setPlatformsByBox({});
   };
   
+  const boxColorStyle = (color) => {
+    const colors = {
+      teal: { "--box-accent": "#72d7ca", "--box-soft": "rgba(114, 215, 202, 0.08)", "--box-glow": "rgba(114, 215, 202, 0.3)", "--box-line": "rgba(114, 215, 202, 0.2)" },
+      blue: { "--box-accent": "#5aa8d8", "--box-soft": "rgba(90, 168, 216, 0.08)", "--box-glow": "rgba(90, 168, 216, 0.3)", "--box-line": "rgba(90, 168, 216, 0.2)" },
+      green: { "--box-accent": "#83d5a2", "--box-soft": "rgba(131, 213, 162, 0.08)", "--box-glow": "rgba(131, 213, 162, 0.3)", "--box-line": "rgba(131, 213, 162, 0.2)" },
+      orange: { "--box-accent": "#f5ad69", "--box-soft": "rgba(245, 173, 105, 0.08)", "--box-glow": "rgba(245, 173, 105, 0.3)", "--box-line": "rgba(245, 173, 105, 0.2)" },
+      pink: { "--box-accent": "#f597b1", "--box-soft": "rgba(245, 151, 177, 0.08)", "--box-glow": "rgba(245, 151, 177, 0.3)", "--box-line": "rgba(245, 151, 177, 0.2)" },
+      red: { "--box-accent": "#ef8888", "--box-soft": "rgba(239, 136, 136, 0.08)", "--box-glow": "rgba(239, 136, 136, 0.3)", "--box-line": "rgba(239, 136, 136, 0.2)" },
+      yellow: { "--box-accent": "#f5d547", "--box-soft": "rgba(245, 213, 71, 0.08)", "--box-glow": "rgba(245, 213, 71, 0.3)", "--box-line": "rgba(245, 213, 71, 0.2)" },
+      violet: { "--box-accent": "#b7a3e5", "--box-soft": "rgba(183, 163, 229, 0.08)", "--box-glow": "rgba(183, 163, 229, 0.3)", "--box-line": "rgba(183, 163, 229, 0.2)" },
+      slate: { "--box-accent": "#8b92a9", "--box-soft": "rgba(139, 146, 169, 0.08)", "--box-glow": "rgba(139, 146, 169, 0.3)", "--box-line": "rgba(139, 146, 169, 0.2)" },
+    };
+    return colors[color] || colors.teal;
+  };
+  
   return <>
     <section className="config-card monthly-goal-card">
       <div className="config-list-head"><h3>Objetivo de Depósitos General</h3><span>Se actualiza manualmente</span></div>
@@ -470,7 +485,7 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
     </section>
     
     {depositModalOpen && <div className="modal-backdrop" onClick={() => setDepositModalOpen(false)}>
-      <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "85vh", overflowY: "auto", maxWidth: "800px" }}>
+      <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "85vh", maxWidth: "700px", overflowY: "auto", overflowX: "hidden", padding: "24px" }}>
         <button className="modal-close" onClick={() => setDepositModalOpen(false)} title="Cerrar"><X size={18} /></button>
         <div className="modal-icon"><Download size={21} /></div>
         <h2>Importar depósitos por plataforma</h2>
@@ -480,32 +495,36 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
         ) : Object.keys(platformsByBox).length === 0 ? (
           <div style={{ padding: "60px 40px", textAlign: "center", color: "var(--text-muted)" }}>No hay plataformas configuradas</div>
         ) : (
-          <div style={{ padding: "24px 0", display: "flex", flexDirection: "column", gap: "24px" }}>
-            {Object.entries(platformsByBox).map(([boxId, { title, platforms }]) => (
+          <div style={{ padding: "20px 0", display: "flex", flexDirection: "column", gap: "24px" }}>
+            {Object.entries(platformsByBox).map(([boxId, { title, platforms, color }]) => (
               platforms.length > 0 && (
-                <div key={boxId} style={{ borderBottom: "1px solid var(--line-color)", paddingBottom: "20px" }}>
-                  <h3 style={{ fontSize: "0.95em", fontWeight: "700", marginBottom: "12px", color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div key={boxId} style={{ ...boxColorStyle(color), borderBottom: `1px solid var(--box-line)`, paddingBottom: "20px" }}>
+                  <h3 style={{ fontSize: "0.95em", fontWeight: "700", marginBottom: "14px", color: "var(--box-accent)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                     {platforms.map((platform) => (
-                      <label key={`${boxId}-${platform}`} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <span style={{ fontSize: "0.8em", fontWeight: "600", color: "var(--text-secondary)" }}>Depósitos {platform}</span>
-                        <input 
-                          type="number" 
-                          inputMode="decimal"
-                          placeholder="0"
-                          value={depositValues[`${boxId}-${platform}`] || ""} 
-                          onChange={(event) => setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: event.target.value })}
-                          style={{ 
-                            padding: "10px 12px", 
-                            border: "1px solid var(--line-color)", 
-                            borderRadius: "6px",
-                            backgroundColor: "var(--bg-secondary)",
-                            color: "var(--text-primary)",
-                            fontSize: "0.95em",
-                            fontFamily: "inherit"
-                          }}
-                        />
-                      </label>
+                      <div key={`${boxId}-${platform}`} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                        <label style={{ fontSize: "0.8em", fontWeight: "600", color: "var(--text-secondary)" }}>Depósitos {platform}</label>
+                        <div style={{ display: "flex", alignItems: "center", backgroundColor: "#202a2c", border: `1px solid var(--box-line)`, borderRadius: "5px", paddingLeft: "8px", color: "#758689", fontFamily: "DM Mono", fontSize: "11px" }}>
+                          <span>$</span>
+                          <input 
+                            type="number" 
+                            inputMode="decimal"
+                            placeholder="0,00"
+                            value={depositValues[`${boxId}-${platform}`] || ""} 
+                            onChange={(event) => setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: event.target.value })}
+                            style={{ 
+                              border: "0",
+                              background: "transparent",
+                              width: "100%",
+                              padding: "8px 8px 8px 4px",
+                              textAlign: "right",
+                              fontFamily: "DM Mono",
+                              fontSize: "11px",
+                              color: "inherit"
+                            }}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -513,7 +532,8 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
             ))}
           </div>
         )}
-        <div className="modal-actions" style={{ marginTop: "20px" }}>
+        <div className="modal-actions" style={{ marginTop: "24px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+          <button onClick={() => setDepositModalOpen(false)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontWeight: "500" }}>Cancelar</button>
           <button className="close-button" onClick={handleDepositModalSave} disabled={loadingPlatforms}>Listo <Check size={16} /></button>
         </div>
       </div>

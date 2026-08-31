@@ -4031,3 +4031,19 @@ select:focus {
     min-width: 22px !important;
   }
 }
+
+/* Remove arrows from number inputs */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Deposit modal styling */
+.modal input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
