@@ -583,11 +583,14 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
                           <div style={{ display: "flex", alignItems: "center", backgroundColor: "#202a2c", border: `1px solid var(--box-line)`, borderRadius: "5px", paddingLeft: "8px", color: "#758689", fontFamily: "DM Mono", fontSize: "11px", flex: 1 }}>
                             <span>$</span>
                             <input 
-                              type="number" 
+                              type="text" 
                               inputMode="decimal"
                               placeholder="0,00"
-                              value={depositValues[`${boxId}-${platform}`] || ""} 
-                              onChange={(event) => setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: event.target.value })}
+                              value={formatNumberInput(depositValues[`${boxId}-${platform}`] || 0)} 
+                              onChange={(event) => {
+                                const rawValue = event.target.value.replace(/\./g, '').replace(',', '.');
+                                setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: rawValue || "" });
+                              }}
                               style={{ 
                                 border: "0",
                                 background: "transparent",
