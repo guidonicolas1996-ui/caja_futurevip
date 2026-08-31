@@ -613,11 +613,11 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
             ))}
           </div>
         )}
-        <div style={{ padding: "20px 16px", backgroundColor: "rgba(0,0,0,0.3)", borderRadius: "8px", marginTop: "20px", textAlign: "right" }}>
-          <small style={{ color: "var(--text-muted)" }}>Suma total:</small>
-          <div style={{ fontSize: "1.3em", fontWeight: "700", color: "var(--box-accent)", fontFamily: "DM Mono" }}>${formatNumberInput(Object.values(depositValues).reduce((sum, val) => sum + number(val), 0))}</div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", alignItems: "center", marginTop: "20px", paddingTop: "16px", borderTop: "1px solid var(--line)" }}>
+          <small style={{ color: "var(--text-muted)", fontSize: "0.75em" }}>Suma total:</small>
+          <div style={{ fontSize: "0.9em", fontWeight: "600", color: "var(--box-accent)", fontFamily: "DM Mono" }}>${formatNumberInput(Object.values(depositValues).reduce((sum, val) => sum + number(val), 0))}</div>
         </div>
-        <div className="modal-actions" style={{ marginTop: "24px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+        <div className="modal-actions" style={{ marginTop: "16px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
           <button onClick={() => setDepositModalOpen(false)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontWeight: "500", transition: "all 0.2s" }}>Cancelar</button>
           <button className="close-button" onClick={handleDepositModalSave} disabled={loadingPlatforms}>Listo <Check size={16} /></button>
         </div>
