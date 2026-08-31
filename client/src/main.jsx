@@ -1867,7 +1867,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   const [chartMetric, setChartMetric] = useState("tips");
   const [selectedBar, setSelectedBar] = useState(null);
   const [selectedBoxIds, setSelectedBoxIds] = useState([activeBoxId]);
-  const [combinedView, setCombinedView] = useState(false);
+  const [combinedView, setCombinedView] = useState(true);
   const setRange = (start, end) => { setStartDate(dateKey(start)); setEndDate(dateKey(end)); setSelectedBar(null); };
   const shortcut = (name) => {
     const current = new Date();
@@ -1902,10 +1902,129 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   const metricOptions = [{ key: "tips", label: "Propinas" }, { key: "found", label: "Encontrado" }, { key: "granted", label: "Bonos otorgados" }, { key: "expenses", label: "Salidas" }, { key: "ta", label: "Cargas T.A." }];
   const chartRows = summaries.map((group) => ({ label: group.shift, value: group.values?.[chartMetric] || 0 }));
   const maxChart = Math.max(...chartRows.map((row) => row.value), 1);
-  const metrics = [{ label: "Propinas", key: "tips" }, { label: "Dinero encontrado", key: "found" }, { label: "Redondeo", key: "rounding" }, { label: "Bonos otorgados", key: "granted" }, { label: "Bonos recuperados", key: "recovered" }, { label: "Bonos netos", key: "bonusesNet" }, { label: "Traspasos", key: "transfers" }, { label: "Cargas T.A.", key: "ta" }, { label: "Caja inicial", key: "cashInitial" }, { label: "Caja final", key: "cashFinal" }, { label: "Saldo", key: "balance" }, { label: "Pre diferencia", key: "preDifference" }, { label: "Diferencia", key: "difference" }, { label: "Diferencia caja", key: "cashDifference" }, { label: "Diferencia real", key: "realDifference" }];
+  
+  const metricsConfig = [
+    {
+      section: "General",
+      metrics: [
+        { label: "Propinas", key: "tips" },
+        { label: "Caja inicial (Promedio)", key: "cashInitial", isAverage: true },
+        { label: "Caja final (Promedio)", key: "cashFinal", isAverage: true },
+        { label: "Diferencia caja (Promedio)", key: "cashDifference", isAverage: true },
+        { label: "Diferencia real (Promedio)", key: "realDifference", isAverage: true },
+        { label: "Saldo (Promedio)", key: "balance", isAverage: true },
+        { label: "Redondeo (Promedio)", key: "rounding", isAverage: true },
+      ]
+    },
+    {
+      section: "Bonos",
+      metrics: [
+        { label: "Bonos otorgados", key: "granted" },
+        { label: "Bonos recuperados", key: "recovered" },
+        { label: "Bonos netos", key: "bonusesNet" },
+      ]
+    },
+    {
+      section: "Cargas de Fichas",
+      dynamic: true
+    },
+    {
+      section: "Traspasos",
+      dynamic: true
+    },
+    {
+      section: "Gastos",
+      dynamic: true
+    }
+  ];
   return <main className="statistics-page">
     <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined"><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
-    {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id}><h2 className="statistics-box-title">{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => <section className={`panel statistics-shift ${group.shift === "Total" ? "statistics-total" : ""}`} key={`${box.id}-${group.shift}`}><div className="statistics-shift-head"><h2>{group.shift}</h2><span>{group.rows.length} turnos</span></div><div className="statistics-metrics">{metrics.map((metric) => <div key={metric.key}><span>{metric.label}</span><b>{money(group.values[metric.key])}</b></div>)}</div><div className="statistics-expenses"><strong>Desglose de salidas</strong>{Object.entries(group.values.expensesByCategory).map(([category, value]) => <span key={category}>{category}<b>{money(value)}</b></span>)}{!Object.keys(group.values.expensesByCategory).length && <small>Sin salidas</small>}</div></section>)}</section></section>)}
+    {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id}><h2 className="statistics-box-title" style={{ borderBottom: `3px solid var(--box-accent)`, paddingBottom: "8px" }}>{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => {
+      const renderMetricSection = (section) => {
+        if (section.dynamic) {
+          if (section.section === "Cargas de Fichas") {
+            const chipData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.chips || []).reduce((acc, chip) => {
+              acc[chip.platform] = (acc[chip.platform] || 0) + (number(chip.initial) - number(chip.final));
+              return acc;
+            }, {});
+            return Object.keys(chipData).length > 0 ? (
+              <div key={section.section} className="statistics-section">
+                <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: "12px", marginBottom: "8px" }}>{section.section}</h3>
+                {Object.entries(chipData).map(([platform, value]) => (
+                  <div key={platform} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                    <span>Carga de Fichas {platform}</span>
+                    <b>{money(value)}</b>
+                  </div>
+                ))}
+              </div>
+            ) : null;
+          }
+          if (section.section === "Traspasos") {
+            const transferData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.transfers || []).reduce((acc, transfer) => {
+              const fromBox = boxes.find((b) => b.id === transfer.fromBoxId)?.title || "Caja";
+              const toBox = boxes.find((b) => b.id === transfer.toBoxId)?.title || "Caja";
+              const key = `${fromBox} → ${toBox}`;
+              acc[key] = (acc[key] || 0) + number(transfer.amount);
+              return acc;
+            }, {});
+            return Object.keys(transferData).length > 0 ? (
+              <div key={section.section} className="statistics-section">
+                <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: "12px", marginBottom: "8px" }}>{section.section}</h3>
+                {Object.entries(transferData).map(([route, value]) => (
+                  <div key={route} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                    <span>{route}</span>
+                    <b>{money(value)}</b>
+                  </div>
+                ))}
+              </div>
+            ) : null;
+          }
+          if (section.section === "Gastos") {
+            const expensesObj = group.values.expensesByCategory || {};
+            const withoutEmpty = Object.entries(expensesObj).filter(([_, val]) => val !== 0);
+            return (
+              <div key={section.section} className="statistics-section">
+                <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: "12px", marginBottom: "8px" }}>{section.section}</h3>
+                {withoutEmpty.length > 0 ? withoutEmpty.map(([category, value]) => (
+                  <div key={category} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                    <span>{category || "Sin Categoría"}</span>
+                    <b>{money(value)}</b>
+                  </div>
+                )) : <small>Sin gastos</small>}
+              </div>
+            );
+          }
+        }
+        return (
+          <div key={section.section} className="statistics-section">
+            <h3 style={{ color: "var(--box-accent)", fontSize: "0.85em", fontWeight: "600", marginTop: section === metricsConfig[0] ? "0" : "12px", marginBottom: "8px" }}>{section.section}</h3>
+            {section.metrics.map((metric) => {
+              let displayValue = group.values[metric.key];
+              if (metric.isAverage && group.rows.length > 0) {
+                displayValue = displayValue / group.rows.length;
+              }
+              return (
+                <div key={metric.key} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85em", padding: "4px 0" }}>
+                  <span>{metric.label}</span>
+                  <b>{money(displayValue)}</b>
+                </div>
+              );
+            })}
+          </div>
+        );
+      };
+      return (
+        <section className={`panel statistics-shift ${group.shift === "Total" ? "statistics-total" : ""}`} key={`${box.id}-${group.shift}`}>
+          <div className="statistics-shift-head">
+            <h2>{group.shift}</h2>
+            <span>{group.rows.length} turnos</span>
+          </div>
+          <div className="statistics-metrics" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+            {metricsConfig.map((section) => renderMetricSection(section))}
+          </div>
+        </section>
+      );
+    })}</section></section>)}
     <section className="statistics-visuals"><section className="panel statistics-chart"><div className="statistics-chart-head"><div><h2>Comparativa por turno</h2><span>Seleccioná una métrica y una barra</span></div><select value={chartMetric} onChange={(event) => { setChartMetric(event.target.value); setSelectedBar(null); }}>{metricOptions.map((metric) => <option value={metric.key} key={metric.key}>{metric.label}</option>)}</select></div><div className="statistics-bars">{chartRows.map((row) => <button type="button" className={selectedBar === row.label ? "selected" : ""} key={row.label} onClick={() => setSelectedBar(row.label)}><span className="statistics-bar-value">{money(row.value)}</span><i style={{ height: `${Math.max(4, row.value / maxChart * 150)}px` }} /><small>{row.label}</small></button>)}</div>{selectedBar && <p className="statistics-chart-detail">{selectedBar}: <b>{money(chartRows.find((row) => row.label === selectedBar)?.value)}</b></p>}</section><section className="panel statistics-tips"><div className="statistics-chart-head"><div><h2>Totalizador de propinas</h2><span>Valores guardados en configuración</span></div><Coins size={18} /></div><div className="statistics-tip-total"><span>Total de propinas</span><strong>{money(total.tips)}</strong></div><div className="statistics-tip-fields"><label>Empleados<input type="number" min="1" step="1" value={statistics.employees ?? 1} onChange={(event) => updateStatistics({ employees: Math.max(1, number(event.target.value)) })} /></label><label>Propinas c/u<strong>{money(total.tips / employees)}</strong></label><label>% proporcional<input type="number" min="0" max="100" step="1" value={statistics.proportionalPercent ?? 100} onChange={(event) => updateStatistics({ proportionalPercent: Math.min(100, Math.max(0, number(event.target.value))) })} /></label><label>Proporcional c/u<strong>{money(total.tips / employees * percent / 100)}</strong></label></div></section></section>
   </main>;
 }
