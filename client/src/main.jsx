@@ -32,6 +32,7 @@ import {
   ReceiptText,
   Target,
   Ticket,
+  Upload,
   WalletCards,
   X,
 } from "lucide-react";
@@ -427,6 +428,11 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
   const [depositValues, setDepositValues] = useState({});
   const [platformsByBox, setPlatformsByBox] = useState({});
   const [loadingPlatforms, setLoadingPlatforms] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
+  const [csvModalTarget, setCsvModalTarget] = useState(null); // { boxId, platform }
+  const [csvFormat, setCsvFormat] = useState("MultiPanel");
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvProcessing, setCsvProcessing] = useState(false);
   const monthlyGoal = draft.monthlyGoal || { final: 0, achieved: 0 };
   const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
   
@@ -458,6 +464,75 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
     setDepositModalOpen(false);
     setDepositValues({});
     setPlatformsByBox({});
+  };
+  
+  const handleOpenCsvModal = (boxId, platform) => {
+    setCsvModalTarget({ boxId, platform });
+    setCsvFile(null);
+    setCsvFormat("MultiPanel");
+    setCsvModalOpen(true);
+  };
+  
+  const handleCsvFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setCsvFile(file);
+    }
+  };
+  
+  const parseMultiPanelCSV = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csv = e.target.result;
+          const lines = csv.split('\n').filter(line => line.trim());
+          let total = 0;
+          
+          for (const line of lines) {
+            const parts = line.split(',');
+            if (parts.length >= 3) {
+              const amount = parseFloat(parts[2].trim());
+              if (!isNaN(amount) && amount > 0) {
+                total += amount;
+              }
+            }
+          }
+          
+          resolve(total);
+        } catch (error) {
+          reject(new Error("Error al procesar el CSV: " + error.message));
+        }
+      };
+      reader.onerror = () => reject(new Error("Error al leer el archivo"));
+      reader.readAsText(file);
+    });
+  };
+  
+  const handleCsvImport = async () => {
+    if (!csvFile || !csvModalTarget) return;
+    
+    setCsvProcessing(true);
+    try {
+      let total = 0;
+      
+      if (csvFormat === "MultiPanel") {
+        total = await parseMultiPanelCSV(csvFile);
+      }
+      
+      setDepositValues({
+        ...depositValues,
+        [`${csvModalTarget.boxId}-${csvModalTarget.platform}`]: total
+      });
+      
+      setCsvModalOpen(false);
+      setCsvModalTarget(null);
+      setCsvFile(null);
+    } catch (error) {
+      alert("Error: " + error.message);
+    } finally {
+      setCsvProcessing(false);
+    }
   };
   
   const boxColorStyle = (color) => {
@@ -504,25 +579,28 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
                     {platforms.map((platform) => (
                       <div key={`${boxId}-${platform}`} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                         <label style={{ fontSize: "0.8em", fontWeight: "600", color: "var(--text-secondary)" }}>Depósitos {platform}</label>
-                        <div style={{ display: "flex", alignItems: "center", backgroundColor: "#202a2c", border: `1px solid var(--box-line)`, borderRadius: "5px", paddingLeft: "8px", color: "#758689", fontFamily: "DM Mono", fontSize: "11px" }}>
-                          <span>$</span>
-                          <input 
-                            type="number" 
-                            inputMode="decimal"
-                            placeholder="0,00"
-                            value={depositValues[`${boxId}-${platform}`] || ""} 
-                            onChange={(event) => setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: event.target.value })}
-                            style={{ 
-                              border: "0",
-                              background: "transparent",
-                              width: "100%",
-                              padding: "8px 8px 8px 4px",
-                              textAlign: "right",
-                              fontFamily: "DM Mono",
-                              fontSize: "11px",
-                              color: "inherit"
-                            }}
-                          />
+                        <div style={{ display: "flex", gap: "6px", alignItems: "stretch" }}>
+                          <div style={{ display: "flex", alignItems: "center", backgroundColor: "#202a2c", border: `1px solid var(--box-line)`, borderRadius: "5px", paddingLeft: "8px", color: "#758689", fontFamily: "DM Mono", fontSize: "11px", flex: 1 }}>
+                            <span>$</span>
+                            <input 
+                              type="number" 
+                              inputMode="decimal"
+                              placeholder="0,00"
+                              value={depositValues[`${boxId}-${platform}`] || ""} 
+                              onChange={(event) => setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: event.target.value })}
+                              style={{ 
+                                border: "0",
+                                background: "transparent",
+                                width: "100%",
+                                padding: "8px 8px 8px 4px",
+                                textAlign: "right",
+                                fontFamily: "DM Mono",
+                                fontSize: "11px",
+                                color: "inherit"
+                              }}
+                            />
+                          </div>
+                          <button type="button" onClick={() => handleOpenCsvModal(boxId, platform)} style={{ padding: "8px 10px", backgroundColor: "var(--box-line)", border: "1px solid var(--box-line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontSize: "0.8em", fontWeight: "600", whiteSpace: "nowrap" }}>CSV</button>
                         </div>
                       </div>
                     ))}
@@ -535,6 +613,46 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
         <div className="modal-actions" style={{ marginTop: "24px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
           <button onClick={() => setDepositModalOpen(false)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontWeight: "500" }}>Cancelar</button>
           <button className="close-button" onClick={handleDepositModalSave} disabled={loadingPlatforms}>Listo <Check size={16} /></button>
+        </div>
+      </div>
+    </div>}
+    
+    {csvModalOpen && <div className="modal-backdrop" onClick={() => setCsvModalOpen(false)}>
+      <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "85vh", maxWidth: "500px", overflowY: "auto", overflowX: "hidden", padding: "24px" }}>
+        <button className="modal-close" onClick={() => setCsvModalOpen(false)} title="Cerrar"><X size={18} /></button>
+        <div className="modal-icon"><Upload size={21} /></div>
+        <h2>Importar desde CSV</h2>
+        <p>Selecciona el formato y sube el archivo CSV</p>
+        
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "20px" }}>
+          <div>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "0.85em", fontWeight: "600", color: "var(--text-secondary)" }}>Formato</span>
+              <select value={csvFormat} onChange={(e) => setCsvFormat(e.target.value)} style={{ padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "5px", backgroundColor: "#202a2c", color: "var(--text-primary)", fontFamily: "inherit" }}>
+                <option value="MultiPanel">MultiPanel</option>
+              </select>
+            </label>
+          </div>
+          
+          <div>
+            <label style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <span style={{ fontSize: "0.85em", fontWeight: "600", color: "var(--text-secondary)" }}>Archivo CSV</span>
+              <input 
+                type="file" 
+                accept=".csv"
+                onChange={handleCsvFileChange}
+                style={{ padding: "8px 12px", border: "1px solid var(--line)", borderRadius: "5px", backgroundColor: "#202a2c", color: "var(--text-secondary)", cursor: "pointer" }}
+              />
+              {csvFile && <small style={{ color: "var(--box-accent)", fontWeight: "600" }}>✓ {csvFile.name}</small>}
+            </label>
+          </div>
+          
+          <small style={{ color: "var(--text-muted)", lineHeight: "1.4" }}>El sistema sumará solo los valores positivos de la tercera columna del CSV, ignorando los negativos.</small>
+        </div>
+        
+        <div className="modal-actions" style={{ marginTop: "24px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+          <button onClick={() => setCsvModalOpen(false)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontWeight: "500" }}>Cancelar</button>
+          <button className="close-button" onClick={handleCsvImport} disabled={!csvFile || csvProcessing}>Importar {csvProcessing && "..."}</button>
         </div>
       </div>
     </div>}
