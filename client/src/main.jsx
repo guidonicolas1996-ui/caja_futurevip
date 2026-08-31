@@ -93,7 +93,7 @@ const parseNumberInput = (value) => {
 };
 const formatNumberInput = (value) => {
   const parsed = parseNumberInput(value);
-  if (parsed === 0) return "0";
+  if (parsed === 0) return "";
   return parsed
     ? new Intl.NumberFormat("es-AR", { maximumFractionDigits: 2 }).format(parsed)
     : "";
@@ -451,7 +451,7 @@ function BonusMonthlyGoalConfig({ draft, update }) {
       <label><span>Objetivo total</span><AmountInput value={bonusGoal.total} onChange={(value) => updateValue("total", value)} /></label>
       <div className="bonus-goal-percentages">
         {Object.keys(bonusGoal.percentages || {}).map((shift) => (
-          <label key={shift}><span>{shift}</span><input type="number" value={bonusGoal.percentages?.[shift] ?? 0} min="0" max="100" onChange={(event) => updatePercent(shift, event.target.value)} /></label>
+          <label key={shift}><span>{shift}</span><input type="number" value={bonusGoal.percentages?.[shift] ?? ""} min="0" max="100" onChange={(event) => updatePercent(shift, event.target.value)} /></label>
         ))}
       </div>
     </div>
@@ -914,7 +914,7 @@ function AdvertisingSectionRebuilt({ caja, update, boxes, config, onViewBonuses,
     onNotify("Copiado al portapapeles");
   };
   return <div className="publicity-layout" onClick={(event) => { if (event.target instanceof HTMLInputElement && event.target.closest(".publicity-panel")) event.target.select(); }}>
-    <section className="panel publicity-panel"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="publicity-list">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const total = number(item.total); const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const response = number(item.new) + number(item.repeated) - total; return <div className="publicity-item" key={name}><strong className="publicity-name"><ReceiptText size={13} />{name}</strong><div className="publicity-numbers"><label><span>Total</span><input maxLength={3} inputMode="numeric" value={item.total ?? 0} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><span>Nuevos</span><input maxLength={3} inputMode="numeric" value={item.new ?? 0} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><span>Repetidos</span><input maxLength={3} inputMode="numeric" value={item.repeated ?? 0} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><span>S/Resp</span><b>{response}</b></label></div><div className="publicity-derived"><span>Derivados <b>{derived}</b></span><div>{boxes.map((box) => <label key={box.id}><small>{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] ?? 0} onChange={(event) => updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: Math.max(0, Number(String(event.target.value).replace(/\D/g, "").slice(0, 3)) || 0) } })} /></label>)}</div></div><strong className="publicity-rate"><ReceiptText size={11} />{total ? Math.round((derived / total) * 100) : 0}%</strong></div>; })}</div></section>
+    <section className="panel publicity-panel"><SectionHead icon={<ReceiptText size={16} />} title="Publicidad" action={<button className="icon-button" title="Copiar conteo de publicidad" onClick={copySummary}><Copy size={15} /></button>} /><div className="publicity-list">{["Publicidad A", "Publicidad B"].map((name) => { const item = advertising[name] || {}; const total = number(item.total); const derived = boxes.reduce((sum, box) => sum + number(item.derived?.[box.id]), 0); const response = number(item.new) + number(item.repeated) - total; return <div className="publicity-item" key={name}><strong className="publicity-name"><ReceiptText size={13} />{name}</strong><div className="publicity-numbers"><label><span>Total</span><input maxLength={3} inputMode="numeric" value={item.total || ""} onChange={(event) => updateValue(name, "total", event.target.value)} /></label><label><span>Nuevos</span><input maxLength={3} inputMode="numeric" value={item.new || ""} onChange={(event) => updateValue(name, "new", event.target.value)} /></label><label><span>Repetidos</span><input maxLength={3} inputMode="numeric" value={item.repeated || ""} onChange={(event) => updateValue(name, "repeated", event.target.value)} /></label><label><span>S/Resp</span><b>{response}</b></label></div><div className="publicity-derived"><span>Derivados <b>{derived}</b></span><div>{boxes.map((box) => <label key={box.id}><small>{box.title}</small><input maxLength={3} inputMode="numeric" value={item.derived?.[box.id] || ""} onChange={(event) => { const cleaned = String(event.target.value).replace(/\D/g, "").slice(0, 3); const numValue = cleaned === "" ? "" : Math.max(0, Number(cleaned)); updateAdvertising(name, { derived: { ...(item.derived || {}), [box.id]: numValue } }); }} /></label>)}</div></div><strong className="publicity-rate"><ReceiptText size={11} />{total ? Math.round((derived / total) * 100) : 0}%</strong></div>; })}</div></section>
     <section className="panel publicity-bonus-panel"><QuickBonusAccess caja={caja} update={update} onViewBonuses={onViewBonuses} onAddManualBonus={onAddManualBonus} /></section>
     <section className="panel publicity-chips-panel"><SectionHead icon={<Ticket size={16} />} title="Fichas Finales" /><div className="publicity-chip-list">{caja.chips.map((chip, index) => { const balance = number(chip.initial) - number(chip.final); return <label key={chip.platform} style={{ "--platform-accent": boxColorStyle(config.platformColors?.[chip.platform] || "teal")["--box-accent"] }}><span>Ficha Final ({chip.platform})</span><AmountInput value={chip.final} onChange={(value) => { const chips = structuredClone(caja.chips); chips[index].final = value; update({ chips }); }} /><small className={balance < 0 ? "negative" : balance > 0 ? "positive" : "neutral"}>{money(balance)}</small></label>; })}</div></section>
   </div>;
@@ -1093,9 +1093,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const [recoveredMode, setRecoveredMode] = useState(false);
   const [open, setOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editorAmount, setEditorAmount] = useState(0);
-  const [editorWithdrawal, setEditorWithdrawal] = useState(0);
-  const [editorPercent, setEditorPercent] = useState(0);
+  const [editorAmount, setEditorAmount] = useState("");
+  const [editorWithdrawal, setEditorWithdrawal] = useState("");
+  const [editorPercent, setEditorPercent] = useState("");
   const [noteId, setNoteId] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
   const grantedCount = caja.bonuses.filter((bonus) => number(bonus.granted) > 0).length;
@@ -1149,15 +1149,19 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     setDeleteIndex(null);
   };
   const openBonusEditor = () => {
-    setEditorAmount(0);
-    setEditorWithdrawal(0);
-    setEditorPercent(0);
+    setEditorAmount("");
+    setEditorWithdrawal("");
+    setEditorPercent("");
     setRecoveredMode(false);
     setEditorOpen(true);
   };
   const addEditedBonus = () => {
-    if (!editorAmount || (recoveredMode && !editorWithdrawal)) return;
-    const amount = Math.round(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1) * 100) / 100;
+    const amountValue = number(editorAmount);
+    const withdrawalValue = number(editorWithdrawal);
+    const percentValue = number(editorPercent);
+    
+    if (!amountValue || (recoveredMode && !withdrawalValue)) return;
+    const amount = Math.round(amountValue * (percentValue > 0 ? percentValue / 100 : 1) * 100) / 100;
     if (!amount) return;
     update({
       bonuses: [
@@ -1254,12 +1258,12 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
             <div className="bonus-editor-preview">
               {recoveredMode
                 ? <>
-                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(editorWithdrawal - editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
-                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(number(editorWithdrawal) - number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1))}</b></div>
+                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1))}</b></div>
                 </>
                 : <>
-                  {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(editorAmount + editorAmount * (editorPercent / 100))}</b></div>}
-                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                  {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(number(editorAmount) + number(editorAmount) * (number(editorPercent) / 100))}</b></div>}
+                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1))}</b></div>
                 </>}
             </div>
             <div className="modal-actions">
