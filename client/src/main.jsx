@@ -425,7 +425,7 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
 function MonthlyGoalConfig({ draft, boxes, api, update }) {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [depositValues, setDepositValues] = useState({});
-  const [allPlatforms, setAllPlatforms] = useState([]);
+  const [platformsByBox, setPlatformsByBox] = useState({});
   const [loadingPlatforms, setLoadingPlatforms] = useState(false);
   const monthlyGoal = draft.monthlyGoal || { final: 0, achieved: 0 };
   const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
@@ -437,22 +437,16 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
     
     // Load configurations from all boxes
     try {
-      const allBoxPlatforms = [];
+      const boxPlatforms = {};
       for (const box of boxes) {
         const config = await api(`/api/configuracion?boxId=${box.id}`);
         const platforms = config.platforms || [];
-        platforms.forEach((platform) => {
-          allBoxPlatforms.push({ 
-            platform, 
-            boxId: box.id, 
-            boxTitle: box.title 
-          });
-        });
+        boxPlatforms[box.id] = { title: box.title, platforms };
       }
-      setAllPlatforms(allBoxPlatforms);
+      setPlatformsByBox(boxPlatforms);
     } catch (error) {
       console.error("Error loading platforms:", error);
-      setAllPlatforms([]);
+      setPlatformsByBox({});
     } finally {
       setLoadingPlatforms(false);
     }
@@ -463,7 +457,7 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
     updateValue("achieved", monthlyGoal.achieved + total);
     setDepositModalOpen(false);
     setDepositValues({});
-    setAllPlatforms([]);
+    setPlatformsByBox({});
   };
   
   return <>
@@ -476,33 +470,50 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
     </section>
     
     {depositModalOpen && <div className="modal-backdrop" onClick={() => setDepositModalOpen(false)}>
-      <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "80vh", overflowY: "auto" }}>
+      <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "85vh", overflowY: "auto", maxWidth: "800px" }}>
         <button className="modal-close" onClick={() => setDepositModalOpen(false)} title="Cerrar"><X size={18} /></button>
         <div className="modal-icon"><Download size={21} /></div>
         <h2>Importar depósitos por plataforma</h2>
         <p>Ingresá los depósitos de cada plataforma en cada caja</p>
         {loadingPlatforms ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Cargando plataformas...</div>
-        ) : allPlatforms.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>No hay plataformas configuradas</div>
+          <div style={{ padding: "60px 40px", textAlign: "center", color: "var(--text-muted)" }}>Cargando plataformas...</div>
+        ) : Object.keys(platformsByBox).length === 0 ? (
+          <div style={{ padding: "60px 40px", textAlign: "center", color: "var(--text-muted)" }}>No hay plataformas configuradas</div>
         ) : (
-          <div style={{ padding: "20px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
-            {allPlatforms.map((item, index) => (
-              <label key={index} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <span style={{ fontSize: "0.85em", fontWeight: "600" }}>Depósitos "{item.platform}" - "{item.boxTitle}"</span>
-                <input 
-                  type="number" 
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={depositValues[`${item.platform}-${item.boxId}`] || ""} 
-                  onChange={(event) => setDepositValues({ ...depositValues, [`${item.platform}-${item.boxId}`]: event.target.value })}
-                  style={{ padding: "8px 12px", border: "1px solid var(--text-muted)", borderRadius: "4px" }}
-                />
-              </label>
+          <div style={{ padding: "24px 0", display: "flex", flexDirection: "column", gap: "24px" }}>
+            {Object.entries(platformsByBox).map(([boxId, { title, platforms }]) => (
+              platforms.length > 0 && (
+                <div key={boxId} style={{ borderBottom: "1px solid var(--line-color)", paddingBottom: "20px" }}>
+                  <h3 style={{ fontSize: "0.95em", fontWeight: "700", marginBottom: "12px", color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: "0.5px" }}>{title}</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                    {platforms.map((platform) => (
+                      <label key={`${boxId}-${platform}`} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <span style={{ fontSize: "0.8em", fontWeight: "600", color: "var(--text-secondary)" }}>Depósitos {platform}</span>
+                        <input 
+                          type="number" 
+                          inputMode="decimal"
+                          placeholder="0"
+                          value={depositValues[`${boxId}-${platform}`] || ""} 
+                          onChange={(event) => setDepositValues({ ...depositValues, [`${boxId}-${platform}`]: event.target.value })}
+                          style={{ 
+                            padding: "10px 12px", 
+                            border: "1px solid var(--line-color)", 
+                            borderRadius: "6px",
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-primary)",
+                            fontSize: "0.95em",
+                            fontFamily: "inherit"
+                          }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )
             ))}
           </div>
         )}
-        <div className="modal-actions">
+        <div className="modal-actions" style={{ marginTop: "20px" }}>
           <button className="close-button" onClick={handleDepositModalSave} disabled={loadingPlatforms}>Listo <Check size={16} /></button>
         </div>
       </div>
