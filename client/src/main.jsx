@@ -16,6 +16,7 @@ import {
   Copy,
   Clock3,
   Coins,
+  Download,
   Eye,
   FileText,
   GripVertical,
