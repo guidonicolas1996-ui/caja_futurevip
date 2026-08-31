@@ -421,16 +421,74 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
     {settingsTarget && <div className="modal-backdrop" onClick={() => setSettingsTarget(null)}><div className="modal account-settings-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSettingsTarget(null)} title="Cerrar"><X size={18} /></button><div className="modal-icon"><Settings2 size={21} /></div><h2>{settingsTarget.holder} · {settingsTarget.wallet}</h2><p>Datos disponibles para copiar desde la caja.</p><div className="account-settings-fields"><label><span>Alias</span><input value={targetSetting.alias || ""} onChange={(event) => updateTargetSetting({ alias: event.target.value })} /></label><label><span>CUIL</span><input value={targetSetting.cuil || ""} onChange={(event) => updateTargetSetting({ cuil: event.target.value })} /></label><label><span>Contraseña</span><input value={targetSetting.password || ""} onChange={(event) => updateTargetSetting({ password: event.target.value })} /></label><label><span>Tipo de billetera</span><select value={targetSetting.category || "Normal"} onChange={(event) => updateTargetSetting({ category: event.target.value })}><option>Normal</option><option>Depósitos</option><option>Compartidas</option></select></label><label className="account-settings-note"><span>Nota</span><textarea rows="4" value={targetSetting.note || ""} onChange={(event) => updateTargetSetting({ note: event.target.value })} /></label></div><div className="modal-actions"><button className="close-button" onClick={() => setSettingsTarget(null)}>Listo <Check size={16} /></button></div></div></div>}
   </>;
 }
-function MonthlyGoalConfig({ draft, update }) {
+function MonthlyGoalConfig({ draft, boxes, update }) {
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [depositValues, setDepositValues] = useState({});
   const monthlyGoal = draft.monthlyGoal || { final: 0, achieved: 0 };
   const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
-  return <section className="config-card monthly-goal-card">
-    <div className="config-list-head"><h3>Objetivo de Depósitos General</h3><span>Se actualiza manualmente</span></div>
-    <div className="monthly-goal-fields">
-      <label><span>Objetivo final</span><AmountInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
-      <label><span>Objetivo alcanzado</span><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /></label>
-    </div>
-  </section>;
+  
+  // Collect all unique platforms from all boxes
+  const allPlatforms = [];
+  const platformsByBox = {};
+  boxes?.forEach((box) => {
+    const config = box.config || {};
+    const platforms = config.platforms || [];
+    platformsByBox[box.id] = { title: box.title, platforms };
+    platforms.forEach((platform) => {
+      if (!allPlatforms.find((p) => p.platform === platform && p.boxId === box.id)) {
+        allPlatforms.push({ platform, boxId: box.id, boxTitle: box.title });
+      }
+    });
+  });
+  
+  const handleOpenDepositModal = () => {
+    setDepositValues({});
+    setDepositModalOpen(true);
+  };
+  
+  const handleDepositModalSave = () => {
+    const total = Object.values(depositValues).reduce((sum, val) => sum + number(val), 0);
+    updateValue("achieved", monthlyGoal.achieved + total);
+    setDepositModalOpen(false);
+    setDepositValues({});
+  };
+  
+  return <>
+    <section className="config-card monthly-goal-card">
+      <div className="config-list-head"><h3>Objetivo de Depósitos General</h3><span>Se actualiza manualmente</span></div>
+      <div className="monthly-goal-fields">
+        <label><span>Objetivo final</span><AmountInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
+        <label><span>Objetivo alcanzado</span><div style={{ display: "flex", gap: "8px", alignItems: "center" }}><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /><button type="button" className="icon-button" title="Agregar depósitos por plataforma" onClick={handleOpenDepositModal} style={{ width: "32px", height: "32px", minWidth: "32px", padding: "4px" }}><Plus size={16} /></button></div></label>
+      </div>
+    </section>
+    
+    {depositModalOpen && <div className="modal-backdrop" onClick={() => setDepositModalOpen(false)}>
+      <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "80vh", overflowY: "auto" }}>
+        <button className="modal-close" onClick={() => setDepositModalOpen(false)} title="Cerrar"><X size={18} /></button>
+        <div className="modal-icon"><Banknote size={21} /></div>
+        <h2>Depósitos por plataforma</h2>
+        <p>Ingresá los depósitos de cada plataforma en cada caja</p>
+        <div style={{ padding: "20px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {allPlatforms.map((item, index) => (
+            <label key={index} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <span style={{ fontSize: "0.85em", fontWeight: "600" }}>Depósitos "{item.platform}" - "{item.boxTitle}"</span>
+              <input 
+                type="number" 
+                inputMode="decimal"
+                placeholder="0"
+                value={depositValues[`${item.platform}-${item.boxId}`] || ""} 
+                onChange={(event) => setDepositValues({ ...depositValues, [`${item.platform}-${item.boxId}`]: event.target.value })}
+                style={{ padding: "8px 12px", border: "1px solid var(--text-muted)", borderRadius: "4px" }}
+              />
+            </label>
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button className="close-button" onClick={handleDepositModalSave}>Listo <Check size={16} /></button>
+        </div>
+      </div>
+    </div>}
+  </>;
 }
 
 function MonthlyGoalProgress({ config, boxColor }) {
@@ -589,7 +647,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
           {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /></>}
-          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y la meta exclusiva de bonos por caja para ese mes.</p></div><MonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
+          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y la meta exclusiva de bonos por caja para ese mes.</p></div><MonthlyGoalConfig draft={draft} boxes={boxes} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           </>}
         </main>
       </div>
