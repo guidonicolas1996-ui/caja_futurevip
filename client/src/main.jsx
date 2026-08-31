@@ -712,7 +712,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
   useEffect(() => {
     if (!focused.current) {
       if (hasExplicitValue) {
-        const displayValue = numericOnly ? String(normalizedValue) : formatNumberInput(value);
+        const displayValue = numericOnly ? formatNumberInput(normalizedValue) : formatNumberInput(value);
         setInputValue(displayValue);
       } else {
         setInputValue("");
@@ -757,7 +757,7 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
         if (selectAll) {
           selectAllPending.current = false;
           selectAllHandled.current = true;
-          const formattedValue = hasExplicitValue ? String(normalizedValue) : "";
+          const formattedValue = hasExplicitValue ? formatNumberInput(normalizedValue) : "";
           selectionRef.current = { start: 0, end: formattedValue.length };
           setInputValue(formattedValue);
           return;
