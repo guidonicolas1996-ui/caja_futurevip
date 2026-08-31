@@ -128,9 +128,9 @@ const isShiftOutOfTime = (shift) => {
   const hour = now.getHours();
   const minute = now.getMinutes();
   const currentMinutes = hour * 60 + minute;
-  
+
   if (shift === "Noche") return currentMinutes >= 8 * 60;
-  if (shift === "Mañana") return currentMinutes < 8 * 60 || currentMinutes >= 16 * 60;
+  if (shift === "Mañana") return currentMinutes >= 16 * 60;
   if (shift === "Tarde") return currentMinutes < 16 * 60;
   return false;
 };
