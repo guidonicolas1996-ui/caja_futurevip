@@ -424,26 +424,38 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
 function MonthlyGoalConfig({ draft, boxes, update }) {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [depositValues, setDepositValues] = useState({});
+  const [allPlatforms, setAllPlatforms] = useState([]);
+  const [loadingPlatforms, setLoadingPlatforms] = useState(false);
   const monthlyGoal = draft.monthlyGoal || { final: 0, achieved: 0 };
   const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
   
-  // Collect all unique platforms from all boxes
-  const allPlatforms = [];
-  const platformsByBox = {};
-  boxes?.forEach((box) => {
-    const config = box.config || {};
-    const platforms = config.platforms || [];
-    platformsByBox[box.id] = { title: box.title, platforms };
-    platforms.forEach((platform) => {
-      if (!allPlatforms.find((p) => p.platform === platform && p.boxId === box.id)) {
-        allPlatforms.push({ platform, boxId: box.id, boxTitle: box.title });
-      }
-    });
-  });
-  
-  const handleOpenDepositModal = () => {
+  const handleOpenDepositModal = async () => {
     setDepositValues({});
+    setLoadingPlatforms(true);
     setDepositModalOpen(true);
+    
+    // Load configurations from all boxes
+    try {
+      const allBoxPlatforms = [];
+      for (const box of boxes) {
+        const response = await fetch(`/api/configuracion?boxId=${box.id}`);
+        const config = await response.json();
+        const platforms = config.platforms || [];
+        platforms.forEach((platform) => {
+          allBoxPlatforms.push({ 
+            platform, 
+            boxId: box.id, 
+            boxTitle: box.title 
+          });
+        });
+      }
+      setAllPlatforms(allBoxPlatforms);
+    } catch (error) {
+      console.error("Error loading platforms:", error);
+      setAllPlatforms([]);
+    } finally {
+      setLoadingPlatforms(false);
+    }
   };
   
   const handleDepositModalSave = () => {
@@ -451,6 +463,7 @@ function MonthlyGoalConfig({ draft, boxes, update }) {
     updateValue("achieved", monthlyGoal.achieved + total);
     setDepositModalOpen(false);
     setDepositValues({});
+    setAllPlatforms([]);
   };
   
   return <>
@@ -458,33 +471,39 @@ function MonthlyGoalConfig({ draft, boxes, update }) {
       <div className="config-list-head"><h3>Objetivo de Depósitos General</h3><span>Se actualiza manualmente</span></div>
       <div className="monthly-goal-fields">
         <label><span>Objetivo final</span><AmountInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
-        <label><span>Objetivo alcanzado</span><div style={{ display: "flex", gap: "8px", alignItems: "center" }}><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /><button type="button" className="icon-button" title="Agregar depósitos por plataforma" onClick={handleOpenDepositModal} style={{ width: "32px", height: "32px", minWidth: "32px", padding: "4px" }}><Plus size={16} /></button></div></label>
+        <label><span>Objetivo alcanzado</span><div style={{ display: "flex", gap: "8px", alignItems: "center" }}><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /><button type="button" className="icon-button" title="Importar depósitos por plataforma" onClick={handleOpenDepositModal} style={{ width: "32px", height: "32px", minWidth: "32px", padding: "4px" }}><Download size={16} /></button></div></label>
       </div>
     </section>
     
     {depositModalOpen && <div className="modal-backdrop" onClick={() => setDepositModalOpen(false)}>
       <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxHeight: "80vh", overflowY: "auto" }}>
         <button className="modal-close" onClick={() => setDepositModalOpen(false)} title="Cerrar"><X size={18} /></button>
-        <div className="modal-icon"><Banknote size={21} /></div>
-        <h2>Depósitos por plataforma</h2>
+        <div className="modal-icon"><Download size={21} /></div>
+        <h2>Importar depósitos por plataforma</h2>
         <p>Ingresá los depósitos de cada plataforma en cada caja</p>
-        <div style={{ padding: "20px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
-          {allPlatforms.map((item, index) => (
-            <label key={index} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span style={{ fontSize: "0.85em", fontWeight: "600" }}>Depósitos "{item.platform}" - "{item.boxTitle}"</span>
-              <input 
-                type="number" 
-                inputMode="decimal"
-                placeholder="0"
-                value={depositValues[`${item.platform}-${item.boxId}`] || ""} 
-                onChange={(event) => setDepositValues({ ...depositValues, [`${item.platform}-${item.boxId}`]: event.target.value })}
-                style={{ padding: "8px 12px", border: "1px solid var(--text-muted)", borderRadius: "4px" }}
-              />
-            </label>
-          ))}
-        </div>
+        {loadingPlatforms ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>Cargando plataformas...</div>
+        ) : allPlatforms.length === 0 ? (
+          <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>No hay plataformas configuradas</div>
+        ) : (
+          <div style={{ padding: "20px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
+            {allPlatforms.map((item, index) => (
+              <label key={index} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span style={{ fontSize: "0.85em", fontWeight: "600" }}>Depósitos "{item.platform}" - "{item.boxTitle}"</span>
+                <input 
+                  type="number" 
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={depositValues[`${item.platform}-${item.boxId}`] || ""} 
+                  onChange={(event) => setDepositValues({ ...depositValues, [`${item.platform}-${item.boxId}`]: event.target.value })}
+                  style={{ padding: "8px 12px", border: "1px solid var(--text-muted)", borderRadius: "4px" }}
+                />
+              </label>
+            ))}
+          </div>
+        )}
         <div className="modal-actions">
-          <button className="close-button" onClick={handleDepositModalSave}>Listo <Check size={16} /></button>
+          <button className="close-button" onClick={handleDepositModalSave} disabled={loadingPlatforms}>Listo <Check size={16} /></button>
         </div>
       </div>
     </div>}
