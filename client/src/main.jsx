@@ -460,7 +460,7 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
   
   const handleDepositModalSave = () => {
     const total = Object.values(depositValues).reduce((sum, val) => sum + number(val), 0);
-    updateValue("achieved", monthlyGoal.achieved + total);
+    updateValue("achieved", total);
     setDepositModalOpen(false);
     setDepositValues({});
     setPlatformsByBox({});
@@ -613,8 +613,12 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
             ))}
           </div>
         )}
+        <div style={{ padding: "20px 16px", backgroundColor: "rgba(0,0,0,0.3)", borderRadius: "8px", marginTop: "20px", textAlign: "right" }}>
+          <small style={{ color: "var(--text-muted)" }}>Suma total:</small>
+          <div style={{ fontSize: "1.3em", fontWeight: "700", color: "var(--box-accent)", fontFamily: "DM Mono" }}>${formatNumberInput(Object.values(depositValues).reduce((sum, val) => sum + number(val), 0))}</div>
+        </div>
         <div className="modal-actions" style={{ marginTop: "24px", display: "flex", gap: "10px", justifyContent: "flex-end" }}>
-          <button onClick={() => setDepositModalOpen(false)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontWeight: "500" }}>Cancelar</button>
+          <button onClick={() => setDepositModalOpen(false)} style={{ padding: "8px 16px", backgroundColor: "transparent", border: "1px solid var(--line)", borderRadius: "5px", color: "var(--text-secondary)", cursor: "pointer", fontWeight: "500", transition: "all 0.2s" }}>Cancelar</button>
           <button className="close-button" onClick={handleDepositModalSave} disabled={loadingPlatforms}>Listo <Check size={16} /></button>
         </div>
       </div>
