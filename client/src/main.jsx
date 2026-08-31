@@ -113,6 +113,17 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
   return cashDifference - bonuses + transferAdjustment;
 };
   const formatMovementTime = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
+  const isShiftOutOfTime = (shift) => {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    const currentMinutes = hour * 60 + minute;
+    
+    if (shift === "Noche") return currentMinutes >= 8 * 60; // Si es >= 08:00, está fuera
+    if (shift === "Mañana") return currentMinutes < 8 * 60 || currentMinutes >= 16 * 60; // Si es < 08:00 o >= 16:00, está fuera
+    if (shift === "Tarde") return currentMinutes < 16 * 60; // Si es < 16:00, está fuera
+    return false;
+  };
   const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
     const bonusDate = new Date(createdAt);
     const minutes = bonusDate.getHours() * 60 + bonusDate.getMinutes();
@@ -1958,7 +1969,7 @@ function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, ac
   return (
     <div ref={snapshotRef} className="snapshot-export" style={boxColorStyle(activeBox?.color)}>
       <div className="snapshot-title">
-        <h1><strong>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</strong></h1>
+        <h1><strong>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</strong>{isShiftOutOfTime(caja.shift) && <span style={{ color: "rgb(255, 0, 0)", marginLeft: "1em", fontSize: "1em" }}>CAJA FUERA DE TURNO</span>}</h1>
         <p>{capitalizedDate}</p>
       </div>
       <div className="snapshot-summary">
@@ -2350,7 +2361,7 @@ function App() {
       <main>
         <div className="page-title">
           <div className="current-shift-heading">
-            <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}</h1>
+            <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}{isShiftOutOfTime(caja.shift) && <span style={{ color: "rgb(255, 0, 0)", marginLeft: "0.5em", fontSize: "0.8em" }}>CAJA FUERA DE TURNO</span>}</h1>
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
