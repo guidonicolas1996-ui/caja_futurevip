@@ -2019,7 +2019,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             <h2>{group.shift}</h2>
             <span>{group.rows.length} turnos</span>
           </div>
-          <div className="statistics-metrics" style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {metricsConfig.map((section) => renderMetricSection(section))}
           </div>
         </section>

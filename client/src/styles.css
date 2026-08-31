@@ -2835,6 +2835,20 @@ select:focus {
 }
 .statistics-metrics {
   padding: 5px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.statistics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.statistics-section h3 {
+  margin: 12px 0 8px 0 !important;
+}
+.statistics-section > div:last-child {
+  margin-bottom: 0;
 }
 .statistics-metrics div,
 .statistics-expenses span {
