@@ -706,10 +706,14 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   if (!config || !caja) return null;
   const goal = config.bonusGoal || { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } };
   const monthItems = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
+  const currentDate = new Date(caja.date);
   const sameDateItems = monthItems.filter((item) => {
     const itemDate = new Date(item.date);
-    const currentDate = new Date(caja.date);
     return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth() && itemDate.getDate() === currentDate.getDate();
+  });
+  const monthItemsInMonth = monthItems.filter((item) => {
+    const itemDate = new Date(item.date);
+    return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth();
   });
   const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
   const dayBonusNet = sameDateItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
@@ -723,7 +727,7 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const currentDay = currentMonth.getDate();
   const monthTarget = totalTarget;
-  const monthAchieved = monthItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
+  const monthAchieved = monthItemsInMonth.reduce((sum, item) => sum + monthBonusNet(item), 0);
   const remainingGoal = Math.max(0, monthTarget - monthAchieved);
   const remainingDays = Math.max(1, daysInMonth - currentDay + 1);
   const dailyTarget = remainingGoal > 0 ? remainingGoal / remainingDays : 0;
