@@ -2358,7 +2358,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   const [sortMode, setSortMode] = useState("none");
   const [groupMode, setGroupMode] = useState("none");
   const [newUserOpen, setNewUserOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString() });
+  const [newUser, setNewUser] = useState({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], createdAt: new Date().toISOString() });
   const configUsers = Array.isArray(config?.users) ? config.users : [];
   const [editableUsers, setEditableUsers] = useState(configUsers);
   const [globalClarifications, setGlobalClarifications] = useState(Array.isArray(config?.userClarifications) ? config.userClarifications : []);
@@ -2377,6 +2377,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     userLists.flat().forEach((user) => {
       const names = Array.isArray(user?.names) ? user.names : [user?.name];
       const phones = Array.isArray(user?.phones) ? user.phones : [user?.phone];
+      const titulars = Array.isArray(user?.titulars) ? user.titulars : (user?.titular ? [user.titular] : []);
       const identity = user?.id || `${names.find(Boolean) || ""}::${phones.find(Boolean) || ""}`;
       const previous = merged.get(identity);
       const uniqueValues = (values) => [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
@@ -2386,11 +2387,11 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
         id: user?.id || previous?.id || `user-${crypto.randomUUID()}`,
         names: uniqueValues([...(previous?.names || []), ...names]),
         phones: uniqueValues([...(previous?.phones || []), ...phones]),
+        titulars: uniqueValues([...(previous?.titulars || []), ...titulars]),
         boxes: uniqueValues([...(previous?.boxes || []), ...(user?.boxes || [])]),
         subPlatforms: uniqueValues([...(previous?.subPlatforms || []), ...(user?.subPlatforms || [])]),
         clarifications: uniqueValues([...(previous?.clarifications || []), ...(user?.clarifications || [])]),
         linkedUsers: uniqueValues([...(previous?.linkedUsers || []), ...(user?.linkedUsers || [])]),
-        titular: String(previous?.titular || user?.titular || ""),
         createdAt: previous?.createdAt || user?.createdAt || new Date().toISOString(),
       });
     });
@@ -2419,17 +2420,18 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     setEditableUsers(nextUsers);
   };
   const openNewUser = () => {
-    setNewUser({ names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString() });
+    setNewUser({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], createdAt: new Date().toISOString() });
     setNewUserOpen(true);
   };
   const saveNewUser = () => {
     const names = newUser.names.map((name) => name.trim()).filter(Boolean);
     const phones = newUser.phones.map((phone) => phone.trim()).filter(Boolean);
+    const titulars = newUser.titulars.map((titular) => titular.trim()).filter(Boolean);
     if (!names.length || !phones.length) {
       onNotify?.("El usuario necesita al menos un nombre y un número de teléfono.");
       return;
     }
-    updateUsers([...users, { ...newUser, id: `user-${crypto.randomUUID()}`, names, phones, createdAt: new Date(newUser.createdAt).toISOString(), clarifications: [], linkedUsers: [] }]);
+    updateUsers([...users, { ...newUser, id: `user-${crypto.randomUUID()}`, names, phones, titulars, createdAt: new Date(newUser.createdAt).toISOString(), clarifications: [], linkedUsers: [] }]);
     setNewUserOpen(false);
   };
   useEffect(() => {
@@ -2455,7 +2457,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     const haystack = [
       ...(user.names || []),
       ...(user.phones || []),
-      user.titular,
+      ...(user.titulars || []),
       user.createdAt,
       ...(user.boxes || []),
       ...(user.boxes || []).map((boxId) => boxById[String(boxId)]?.title || ""),
@@ -2469,8 +2471,8 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     const sorted = [...items];
     if (sortMode === "name-asc" || sortMode === "name-desc") {
       sorted.sort((first, second) => {
-        const firstName = String(first.names?.find(Boolean) || first.titular || "").toLowerCase();
-        const secondName = String(second.names?.find(Boolean) || second.titular || "").toLowerCase();
+        const firstName = String(first.names?.find(Boolean) || first.titulars?.find(Boolean) || "").toLowerCase();
+        const secondName = String(second.names?.find(Boolean) || second.titulars?.find(Boolean) || "").toLowerCase();
         return sortMode === "name-asc" ? firstName.localeCompare(secondName) : secondName.localeCompare(firstName);
       });
     }
@@ -2541,7 +2543,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
           const editing = editingUserId === user.id;
           const displayClarifications = clarifications.filter((clarification) => selectedClarifications.has(clarification.id));
           const userBoxes = selectedUserBoxes.map((boxId) => boxById[boxId]).filter(Boolean);
-          const compactName = compactValues(user.names || [], user.titular || "Usuario sin nombre");
+          const compactName = compactValues(user.names || [], compactValues(user.titulars || [], "Usuario sin nombre"));
           const compactPhone = compactValues(user.phones || [], "Sin teléfono");
           const userSubPlatforms = (boxes || []).filter((box) => selectedUserBoxes.includes(String(box.id))).flatMap((box) => (config.platforms || []).flatMap((platform) => {
             const subs = Array.isArray(platformSubPlatforms[platform]) ? platformSubPlatforms[platform] : [];
@@ -2565,10 +2567,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
             <div className="user-fields-grid">
               {renderListField("Nombre de usuario", Array.isArray(user.names) && user.names.length ? user.names : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || [""]).map((name, nameIndex) => nameIndex === index ? value : name) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || []).filter((_, nameIndex) => nameIndex !== index) } : item)), (newNames) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: newNames } : item)), editing)}
               {renderListField("Número de teléfono", Array.isArray(user.phones) && user.phones.length ? user.phones : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || [""]).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || []).filter((_, phoneIndex) => phoneIndex !== index) } : item)), (newPhones) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: newPhones } : item)), editing)}
-              <label className="field-block">
-                <span>Titular</span>
-                <input value={user.titular || ""} disabled={!editing} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titular: event.target.value } : item))} />
-              </label>
+              {renderListField("Titular", Array.isArray(user.titulars) && user.titulars.length ? user.titulars : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: [...(item.titulars || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: (item.titulars || [""]).map((titular, titularIndex) => titularIndex === index ? value : titular) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: (item.titulars || []).filter((_, titularIndex) => titularIndex !== index) } : item)), (newTitulars) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: newTitulars } : item)), editing)}
               <label className="field-block">
                 <span>Fecha creación</span>
                 <input type="datetime-local" disabled={!editing} value={user.createdAt ? new Date(user.createdAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, createdAt: new Date(event.target.value).toISOString() } : item))} />
@@ -2646,7 +2645,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
         })}</React.Fragment>)}
         {users.length === 0 && <div className="empty-state">No hay usuarios cargados todavía.</div>}
       </div>
-      {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal users-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><p>Completá los datos obligatorios para darlo de alta.</p><div className="user-fields-grid"><div>{renderListField("Nombre de usuario *", newUser.names, () => setNewUser((current) => ({ ...current, names: [...current.names, ""] })), (index, value) => setNewUser((current) => ({ ...current, names: current.names.map((name, nameIndex) => nameIndex === index ? value : name) })), (index) => setNewUser((current) => ({ ...current, names: current.names.filter((_, nameIndex) => nameIndex !== index) })), (newNames) => setNewUser((current) => ({ ...current, names: newNames })))}</div><div>{renderListField("Número de teléfono *", newUser.phones, () => setNewUser((current) => ({ ...current, phones: [...current.phones, ""] })), (index, value) => setNewUser((current) => ({ ...current, phones: current.phones.map((phone, phoneIndex) => phoneIndex === index ? value : phone) })), (index) => setNewUser((current) => ({ ...current, phones: current.phones.filter((_, phoneIndex) => phoneIndex !== index) })), (newPhones) => setNewUser((current) => ({ ...current, phones: newPhones })))}</div><label className="field-block"><span>Titular</span><input value={newUser.titular} onChange={(event) => setNewUser((current) => ({ ...current, titular: event.target.value }))} /></label><label className="field-block"><span>Fecha creación</span><input type="datetime-local" value={new Date(newUser.createdAt).toISOString().slice(0, 16)} onChange={(event) => setNewUser((current) => ({ ...current, createdAt: new Date(event.target.value).toISOString() }))} /></label></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
+      {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal users-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><p>Completá los datos obligatorios para darlo de alta.</p><div className="user-fields-grid"><div>{renderListField("Nombre de usuario *", newUser.names, () => setNewUser((current) => ({ ...current, names: [...current.names, ""] })), (index, value) => setNewUser((current) => ({ ...current, names: current.names.map((name, nameIndex) => nameIndex === index ? value : name) })), (index) => setNewUser((current) => ({ ...current, names: current.names.filter((_, nameIndex) => nameIndex !== index) })), (newNames) => setNewUser((current) => ({ ...current, names: newNames })))}</div><div>{renderListField("Número de teléfono *", newUser.phones, () => setNewUser((current) => ({ ...current, phones: [...current.phones, ""] })), (index, value) => setNewUser((current) => ({ ...current, phones: current.phones.map((phone, phoneIndex) => phoneIndex === index ? value : phone) })), (index) => setNewUser((current) => ({ ...current, phones: current.phones.filter((_, phoneIndex) => phoneIndex !== index) })), (newPhones) => setNewUser((current) => ({ ...current, phones: newPhones })))}</div><div>{renderListField("Titular", newUser.titulars, () => setNewUser((current) => ({ ...current, titulars: [...current.titulars, ""] })), (index, value) => setNewUser((current) => ({ ...current, titulars: current.titulars.map((titular, titularIndex) => titularIndex === index ? value : titular) })), (index) => setNewUser((current) => ({ ...current, titulars: current.titulars.filter((_, titularIndex) => titularIndex !== index) })), (newTitulars) => setNewUser((current) => ({ ...current, titulars: newTitulars })))}</div><label className="field-block"><span>Fecha creación</span><input type="datetime-local" value={new Date(newUser.createdAt).toISOString().slice(0, 16)} onChange={(event) => setNewUser((current) => ({ ...current, createdAt: new Date(event.target.value).toISOString() }))} /></label></div><div className="user-checks-grid"><div className="check-group"><span>Cajas</span><div className="checkbox-list">{(boxes || []).map((box) => {const checked = newUser.boxes.includes(box.id); return <label className="user-switch" key={box.id} style={{ "--switch-accent": boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" checked={checked} onChange={() => setNewUser((current) => ({ ...current, boxes: checked ? (current.boxes || []).filter((id) => id !== box.id) : [...(current.boxes || []), box.id] }))} /><i /> <span>{box.title}</span></label>;})}</div></div><div className="check-group"><span>Subplataformas</span><div className="checkbox-list">{(boxes || []).filter((box) => newUser.boxes.includes(box.id)).flatMap((box) => {const platforms = config?.platforms || []; return platforms.flatMap((platform) => {const subsList = Array.isArray(platformSubPlatforms[platform]) ? platformSubPlatforms[platform] : []; if (subsList.length === 0) return []; return subsList.map((sub) => {const subName = typeof sub === 'string' ? sub : sub?.name || ''; const subColor = typeof sub === 'string' ? (config.platformColors?.[platform] || "teal") : (sub?.color || config.platformColors?.[platform] || "teal"); return { key: `${box.id}::${platform}::${subName}`, label: subName, color: subColor };});});}).map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" checked={((newUser.subPlatforms || []).includes(option.key))} onChange={() => setNewUser((current) => ({ ...current, subPlatforms: ((current.subPlatforms || []).includes(option.key)) ? (current.subPlatforms || []).filter((sub) => sub !== option.key) : [...(current.subPlatforms || []), option.key] }))} /><i /> <span>{option.label}</span></label>)}</div></div></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
     </section>
   </main>;
 }

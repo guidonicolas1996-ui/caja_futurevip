@@ -690,6 +690,7 @@ main {
 .users-list { display: flex; flex-direction: column; gap: 8px; }
 .user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); transition: all 0.2s ease; }
 .user-card.expanded { padding: 16px; }
+.user-card.expanded .user-card-head { padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
 .user-card-head { cursor: pointer; transition: background 0.2s; }
 .user-card-head:hover { background: rgba(51, 68, 74, 0.5); }
 .user-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 42%) auto auto; align-items: center; gap: 6px; min-height: 28px; }
@@ -702,9 +703,9 @@ main {
 .user-assignment-pills > b { color: var(--muted); font-size: 12px; font-weight: 500; }
 .user-subplatform-pills { display: flex; min-width: 0; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
 .user-subplatform-pills span { display: inline-flex; align-items: center; max-width: min(130px, 100%); overflow: hidden; padding: 4px 8px; border: 1px solid color-mix(in srgb, var(--box-pill-accent) 62%, var(--line)); border-radius: 999px; color: var(--box-pill-accent); font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-.user-edit { order: 3; }
-.user-delete { order: 4; }
-.user-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.user-edit { order: 3; padding: 2px 4px !important; height: 32px; width: 32px; }
+.user-delete { order: 4; padding: 2px 4px !important; height: 32px; width: 32px; }
+.user-fields-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .field-block, .users-list-field { display: flex; flex-direction: column; gap: 7px; }
 .field-block span, .users-list-field span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .users-inline-list { display: flex; flex-direction: column; gap: 8px; }
@@ -718,7 +719,7 @@ main {
 .check-group > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow: auto; padding-right: 4px; }
 .checkbox-list label { display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; background: rgba(255,255,255,0.02); }
-.user-switch { border-color: color-mix(in srgb, var(--switch-accent) 55%, var(--line)); }
+.user-switch { border-color: color-mix(in srgb, var(--switch-accent) 55%, var(--line)); cursor: pointer; }
 .user-switch input { position: absolute; opacity: 0; pointer-events: none; }
 .user-switch i { position: relative; display: inline-block; width: 27px; height: 15px; flex: 0 0 27px; border-radius: 999px; background: rgba(117, 134, 137, 0.32); transition: background 160ms ease; }
 .user-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 9px; height: 9px; border-radius: 50%; background: #d7dddd; transition: transform 160ms ease, background 160ms ease; }
