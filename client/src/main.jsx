@@ -2433,18 +2433,12 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
       .then((configs) => {
         if (cancelled) return;
         setEditableUsers(mergeUsers([configUsers, ...configs.map((item) => item.users)]));
-        const mergedClarifications = [...new Map(configs.flatMap((item) => Array.isArray(item.userClarifications) ? item.userClarifications : []).map((item) => [item.id || item.text, item])).values()];
-        setGlobalClarifications(mergedClarifications);
-        const mergedSubPlatforms = {};
-        configs.forEach((item) => Object.entries(item.platformSubPlatforms || {}).forEach(([platform, values]) => {
-          const nextValues = dedupeSubPlatformEntries(platform, [...(mergedSubPlatforms[platform] || []), ...(Array.isArray(values) ? values : [])]);
-          mergedSubPlatforms[platform] = nextValues;
-        }));
-        setGlobalPlatformSubPlatforms(mergedSubPlatforms);
+        setGlobalClarifications(Array.isArray(config?.userClarifications) ? config.userClarifications : []);
+        setGlobalPlatformSubPlatforms(config?.platformSubPlatforms || {});
         usersLoadedRef.current = true;
       });
     return () => { cancelled = true; };
-  }, [api, boxes]);
+  }, [api, boxes, config]);
   const updateUsers = (nextUsers) => {
     persistUsersRef.current = true;
     setEditableUsers(nextUsers);
@@ -2468,14 +2462,14 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     if (!persistUsersRef.current) return undefined;
     const timer = window.setTimeout(() => {
       persistUsersRef.current = false;
-      onConfigChange({ ...config, users: editableUsers });
-      Promise.all((boxes || []).filter((box) => box.id !== activeBoxId).map(async (box) => {
+      onConfigChange({ ...config, users: editableUsers, userClarifications: globalClarifications, platformSubPlatforms: globalPlatformSubPlatforms });
+      Promise.all((boxes || []).map(async (box) => {
         const boxConfig = await api(`/api/configuracion?boxId=${box.id}`);
-        return api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, users: editableUsers }) });
+        return api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, users: editableUsers, userClarifications: globalClarifications, platformSubPlatforms: globalPlatformSubPlatforms }) });
       })).catch((error) => onNotify?.(error.message));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [editableUsers, activeBoxId, boxes, api, config, onConfigChange, onNotify]);
+  }, [editableUsers, globalClarifications, globalPlatformSubPlatforms, activeBoxId, boxes, api, config, onConfigChange, onNotify]);
   const normalizeIdList = (list) => Array.isArray(list) ? list.filter(Boolean).map(String) : [];
   const compactValues = (values, fallback) => {
     const cleanValues = values.map((value) => String(value || "").trim()).filter(Boolean);
@@ -2967,6 +2961,18 @@ function App() {
     if (boxId === activeBoxId) {
       setConfig(result.config);
       setCaja(result.current);
+    }
+    // Replicate global user config (clarifications and platformSubPlatforms) to all boxes
+    if (nextConfig.userClarifications || nextConfig.platformSubPlatforms) {
+      const globalUpdate = {};
+      if (nextConfig.userClarifications) globalUpdate.userClarifications = nextConfig.userClarifications;
+      if (nextConfig.platformSubPlatforms) globalUpdate.platformSubPlatforms = nextConfig.platformSubPlatforms;
+      await Promise.all((boxes || []).filter((box) => box.id !== boxId).map(async (box) => {
+        const boxConfig = await api(`/api/configuracion?boxId=${box.id}`).catch(() => null);
+        if (boxConfig) {
+          await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate }) });
+        }
+      })).catch((error) => onNotify?.(error.message));
     }
   };
   const manageBoxes = async ({ type, id, patch }) => {
