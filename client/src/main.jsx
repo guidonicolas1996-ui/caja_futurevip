@@ -378,6 +378,11 @@ function ConfigList({ title, items, onChange, placeholder, sortable = false, onI
   );
 }
 
+function UserInfoOptionsConfig({ draft, setDraft }) {
+  const options = Array.isArray(draft.userInfoOptions) ? draft.userInfoOptions : [];
+  return <section className="config-card user-info-options-config"><div className="config-list-head"><h3>Información adicional</h3><span>{options.length} opciones</span></div>{options.map((option, index) => <div className="config-list-row" key={index}><input value={option} placeholder="Opción de información" onChange={(event) => setDraft((current) => ({ ...current, userInfoOptions: options.map((item, itemIndex) => itemIndex === index ? event.target.value : item) }))} /><button className="delete-button" type="button" title="Eliminar opción" onClick={() => setDraft((current) => ({ ...current, userInfoOptions: options.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, userInfoOptions: [...options, ""] }))}><Plus size={15} /> Agregar opción</button></section>;
+}
+
 function PlatformConfigList({ platforms, platformColors, platformEntities = [], onPlatformsChange, onEntitiesChange, onColorChange, platformSubPlatforms = {}, onSubPlatformsChange }) {
   const [subplatformModal, setSubplatformModal] = useState(null);
   const [subplatformsInEdit, setSubplatformsInEdit] = useState([]);
@@ -872,6 +877,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           <button className={tab === "monthly-goal" ? "active" : ""} onClick={() => setTab("monthly-goal")}><Target size={17} /> Objetivos</button>
         </nav>
         <main className="configuration-content">
+          {tab === "users" && !loadingConfig && draft && <UserInfoOptionsConfig draft={draft} setDraft={setDraft} />}
           {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
           {!loadingConfig && draft && <>
           {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section></>}
@@ -2357,11 +2363,12 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   const [sortMode, setSortMode] = useState("none");
   const [groupMode, setGroupMode] = useState("none");
   const [newUserOpen, setNewUserOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], createdAt: new Date().toISOString() });
+  const [newUser, setNewUser] = useState({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], userInfo: null, createdAt: new Date().toISOString() });
   const configUsers = Array.isArray(config?.users) ? config.users : [];
   const [editableUsers, setEditableUsers] = useState(configUsers);
   const [globalClarifications, setGlobalClarifications] = useState(Array.isArray(config?.userClarifications) ? config.userClarifications : []);
   const [globalPlatformSubPlatforms, setGlobalPlatformSubPlatforms] = useState(config?.platformSubPlatforms || {});
+  const [userInfoOptionsByBox, setUserInfoOptionsByBox] = useState({ [String(activeBoxId)]: config?.userInfoOptions || [] });
   const usersLoadedRef = React.useRef(false);
   const [expandedUserId, setExpandedUserId] = useState(null);
   const [editingUserId, setEditingUserId] = useState(null);
@@ -2436,6 +2443,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
         setEditableUsers(mergeUsers([configUsers, ...configs.map((item) => item.users)]));
         setGlobalClarifications(Array.isArray(config?.userClarifications) ? config.userClarifications : []);
         setGlobalPlatformSubPlatforms(config?.platformSubPlatforms || {});
+        setUserInfoOptionsByBox(Object.fromEntries((boxes || []).map((box, index) => [String(box.id), Array.isArray(configs[index]?.userInfoOptions) ? configs[index].userInfoOptions : []])));
         usersLoadedRef.current = true;
       });
     return () => { cancelled = true; };
@@ -2445,7 +2453,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     setEditableUsers(nextUsers);
   };
   const openNewUser = () => {
-    setNewUser({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], createdAt: new Date().toISOString() });
+    setNewUser({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], userInfo: null, createdAt: new Date().toISOString() });
     setNewUserOpen(true);
   };
   const saveNewUser = () => {
@@ -2459,6 +2467,9 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     updateUsers([...users, { ...newUser, id: `user-${crypto.randomUUID()}`, names, phones, titulars, createdAt: new Date(newUser.createdAt).toISOString(), clarifications: [], linkedUsers: [] }]);
     setNewUserOpen(false);
   };
+  const userInfoOptionsFor = (selectedBoxes) => selectedBoxes.flatMap((boxId) => (userInfoOptionsByBox[String(boxId)] || []).map((label) => ({ value: `${boxId}::${label}`, label: `${boxById[String(boxId)]?.title || "Caja"} · ${label}`, boxId, value: label })));
+  const userInfoValueFor = (userInfo) => typeof userInfo === "object" ? (userInfo?.boxId && userInfo?.value ? `${userInfo.boxId}::${userInfo.value}` : "") : String(userInfo || "");
+  const userInfoFromValue = (value) => { const separator = value.indexOf("::"); return separator < 0 ? null : { boxId: value.slice(0, separator), value: value.slice(separator + 2) }; };
   useEffect(() => {
     if (!persistUsersRef.current) return undefined;
     const timer = window.setTimeout(() => {
@@ -2520,6 +2531,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
       setDragIndex(null);
     };
     return (
+      <>
       <div className="users-list-field" data-editable={editable}>
         <span>{label}</span>
         <div className="users-inline-list">
@@ -2538,6 +2550,8 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
           <button className="config-add" type="button" disabled={!editable || !valueList.length || !String(valueList[valueList.length - 1] || "").trim()} onClick={onAdd}><Plus size={15} /> Agregar</button>
         </div>
       </div>
+      {valueList === newUser.titulars && <label className="field-block"><span>Información</span><select value={userInfoValueFor(newUser.userInfo)} onChange={(event) => setNewUser((current) => ({ ...current, userInfo: userInfoFromValue(event.target.value) }))}><option value="">Sin seleccionar</option>{userInfoOptionsFor(newUser.boxes || []).map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>}
+      </>
     );
   };
   const visibleUsers = sortUsers(users.filter((user) => isMatch(user, search)));
@@ -2587,6 +2601,10 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
               {renderListField("Nombre de usuario", Array.isArray(user.names) && user.names.length ? user.names : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || [""]).map((name, nameIndex) => nameIndex === index ? value : name) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || []).filter((_, nameIndex) => nameIndex !== index) } : item)), (newNames) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: newNames } : item)), editing)}
               {renderListField("Número de teléfono", Array.isArray(user.phones) && user.phones.length ? user.phones : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || [""]).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || []).filter((_, phoneIndex) => phoneIndex !== index) } : item)), (newPhones) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: newPhones } : item)), editing)}
               {renderListField("Titular", Array.isArray(user.titulars) && user.titulars.length ? user.titulars : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: [...(item.titulars || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: (item.titulars || [""]).map((titular, titularIndex) => titularIndex === index ? value : titular) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: (item.titulars || []).filter((_, titularIndex) => titularIndex !== index) } : item)), (newTitulars) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: newTitulars } : item)), editing)}
+              <label className="field-block">
+                <span>Información</span>
+                <select disabled={!editing} value={userInfoValueFor(user.userInfo)} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, userInfo: userInfoFromValue(event.target.value) } : item))}><option value="">Sin seleccionar</option>{userInfoOptionsFor(selectedUserBoxes).map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select>
+              </label>
               <label className="field-block">
                 <span>Fecha creación</span>
                 <input type="datetime-local" disabled={!editing} value={user.createdAt ? new Date(user.createdAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, createdAt: new Date(event.target.value).toISOString() } : item))} />

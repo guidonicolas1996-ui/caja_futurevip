@@ -197,6 +197,7 @@ function normalizeConfig(config) {
     phones: Array.isArray(user?.phones) ? user.phones.filter(Boolean).map(String) : [user?.phone || ''].filter(Boolean).map(String),
     boxes: Array.isArray(user?.boxes) ? user.boxes.filter(Boolean).map(String) : [],
     subPlatforms: Array.isArray(user?.subPlatforms) ? user.subPlatforms.filter(Boolean).map(String) : [],
+    userInfo: user?.userInfo && typeof user.userInfo === 'object' ? { boxId: String(user.userInfo.boxId || ''), value: String(user.userInfo.value || '') } : null,
     titular: String(user?.titular || ''),
     createdAt: String(user?.createdAt || new Date().toISOString()),
     clarifications: Array.isArray(user?.clarifications) ? user.clarifications.filter(Boolean).map(String) : [],
