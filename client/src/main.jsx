@@ -2383,7 +2383,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
           return (
           <div className="user-card" key={user.id}>
             <div className="user-card-head">
-              <strong>{[(user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre"].trim()}</strong>
+              <strong>{((user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre").trim()}</strong>
               <button className="delete-button" type="button" title="Eliminar usuario" onClick={() => updateUsers(users.filter((item) => item.id !== user.id))}><Trash2 size={15} /></button>
             </div>
             <div className="user-fields-grid">
@@ -2461,7 +2461,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                 }}>Vincular</button>
               </div>
               <div className="linked-tags">
-                {((user.linkedUsers || []).map((linkedId) => users.find((entry) => entry.id === linkedId)).filter(Boolean)).map((linkedUser) => <span key={linkedUser.id} className="linked-tag">{[(linkedUser.names || []).filter(Boolean).join(" / ") || linkedUser.titular || "Usuario"].trim()}</span>)}
+                {((user.linkedUsers || []).map((linkedId) => users.find((entry) => entry.id === linkedId)).filter(Boolean)).map((linkedUser) => <span key={linkedUser.id} className="linked-tag">{((linkedUser.names || []).filter(Boolean).join(" / ") || linkedUser.titular || "Usuario").trim()}</span>)}
               </div>
             </div>
           </div>
