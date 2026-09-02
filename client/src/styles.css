@@ -710,22 +710,26 @@ main {
 .field-block span, .users-list-field span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .users-inline-list { display: flex; flex-direction: column; gap: 8px; }
 .users-list-item { display: flex; gap: 6px; align-items: center; }
-.users-list-item input { flex: 1; }
-.users-list-item[draggable="true"] { cursor: grab; opacity: 0.8; }
-.users-list-item[draggable="true"]:active { cursor: grabbing; opacity: 0.6; }
-.users-list-item .delete-button { flex: 0 0 auto; padding: 4px 6px; height: 28px; width: 28px; }
+.users-list-item input { flex: 1; transition: all 0.2s; }\n.users-list-item input[data-mode="edit"] { border: 1px solid color-mix(in srgb, var(--box-accent) 45%, var(--line)); background: rgba(255, 255, 255, 0.05); }\n.users-list-item input[data-mode="edit"]:focus { border-color: var(--box-accent); background: rgba(255, 255, 255, 0.08); outline: none; box-shadow: 0 0 10px rgba(255, 255, 255, 0.08); }\n.users-list-item input[data-mode="readonly"] { border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); color: var(--text-secondary); font-style: italic; opacity: 0.7; cursor: not-allowed; }\n.users-list-field[data-editable="false"] { opacity: 0.75; }\n.users-list-item[draggable="true"] { cursor: grab; opacity: 0.8; }\n.users-list-item[draggable="true"]:active { cursor: grabbing; opacity: 0.6; }\n.users-list-item .delete-button { flex: 0 0 auto; padding: 4px 6px; height: 28px; width: 28px; }
 .user-checks-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; }
 .check-group { display: flex; flex-direction: column; gap: 8px; }
 .check-group > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-.checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow: auto; padding-right: 4px; }
+.checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 240px; overflow: auto; padding-right: 4px; }
+.checkbox-list.subplatforms-grouped { display: flex; flex-direction: column; gap: 12px; max-height: none; }
+.subplatforms-group { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: rgba(0, 0, 0, 0.15); border-radius: 6px; border-left: 2px solid var(--box-pill-accent); }
+.subplatforms-group-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--box-pill-accent); opacity: 0.8; }
+.subplatforms-group .user-switch { margin: 0; }
 .checkbox-list label { display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; background: rgba(255,255,255,0.02); }
-.user-switch { border-color: color-mix(in srgb, var(--switch-accent) 55%, var(--line)); cursor: pointer; }
+.user-switch { border-color: color-mix(in srgb, var(--switch-accent) 55%, var(--line)); cursor: pointer; transition: all 0.2s; }
 .user-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.user-switch input:disabled { cursor: not-allowed; }
 .user-switch i { position: relative; display: inline-block; width: 27px; height: 15px; flex: 0 0 27px; border-radius: 999px; background: rgba(117, 134, 137, 0.32); transition: background 160ms ease; }
+.user-switch input:disabled ~ i { opacity: 0.45; cursor: not-allowed; }
 .user-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 9px; height: 9px; border-radius: 50%; background: #d7dddd; transition: transform 160ms ease, background 160ms ease; }
 .user-switch input:checked + i { background: var(--switch-accent); }
 .user-switch input:checked + i::after { background: #fff; transform: translateX(12px); }
-.user-switch span { color: var(--text-primary); }
+.user-switch span { color: var(--text-primary); transition: opacity 0.2s; }
+.user-switch input:disabled ~ span { opacity: 0.6; font-style: italic; }
 .checkbox-list.compact label { border-radius: 8px; }
 .user-clarifications, .user-linked-section { display: flex; flex-direction: column; gap: 8px; }
 .user-clarifications > span, .user-linked-section > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
@@ -738,8 +742,17 @@ main {
 .linked-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .linked-tag button { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: currentColor; cursor: pointer; }
 .linked-tag button:hover { background: rgba(255, 255, 255, 0.12); }
-.users-create-modal { width: min(620px, calc(100vw - 32px)); }
+.users-create-modal { width: min(760px, calc(100vw - 32px)); max-height: 90vh; overflow-y: auto; }
 .users-create-modal .users-list-field { min-width: 0; }
+.users-create-modal .user-checks-grid { margin-top: 8px; }
+/* Estilos para modo editable vs readonly */
+.user-card-head:not(:hover) { opacity: 0.8; }
+.user-card.expanded .user-card-head { opacity: 1; background: rgba(51, 68, 74, 0.3); }
+.users-list-item input:disabled, .field-block input:disabled, .field-block textarea:disabled { opacity: 0.55; color: var(--text-secondary); background: rgba(0, 0, 0, 0.2); cursor: not-allowed; }
+.users-list-item input:enabled, .field-block input:enabled, .field-block textarea:enabled { background: rgba(255, 255, 255, 0.04); border-color: color-mix(in srgb, var(--box-accent) 35%, var(--line)); }
+.users-list-item input:enabled:focus, .field-block input:enabled:focus, .field-block textarea:enabled:focus { background: rgba(255, 255, 255, 0.06); border-color: var(--box-accent); box-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
+.user-switch input:disabled + i { opacity: 0.5; cursor: not-allowed; }
+.user-switch input:enabled + i { cursor: pointer; }
 @media (max-width: 760px) { .user-fields-grid, .user-checks-grid { grid-template-columns: 1fr; } .users-head { flex-direction: column; align-items: stretch; } .users-search { max-width: none; } }
 @media (max-width: 760px) { .user-card-head { grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; } .user-assignment-pills { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; } .user-assignment-pills .user-box-pills, .user-subplatform-pills { justify-content: flex-start; } }
 @media (max-width: 700px) {
