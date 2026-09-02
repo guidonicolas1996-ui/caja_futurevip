@@ -2317,6 +2317,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   const usersLoadedRef = React.useRef(false);
   const [expandedUserId, setExpandedUserId] = useState(null);
   const [editingUserId, setEditingUserId] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
   const persistUsersRef = React.useRef(false);
   const users = editableUsers;
   const clarifications = globalClarifications;
@@ -2434,7 +2435,6 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     return "Todos";
   };
   const renderListField = (label, valueList, onAdd, onUpdate, onDelete, editable = true) => {
-    const [dragIndex, setDragIndex] = React.useState(null);
     const reorder = (targetIndex) => {
       if (dragIndex === null || dragIndex === targetIndex) return;
       const next = [...valueList];
