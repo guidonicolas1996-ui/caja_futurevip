@@ -2312,22 +2312,54 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   const [newUser, setNewUser] = useState({ names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString() });
   const configUsers = Array.isArray(config?.users) ? config.users : [];
   const [editableUsers, setEditableUsers] = useState(configUsers);
+  const [globalClarifications, setGlobalClarifications] = useState(Array.isArray(config?.userClarifications) ? config.userClarifications : []);
+  const [globalPlatformSubPlatforms, setGlobalPlatformSubPlatforms] = useState(config?.platformSubPlatforms || {});
   const usersLoadedRef = React.useRef(false);
   const [expandedUserId, setExpandedUserId] = useState(null);
   const [editingUserId, setEditingUserId] = useState(null);
   const persistUsersRef = React.useRef(false);
   const users = editableUsers;
-  const clarifications = Array.isArray(config?.userClarifications) ? config.userClarifications : [];
-  const platformSubPlatforms = config?.platformSubPlatforms || {};
+  const clarifications = globalClarifications;
+  const platformSubPlatforms = globalPlatformSubPlatforms;
   const boxById = Object.fromEntries((boxes || []).map((box) => [String(box.id), box]));
+  const mergeUsers = (userLists) => {
+    const merged = new Map();
+    userLists.flat().forEach((user) => {
+      const names = Array.isArray(user?.names) ? user.names : [user?.name];
+      const phones = Array.isArray(user?.phones) ? user.phones : [user?.phone];
+      const identity = user?.id || `${names.find(Boolean) || ""}::${phones.find(Boolean) || ""}`;
+      const previous = merged.get(identity);
+      const uniqueValues = (values) => [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
+      merged.set(identity, {
+        ...(previous || {}),
+        ...user,
+        id: user?.id || previous?.id || `user-${crypto.randomUUID()}`,
+        names: uniqueValues([...(previous?.names || []), ...names]),
+        phones: uniqueValues([...(previous?.phones || []), ...phones]),
+        boxes: uniqueValues([...(previous?.boxes || []), ...(user?.boxes || [])]),
+        subPlatforms: uniqueValues([...(previous?.subPlatforms || []), ...(user?.subPlatforms || [])]),
+        clarifications: uniqueValues([...(previous?.clarifications || []), ...(user?.clarifications || [])]),
+        linkedUsers: uniqueValues([...(previous?.linkedUsers || []), ...(user?.linkedUsers || [])]),
+        titular: String(previous?.titular || user?.titular || ""),
+        createdAt: previous?.createdAt || user?.createdAt || new Date().toISOString(),
+      });
+    });
+    return [...merged.values()];
+  };
   useEffect(() => {
     if (!api || usersLoadedRef.current || !(boxes || []).length) return undefined;
     let cancelled = false;
     Promise.all((boxes || []).map((box) => api(`/api/configuracion?boxId=${box.id}`).catch(() => ({ users: [] }))))
       .then((configs) => {
         if (cancelled) return;
-        const mergedUsers = configs.flatMap((item) => Array.isArray(item.users) ? item.users : []);
-        setEditableUsers([...new Map(mergedUsers.map((user) => [user.id, user])).values()]);
+        setEditableUsers(mergeUsers([configUsers, ...configs.map((item) => item.users)]));
+        const mergedClarifications = [...new Map(configs.flatMap((item) => Array.isArray(item.userClarifications) ? item.userClarifications : []).map((item) => [item.id || item.text, item])).values()];
+        setGlobalClarifications(mergedClarifications);
+        const mergedSubPlatforms = {};
+        configs.forEach((item) => Object.entries(item.platformSubPlatforms || {}).forEach(([platform, values]) => {
+          mergedSubPlatforms[platform] = [...new Set([...(mergedSubPlatforms[platform] || []), ...(Array.isArray(values) ? values : [])])];
+        }));
+        setGlobalPlatformSubPlatforms(mergedSubPlatforms);
         usersLoadedRef.current = true;
       });
     return () => { cancelled = true; };
