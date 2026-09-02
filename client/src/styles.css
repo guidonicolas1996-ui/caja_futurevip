@@ -367,7 +367,7 @@ button {
   opacity: .45;
   cursor: not-allowed;
 }
-.box-selector { display: flex; align-items: center; gap: 9px; position: relative; border: 1px solid var(--box-line, #3b5557); border-radius: 8px; padding: 0 9px; height: 36px; min-width: 176px; background: linear-gradient(135deg, var(--box-soft, #1d302f), #182123); box-shadow: inset 0 1px 0 #ffffff0a, 0 4px 14px #0002; }
+.box-selector { display: flex; align-items: center; gap: 9px; position: relative; border: 1px solid var(--box-line, #3b5557); border-top-left-radius: 0; border-top-right-radius: 0; border-radius: 0 0 10px 10px; padding: 0 9px; height: 36px; min-width: 176px; background: linear-gradient(135deg, var(--box-soft, #1d302f), #182123); box-shadow: inset 0 1px 0 #ffffff0a, 0 4px 14px #0002; }
 .box-selector span { color: var(--box-accent, var(--cyan)); font: 8px "DM Mono"; font-weight: 700; letter-spacing: .1em; }
 .box-selector-trigger { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; border: 0; background: transparent; padding: 0 2px; color: #edf6f4; text-align: left; cursor: pointer; }
 .box-selector-trigger b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
@@ -690,10 +690,10 @@ main {
 .users-list { display: flex; flex-direction: column; gap: 8px; }
 .user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); transition: all 0.2s ease; }
 .user-card.expanded { padding: 16px; }
-.user-card.expanded .user-card-head { padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+.user-card.expanded .user-card-head { padding-bottom: 12px; margin-bottom: 2px; }
 .user-card-head { cursor: pointer; transition: background 0.2s; }
 .user-card-head:hover { background: rgba(51, 68, 74, 0.5); }
-.user-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 42%) auto auto; align-items: center; gap: 6px; min-height: 28px; }
+.user-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 42%) auto auto; align-items: center; gap: 6px; min-height: 28px; border-bottom: none; }
 .user-collapse { order: 0; }
 .user-card-title { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; order: 1; }
 .user-card-head strong { display: -webkit-box; min-width: 0; overflow: hidden; color: var(--text-primary); font-size: 0.78rem; font-weight: 700; text-transform: lowercase; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
