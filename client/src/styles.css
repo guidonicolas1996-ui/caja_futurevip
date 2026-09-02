@@ -677,8 +677,14 @@ main {
 .users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .users-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
 .users-head span { color: var(--muted); font-size: 11px; }
-.users-search { flex: 1; max-width: 420px; }
-.users-search input { width: 100%; }
+.users-search { position: relative; display: flex; flex: 1; max-width: 420px; gap: 7px; }
+.users-search input { width: 100%; min-width: 0; }
+.users-filter-button.active { color: var(--box-accent); border-color: var(--box-accent); }
+.users-filter-menu { position: absolute; top: calc(100% + 7px); right: 0; z-index: 5; display: grid; width: 210px; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #171d20; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32); }
+.users-filter-menu label { display: grid; gap: 5px; }
+.users-filter-menu span { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; }
+.users-filter-menu select { width: 100%; }
+.users-group-title { padding: 8px 2px 3px; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
 .users-actions { display: flex; justify-content: flex-start; }
 .users-list { display: flex; flex-direction: column; gap: 8px; }
 .user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); }

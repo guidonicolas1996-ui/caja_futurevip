@@ -2303,18 +2303,34 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   </main>;
 }
 
-function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
+function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }) {
   const [search, setSearch] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sortMode, setSortMode] = useState("none");
+  const [groupMode, setGroupMode] = useState("none");
   const [newUserOpen, setNewUserOpen] = useState(false);
   const [newUser, setNewUser] = useState({ names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString() });
   const configUsers = Array.isArray(config?.users) ? config.users : [];
   const [editableUsers, setEditableUsers] = useState(configUsers);
+  const usersLoadedRef = React.useRef(false);
   const [expandedUserId, setExpandedUserId] = useState(null);
   const persistUsersRef = React.useRef(false);
   const users = editableUsers;
   const clarifications = Array.isArray(config?.userClarifications) ? config.userClarifications : [];
   const platformSubPlatforms = config?.platformSubPlatforms || {};
   const boxById = Object.fromEntries((boxes || []).map((box) => [String(box.id), box]));
+  useEffect(() => {
+    if (!api || usersLoadedRef.current || !(boxes || []).length) return undefined;
+    let cancelled = false;
+    Promise.all((boxes || []).map((box) => api(`/api/configuracion?boxId=${box.id}`).catch(() => ({ users: [] }))))
+      .then((configs) => {
+        if (cancelled) return;
+        const mergedUsers = configs.flatMap((item) => Array.isArray(item.users) ? item.users : []);
+        setEditableUsers([...new Map(mergedUsers.map((user) => [user.id, user])).values()]);
+        usersLoadedRef.current = true;
+      });
+    return () => { cancelled = true; };
+  }, [api, boxes]);
   const updateUsers = (nextUsers) => {
     persistUsersRef.current = true;
     setEditableUsers(nextUsers);
@@ -2338,9 +2354,13 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
     const timer = window.setTimeout(() => {
       persistUsersRef.current = false;
       onConfigChange({ ...config, users: editableUsers });
+      Promise.all((boxes || []).filter((box) => box.id !== activeBoxId).map(async (box) => {
+        const boxConfig = await api(`/api/configuracion?boxId=${box.id}`);
+        return api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, users: editableUsers }) });
+      })).catch((error) => onNotify?.(error.message));
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [editableUsers]);
+  }, [editableUsers, activeBoxId, boxes, api, config, onConfigChange, onNotify]);
   const normalizeIdList = (list) => Array.isArray(list) ? list.filter(Boolean).map(String) : [];
   const compactValues = (values, fallback) => {
     const cleanValues = values.map((value) => String(value || "").trim()).filter(Boolean);
@@ -2362,6 +2382,24 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
     ].join(" ").toLowerCase();
     return haystack.includes(query.toLowerCase());
   };
+  const sortUsers = (items) => {
+    const sorted = [...items];
+    if (sortMode === "name-asc" || sortMode === "name-desc") {
+      sorted.sort((first, second) => {
+        const firstName = String(first.names?.find(Boolean) || first.titular || "").toLowerCase();
+        const secondName = String(second.names?.find(Boolean) || second.titular || "").toLowerCase();
+        return sortMode === "name-asc" ? firstName.localeCompare(secondName) : secondName.localeCompare(firstName);
+      });
+    }
+    return sorted;
+  };
+  const groupLabel = (user) => {
+    if (groupMode === "box") return user.boxes?.map((id) => boxById[String(id)]?.title).filter(Boolean).join(" / ") || "Sin caja";
+    if (groupMode === "clarification") return clarifications.filter((item) => user.clarifications?.includes(item.id)).map((item) => item.text).filter(Boolean).join(" / ") || "Sin aclaración";
+    if (groupMode === "subplatform") return user.subPlatforms?.map((item) => item.split("::").at(-1)).filter(Boolean).join(" / ") || "Sin subplataforma";
+    if (groupMode === "linked") return user.linkedUsers?.length ? "Vinculados" : "Sin vínculos";
+    return "Todos";
+  };
   const renderListField = (label, valueList, onAdd, onUpdate) => (
     <div className="users-list-field">
       <span>{label}</span>
@@ -2378,6 +2416,10 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
       </div>
     </div>
   );
+  const visibleUsers = sortUsers(users.filter((user) => isMatch(user, search)));
+  const groupedUsers = groupMode === "none"
+    ? [["", visibleUsers]]
+    : [...new Map(visibleUsers.map((user) => [groupLabel(user), []])).entries()].map(([label]) => [label, visibleUsers.filter((user) => groupLabel(user) === label)]);
   return <main className="users-page">
     <section className="panel users-panel">
       <div className="users-head">
@@ -2387,13 +2429,15 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
         </div>
         <div className="users-search">
           <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, teléfono, titular o caja" />
+          <button className={`icon-button users-filter-button ${filtersOpen ? "active" : ""}`} type="button" title="Filtros y orden" onClick={() => setFiltersOpen(!filtersOpen)}><Settings2 size={15} /></button>
+          {filtersOpen && <div className="users-filter-menu"><label><span>Ordenar</span><select value={sortMode} onChange={(event) => setSortMode(event.target.value)}><option value="none">Sin ordenar</option><option value="name-asc">Nombre A-Z</option><option value="name-desc">Nombre Z-A</option></select></label><label><span>Agrupar por</span><select value={groupMode} onChange={(event) => setGroupMode(event.target.value)}><option value="none">Sin agrupar</option><option value="clarification">Aclaraciones</option><option value="box">Caja</option><option value="subplatform">Subplataforma</option><option value="linked">Vínculos</option></select></label></div>}
         </div>
       </div>
       <div className="users-actions">
         <button className="config-add" type="button" onClick={openNewUser}><UserPlus size={15} /> Nuevo usuario</button>
       </div>
       <div className="users-list">
-        {(users.filter((user) => isMatch(user, search))).map((user) => {
+        {groupedUsers.map(([groupLabelValue, groupUsers]) => <React.Fragment key={groupLabelValue || "all-users"}>{groupMode !== "none" && <div className="users-group-title">{groupLabelValue}</div>}{groupUsers.map((user) => {
           const selectedUserBoxes = normalizeIdList(user.boxes);
           const selectedClarifications = new Set(normalizeIdList(user.clarifications));
           const linkedOptions = users.filter((other) => other.id !== user.id).map((other) => ({ value: other.id, label: [...(other.names || [])].filter(Boolean).join(" / ") || other.titular || "Usuario sin nombre" }));
@@ -2490,7 +2534,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
             </>}
           </div>
           );
-        })}
+        })}</React.Fragment>)}
         {users.length === 0 && <div className="empty-state">No hay usuarios cargados todavía.</div>}
       </div>
       {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal users-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><p>Completá los datos obligatorios para darlo de alta.</p><div className="user-fields-grid"><div>{renderListField("Nombre de usuario *", newUser.names, () => setNewUser((current) => ({ ...current, names: [...current.names, ""] })), (index, value) => setNewUser((current) => ({ ...current, names: current.names.map((name, nameIndex) => nameIndex === index ? value : name) })))} </div><div>{renderListField("Número de teléfono *", newUser.phones, () => setNewUser((current) => ({ ...current, phones: [...current.phones, ""] })), (index, value) => setNewUser((current) => ({ ...current, phones: current.phones.map((phone, phoneIndex) => phoneIndex === index ? value : phone) })))} </div><label className="field-block"><span>Titular</span><input value={newUser.titular} onChange={(event) => setNewUser((current) => ({ ...current, titular: event.target.value }))} /></label><label className="field-block"><span>Fecha creación</span><input type="datetime-local" value={new Date(newUser.createdAt).toISOString().slice(0, 16)} onChange={(event) => setNewUser((current) => ({ ...current, createdAt: new Date(event.target.value).toISOString() }))} /></label></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
@@ -2948,7 +2992,7 @@ function App() {
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
