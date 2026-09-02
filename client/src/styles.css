@@ -4116,6 +4116,27 @@ select:focus {
 .report-v5-chip-log .report-v5-line:nth-child(3) > .report-v5-chip-final {
   --v5-chip-accent: #83d5a2;
 }
+.report-v5-chip-log .report-v5-line:nth-child(4) > .report-v5-chip-final {
+  --v5-chip-accent: #72d7ca;
+}
+.report-v5-chip-log .report-v5-line:nth-child(5) > .report-v5-chip-final {
+  --v5-chip-accent: #82b8ff;
+}
+.report-v5-chip-log .report-v5-line:nth-child(6) > .report-v5-chip-final {
+  --v5-chip-accent: #f5ad69;
+}
+.report-v5-chip-log .report-v5-line:nth-child(7) > .report-v5-chip-final {
+  --v5-chip-accent: #ed9fc1;
+}
+.report-v5-chip-log .report-v5-line:nth-child(8) > .report-v5-chip-final {
+  --v5-chip-accent: #ef8888;
+}
+.report-v5-chip-log .report-v5-line:nth-child(9) > .report-v5-chip-final {
+  --v5-chip-accent: #c2a0ed;
+}
+.report-v5-chip-log .report-v5-line:nth-child(10) > .report-v5-chip-final {
+  --v5-chip-accent: #aebdca;
+}
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}
 .modal .modal-icon { display: grid; position: absolute; top: 25px; left: 24px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 0; background: transparent !important; color: var(--box-accent, var(--cyan)); }
 .modal { padding: 24px; }
