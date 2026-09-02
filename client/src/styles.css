@@ -684,7 +684,8 @@ main {
 .user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); }
 .user-card.expanded { padding: 16px; }
 .user-card-head { display: flex; align-items: center; gap: 6px; min-height: 28px; }
-.user-card-head strong { flex: 1; min-width: 0; overflow: hidden; color: var(--text-primary); font-size: 0.78rem; font-weight: 700; text-transform: lowercase; text-overflow: ellipsis; white-space: nowrap; }
+.user-card-title { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; }
+.user-card-head strong { min-width: 0; overflow: hidden; color: var(--text-primary); font-size: 0.78rem; font-weight: 700; text-transform: lowercase; text-overflow: ellipsis; white-space: nowrap; }
 .user-expand { order: 2; }
 .user-card-head .delete-button { order: 3; }
 .user-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -713,6 +714,8 @@ main {
 .user-linked-controls { display: flex; gap: 8px; }
 .user-linked-controls input { flex: 1; }
 .linked-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.linked-tag button { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: currentColor; cursor: pointer; }
+.linked-tag button:hover { background: rgba(255, 255, 255, 0.12); }
 .users-create-modal { width: min(620px, calc(100vw - 32px)); }
 .users-create-modal .users-list-field { min-width: 0; }
 @media (max-width: 760px) { .user-fields-grid, .user-checks-grid { grid-template-columns: 1fr; } .users-head { flex-direction: column; align-items: stretch; } .users-search { max-width: none; } }

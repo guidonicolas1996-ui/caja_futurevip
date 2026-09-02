@@ -2366,7 +2366,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
             onChange={(event) => onUpdate(index, event.target.value)}
           />
         ))}
-        <button className="config-add" type="button" onClick={onAdd}><Plus size={15} /> Agregar</button>
+        <button className="config-add" type="button" disabled={!valueList.length || !String(valueList[valueList.length - 1] || "").trim()} onClick={onAdd}><Plus size={15} /> Agregar</button>
       </div>
     </div>
   );
@@ -2390,10 +2390,12 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
           const selectedClarifications = new Set(normalizeIdList(user.clarifications));
           const linkedOptions = users.filter((other) => other.id !== user.id).map((other) => ({ value: other.id, label: [...(other.names || [])].filter(Boolean).join(" / ") || other.titular || "Usuario sin nombre" }));
           const expanded = expandedUserId === user.id;
+          const displayClarifications = clarifications.filter((clarification) => selectedClarifications.has(clarification.id));
+          const unlinkUser = (linkedUserId) => updateUsers(users.map((item) => item.id === user.id ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== linkedUserId) } : item.id === linkedUserId ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== user.id) } : item));
           return (
           <div className={`user-card ${expanded ? "expanded" : "compact"}`} key={user.id}>
             <div className="user-card-head">
-              <strong>{((user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre").trim()}</strong>
+              <div className="user-card-title"><strong>{((user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre").trim()}</strong><div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{displayClarifications.map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div></div>
               <button className="icon-button user-expand" type="button" title={expanded ? "Ocultar usuario" : "Editar usuario"} onClick={() => setExpandedUserId(expanded ? null : user.id)}><Eye size={15} /></button>
               <button className="delete-button" type="button" title="Eliminar usuario" onClick={() => updateUsers(users.filter((item) => item.id !== user.id))}><Trash2 size={15} /></button>
             </div>
@@ -2445,7 +2447,6 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                   </label>;
                 })}
               </div>
-              <div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{(clarifications || []).filter((clarification) => selectedClarifications.has(clarification.id)).map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div>
             </div>
             <div className="user-linked-section">
               <span>Usuarios vinculados</span>
@@ -2470,7 +2471,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                 }}>Vincular</button>
               </div>
               <div className="linked-tags">
-                {((user.linkedUsers || []).map((linkedId) => users.find((entry) => entry.id === linkedId)).filter(Boolean)).map((linkedUser) => <span key={linkedUser.id} className="linked-tag">{((linkedUser.names || []).filter(Boolean).join(" / ") || linkedUser.titular || "Usuario").trim()}</span>)}
+                {((user.linkedUsers || []).map((linkedId) => users.find((entry) => entry.id === linkedId)).filter(Boolean)).map((linkedUser) => <span key={linkedUser.id} className="linked-tag">{((linkedUser.names || []).filter(Boolean).join(" / ") || linkedUser.titular || "Usuario").trim()}<button type="button" title="Desvincular usuario" onClick={() => unlinkUser(linkedUser.id)}><X size={11} /></button></span>)}
               </div>
             </div>
             </>}
