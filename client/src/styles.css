@@ -680,10 +680,13 @@ main {
 .users-search { flex: 1; max-width: 420px; }
 .users-search input { width: 100%; }
 .users-actions { display: flex; justify-content: flex-start; }
-.users-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-.user-card { display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(16, 19, 22, 0.82); }
-.user-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.user-card-head strong { font-size: 0.96rem; }
+.users-list { display: flex; flex-direction: column; gap: 8px; }
+.user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); }
+.user-card.expanded { padding: 16px; }
+.user-card-head { display: flex; align-items: center; gap: 6px; min-height: 28px; }
+.user-card-head strong { flex: 1; min-width: 0; overflow: hidden; color: var(--text-primary); font-size: 0.78rem; font-weight: 700; text-transform: lowercase; text-overflow: ellipsis; white-space: nowrap; }
+.user-expand { order: 2; }
+.user-card-head .delete-button { order: 3; }
 .user-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .field-block, .users-list-field { display: flex; flex-direction: column; gap: 7px; }
 .field-block span, .users-list-field span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
@@ -693,6 +696,13 @@ main {
 .check-group > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 .checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow: auto; padding-right: 4px; }
 .checkbox-list label { display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; background: rgba(255,255,255,0.02); }
+.user-switch { border-color: color-mix(in srgb, var(--switch-accent) 55%, var(--line)); }
+.user-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.user-switch i { position: relative; display: inline-block; width: 27px; height: 15px; flex: 0 0 27px; border-radius: 999px; background: rgba(117, 134, 137, 0.32); transition: background 160ms ease; }
+.user-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 9px; height: 9px; border-radius: 50%; background: #d7dddd; transition: transform 160ms ease, background 160ms ease; }
+.user-switch input:checked + i { background: var(--switch-accent); }
+.user-switch input:checked + i::after { background: #fff; transform: translateX(12px); }
+.user-switch span { color: var(--text-primary); }
 .checkbox-list.compact label { border-radius: 8px; }
 .user-clarifications, .user-linked-section { display: flex; flex-direction: column; gap: 8px; }
 .user-clarifications > span, .user-linked-section > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }

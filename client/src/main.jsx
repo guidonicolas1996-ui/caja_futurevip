@@ -832,7 +832,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
             <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
-          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /><div className="config-card"><div className="config-list-head"><h3>Subplataformas</h3><span>{Object.values(draft.platformSubPlatforms || {}).reduce((sum, list) => sum + list.length, 0)} elementos</span></div>{draft.platforms.map((platform) => <div className="platform-config-row" key={`sub-${platform}`} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "8px" }}><div style={{ display: "flex", alignItems: "center", gap: "8px" }}><i className={`box-swatch ${draft.platformColors?.[platform] || "teal"}`} /><strong style={{ fontSize: "0.76em", color: "var(--text-secondary)" }}>{platform}</strong></div><div className="config-list-row" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "8px" }}><input value={((draft.platformSubPlatforms || {})[platform] || []).join(", ")} onChange={(event) => { const values = event.target.value.split(',').map((item) => item.trim()).filter(Boolean); setDraft((current) => ({ ...current, platformSubPlatforms: { ...(current.platformSubPlatforms || {}), [platform]: values } })); }} placeholder="Agregar subplataformas separadas por coma" /></div></div>)}<button className="config-add" onClick={() => setDraft((current) => ({ ...current, platformSubPlatforms: { ...(current.platformSubPlatforms || {}), [current.platforms[0] || ""]: [...((current.platformSubPlatforms || {})[current.platforms[0] || ""] || []), ""] } }))}><Plus size={15} /> Agregar subplataforma</button></div></>}
+          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /><div className="config-card"><div className="config-list-head"><h3>Subplataformas</h3><span>{Object.values(draft.platformSubPlatforms || {}).reduce((sum, list) => sum + list.filter(Boolean).length, 0)} elementos</span></div>{draft.platforms.map((platform) => <div className="platform-config-row" key={`sub-${platform}`} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "8px" }}><div style={{ display: "flex", alignItems: "center", gap: "8px" }}><i className={`box-swatch ${draft.platformColors?.[platform] || "teal"}`} /><strong style={{ fontSize: "0.76em", color: "var(--text-secondary)" }}>{platform}</strong></div><div className="config-list-row" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "8px" }}><input value={((draft.platformSubPlatforms || {})[platform] || []).join(", ")} onChange={(event) => { const values = event.target.value.split(",").map((item) => item.trim()); setDraft((current) => ({ ...current, platformSubPlatforms: { ...(current.platformSubPlatforms || {}), [platform]: values } })); }} placeholder="Agregar subplataformas separadas por coma" /></div></div>)}<button className="config-add" onClick={() => setDraft((current) => ({ ...current, platformSubPlatforms: { ...(current.platformSubPlatforms || {}), [current.platforms[0] || ""]: [...((current.platformSubPlatforms || {})[current.platforms[0] || ""] || []), ""] } }))}><Plus size={15} /> Agregar subplataforma</button></div></>}
           {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y la meta exclusiva de bonos por caja para ese mes.</p></div><MonthlyGoalConfig draft={draft} boxes={boxes} api={api} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           {tab === "users" && <><div className="config-intro"><span className="eyebrow">Usuarios</span><h2>Conf. de usuarios y aclaraciones</h2><p>Definí las aclaraciones rápidas que se podrán asociar a cada usuario.</p></div><section className="config-card"><div className="config-list-head"><h3>Aclaraciones</h3><span>{draft.userClarifications?.length || 0} elementos</span></div>{(draft.userClarifications || []).map((clarification, index) => <div className="platform-config-row" key={clarification.id || index} style={{ display: "grid", gridTemplateColumns: "1.2fr 120px 88px auto", gap: "8px", alignItems: "center" }}><input value={clarification.text} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, text: event.target.value } : item) }))} placeholder="Texto aclaración" /><select value={clarification.color} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, color: event.target.value } : item) }))}>{Object.entries({ teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" }).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><input value={clarification.emoji || ""} maxLength={2} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, emoji: event.target.value } : item) }))} placeholder="🙂" /><button className="delete-button" title="Eliminar aclaración" onClick={() => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div> )}<button className="config-add" onClick={() => setDraft((current) => ({ ...current, userClarifications: [...(current.userClarifications || []), { id: `clarification-${crypto.randomUUID()}`, text: "", color: "teal", emoji: "" }] }))}><Plus size={15} /> Agregar aclaración</button></section></>}
           </>}
@@ -2305,12 +2305,25 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
 
 function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
   const [search, setSearch] = useState("");
-  const users = Array.isArray(config?.users) ? config.users : [];
+  const configUsers = Array.isArray(config?.users) ? config.users : [];
+  const [editableUsers, setEditableUsers] = useState(configUsers);
+  const [expandedUserId, setExpandedUserId] = useState(null);
+  const persistUsersRef = React.useRef(false);
+  const users = editableUsers;
   const clarifications = Array.isArray(config?.userClarifications) ? config.userClarifications : [];
   const platformSubPlatforms = config?.platformSubPlatforms || {};
-  const selectedBoxIds = new Set((boxes || []).map((box) => box.id));
-  const boxById = Object.fromEntries((boxes || []).map((box) => [box.id, box]));
-  const updateUsers = (nextUsers) => onConfigChange({ ...config, users: nextUsers });
+  const updateUsers = (nextUsers) => {
+    persistUsersRef.current = true;
+    setEditableUsers(nextUsers);
+  };
+  useEffect(() => {
+    if (!persistUsersRef.current) return undefined;
+    const timer = window.setTimeout(() => {
+      persistUsersRef.current = false;
+      onConfigChange({ ...config, users: editableUsers });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [editableUsers]);
   const normalizeIdList = (list) => Array.isArray(list) ? list.filter(Boolean).map(String) : [];
   const isMatch = (user, query) => {
     if (!query) return true;
@@ -2341,26 +2354,6 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
       </div>
     </div>
   );
-  const getUserSubPlatforms = (user) => {
-    const selectedBoxIds = normalizeIdList(user.boxes);
-    const allOptions = [];
-    (boxes || []).forEach((box) => {
-      if (!selectedBoxIds.includes(box.id)) return;
-      const boxPlatforms = config?.platforms || [];
-      boxPlatforms.forEach((platform) => {
-        const entries = normalizeIdList(platformSubPlatforms[platform]);
-        if (entries.length === 0) {
-          if ((user.subPlatforms || []).includes(platform)) allOptions.push({ key: `${box.id}::${platform}`, label: `${box.title} · ${platform}` });
-          return;
-        }
-        entries.forEach((subPlatform) => {
-          const key = `${box.id}::${platform}::${subPlatform}`;
-          if ((user.subPlatforms || []).includes(key)) allOptions.push({ key, label: `${box.title} · ${platform} · ${subPlatform}` });
-        });
-      });
-    });
-    return allOptions;
-  };
   return <main className="users-page">
     <section className="panel users-panel">
       <div className="users-head">
@@ -2380,12 +2373,15 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
           const selectedUserBoxes = normalizeIdList(user.boxes);
           const selectedClarifications = new Set(normalizeIdList(user.clarifications));
           const linkedOptions = users.filter((other) => other.id !== user.id).map((other) => ({ value: other.id, label: [...(other.names || [])].filter(Boolean).join(" / ") || other.titular || "Usuario sin nombre" }));
+          const expanded = expandedUserId === user.id;
           return (
-          <div className="user-card" key={user.id}>
+          <div className={`user-card ${expanded ? "expanded" : "compact"}`} key={user.id}>
             <div className="user-card-head">
               <strong>{((user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre").trim()}</strong>
+              <button className="icon-button user-expand" type="button" title={expanded ? "Ocultar usuario" : "Editar usuario"} onClick={() => setExpandedUserId(expanded ? null : user.id)}><Eye size={15} /></button>
               <button className="delete-button" type="button" title="Eliminar usuario" onClick={() => updateUsers(users.filter((item) => item.id !== user.id))}><Trash2 size={15} /></button>
             </div>
+            {expanded && <>
             <div className="user-fields-grid">
               {renderListField("Nombre de usuario", normalizeIdList(user.names).length ? normalizeIdList(user.names) : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || []), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || []).map((name, nameIndex) => nameIndex === index ? value : name) } : item)))}
               {renderListField("Número de teléfono", normalizeIdList(user.phones).length ? normalizeIdList(user.phones) : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || []), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || []).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)))}
@@ -2404,7 +2400,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                 <div className="checkbox-list">
                   {(boxes || []).map((box) => {
                     const checked = selectedUserBoxes.includes(box.id);
-                    return <label key={box.id}><input type="checkbox" checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, boxes: checked ? (item.boxes || []).filter((id) => id !== box.id) : [...(item.boxes || []), box.id] } : item))} /> {box.title}</label>;
+                    return <label className="user-switch" key={box.id} style={{ "--switch-accent": boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, boxes: checked ? (item.boxes || []).filter((id) => id !== box.id) : [...(item.boxes || []), box.id] } : item))} /><i /> <span>{box.title}</span></label>;
                   })}
                 </div>
               </div>
@@ -2417,11 +2413,11 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                       const subs = normalizeIdList(platformSubPlatforms[platform]);
                       if (subs.length === 0) {
                         const key = platform;
-                        return [{ key: `${box.id}::${platform}`, label: `${box.title} · ${platform}` }];
+                        return [{ key: `${box.id}::${platform}`, label: platform, color: config.platformColors?.[platform] || "teal" }];
                       }
-                      return subs.map((subPlatform) => ({ key: `${box.id}::${platform}::${subPlatform}`, label: `${box.title} · ${platform} · ${subPlatform}` }));
+                      return subs.map((subPlatform) => ({ key: `${box.id}::${platform}::${subPlatform}`, label: subPlatform, color: config.platformColors?.[platform] || "teal" }));
                     });
-                  }).map((option) => <label key={option.key}><input type="checkbox" checked={((user.subPlatforms || []).includes(option.key) || (user.subPlatforms || []).includes(option.key.split("::").slice(0,2).join("::")))} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: ((item.subPlatforms || []).includes(option.key)) ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item))} /> {option.label}</label>)}
+                  }).map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" checked={((user.subPlatforms || []).includes(option.key) || (user.subPlatforms || []).includes(option.key.split("::").slice(0,2).join("::")))} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: ((item.subPlatforms || []).includes(option.key)) ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item))} /><i /> <span>{option.label}</span></label>)}
                 </div>
               </div>
             </div>
@@ -2430,9 +2426,9 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
               <div className="checkbox-list compact">
                 {(clarifications || []).map((clarification) => {
                   const checked = selectedClarifications.has(clarification.id);
-                  return <label key={clarification.id} className="clarification-pill" style={{ borderColor: clarification.color ? `var(--${clarification.color})` : undefined, color: `var(--${clarification.color || "teal"})` }}>
+                  return <label key={clarification.id} className="clarification-pill user-switch" style={{ "--switch-accent": boxColorStyle(clarification.color || "teal")["--box-accent"], borderColor: clarification.color ? `var(--${clarification.color})` : undefined, color: `var(--${clarification.color || "teal"})` }}>
                     <input type="checkbox" checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, clarifications: checked ? (item.clarifications || []).filter((id) => id !== clarification.id) : [...(item.clarifications || []), clarification.id] } : item))} />
-                    <span>{clarification.emoji || "•"} {clarification.text || "Aclaración"}</span>
+                    <i /> <span>{clarification.emoji || "•"} {clarification.text || "Aclaración"}</span>
                   </label>;
                 })}
               </div>
@@ -2464,6 +2460,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                 {((user.linkedUsers || []).map((linkedId) => users.find((entry) => entry.id === linkedId)).filter(Boolean)).map((linkedUser) => <span key={linkedUser.id} className="linked-tag">{((linkedUser.names || []).filter(Boolean).join(" / ") || linkedUser.titular || "Usuario").trim()}</span>)}
               </div>
             </div>
+            </>}
           </div>
           );
         })}
