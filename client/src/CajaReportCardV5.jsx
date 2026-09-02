@@ -2,7 +2,7 @@ import React from "react";
 import { ArrowDownToLine, ArrowLeftRight, Banknote, Coins, FileText, Gift, ReceiptText, Ticket, WalletCards } from "lucide-react";
 
 const n = (value) => Number(value) || 0;
-const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n(value));
+const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n(value));
 const time = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
 const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
   const bonusDate = new Date(createdAt);
