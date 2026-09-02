@@ -2324,6 +2324,10 @@ select:focus {
 .cell-control.has-money.both .account-amount input {
   color: var(--red);
 }
+.cell-control.wallet-category-assigned .account-amount,
+.cell-control.wallet-category-assigned .account-amount input {
+  border-color: var(--box-accent, var(--cyan)) !important;
+}
 .cell-control button.checked:first-child {
   color: #102322;
   background: var(--green);
