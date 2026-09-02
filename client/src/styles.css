@@ -749,10 +749,10 @@ main {
 .linked-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .linked-tag button { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: currentColor; cursor: pointer; }
 .linked-tag button:hover { background: rgba(255, 255, 255, 0.12); }
-.users-create-modal { width: min(960px, calc(100vw - 32px)); max-height: 90vh; overflow-x: hidden; overflow-y: auto; box-sizing: border-box; }
-.users-create-modal .user-fields-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.users-create-modal .user-checks-grid { grid-template-columns: minmax(0, .8fr) minmax(0, 1.6fr); }
-.users-create-modal .subplatforms-group { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.users-create-modal { width: min(960px, calc(100vw - 32px)); max-height: 90vh; overflow-y: auto; }
+.users-create-modal .user-fields-grid { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
+.users-create-modal .user-checks-grid { grid-template-columns: minmax(220px, .8fr) minmax(420px, 1.6fr); }
+.users-create-modal .subplatforms-group { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
 .users-create-modal .users-list-field { min-width: 0; }
 .users-create-modal .user-checks-grid { margin-top: 8px; }
 /* Estilos para modo editable vs readonly */
@@ -764,7 +764,7 @@ main {
 .user-switch input:disabled + i { opacity: 0.5; cursor: not-allowed; }
 .user-switch input:enabled + i { cursor: pointer; }
 @media (max-width: 760px) { .user-fields-grid, .user-checks-grid { grid-template-columns: 1fr; } .users-head { flex-direction: column; align-items: stretch; } .users-search { max-width: none; } }
-@media (max-width: 760px) { .users-create-modal .user-fields-grid, .users-create-modal .user-checks-grid { grid-template-columns: 1fr; } .users-create-modal .subplatforms-group { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .users-create-modal .user-fields-grid, .users-create-modal .user-checks-grid { grid-template-columns: 1fr; } .users-create-modal .subplatforms-group { grid-template-columns: repeat(2, minmax(120px, 1fr)); } }
 @media (max-width: 760px) { .user-card-head { grid-template-columns: minmax(0, 1fr) auto auto; align-items: start; } .user-assignment-pills { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; } .user-assignment-pills .user-box-pills, .user-subplatform-pills { justify-content: flex-start; } }
 @media (max-width: 700px) {
   .monthly-goal-progress { align-items: stretch; flex-direction: column; gap: 8px; }
