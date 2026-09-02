@@ -401,16 +401,14 @@ function PlatformConfigList({ platforms, platformColors, platformEntities = [], 
   return <>
     <div className="config-list platform-config-list">
       <div className="config-list-head"><h3>Plataformas</h3><span>{platforms.length} elementos</span></div>
-      {platforms.map((platform, index) => {
-        const subs = normalizeSubPlatforms(platformSubPlatforms[platform] || []);
-        return <div className="platform-config-row" key={platformEntities[index]?.id || index}>
+      {platforms.map((platform, index) => (
+        <div className="platform-config-row" key={platformEntities[index]?.id || index}>
           <i className={`box-swatch ${platformColors[platform] || "teal"}`} />
           <input value={platform} placeholder="Nombre de plataforma" onChange={(event) => { const next = [...platforms]; const previous = next[index]; next[index] = event.target.value; onPlatformsChange(next); if (onEntitiesChange && platformEntities[index]) onEntitiesChange(platformEntities.map((entity, entityIndex) => entityIndex === index ? { ...entity, name: event.target.value } : entity)); if (previous !== event.target.value) onColorChange(event.target.value, platformColors[previous] || "teal", previous); }} />
           <select value={platformColors[platform] || "teal"} aria-label={`Color de ${platform}`} onChange={(event) => onColorChange(platform, event.target.value)}>{Object.entries(colorNames).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>
-          <button className="icon-button" title="Editar subplataformas" onClick={() => openModal(platform)} style={{ minWidth: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: `var(--box-accent, #72d7ca)`, color: "white", borderRadius: "4px", fontSize: "0.8em", fontWeight: "bold" }}>{subs.filter(s => s.name).length}</button>
           <button className="delete-button" title="Eliminar plataforma" onClick={async () => { if (await confirmDelete(`¿Eliminar plataforma "${platform}"?`)) { onPlatformsChange(platforms.filter((_, itemIndex) => itemIndex !== index)); if (onEntitiesChange) onEntitiesChange(platformEntities.filter((_, entityIndex) => entityIndex !== index)); const newSubs = { ...platformSubPlatforms }; delete newSubs[platform]; if (onSubPlatformsChange) onSubPlatformsChange(newSubs); } }}><Trash2 size={15} /></button>
-        </div>;
-      })}
+        </div>
+      ))}
       <button className="config-add" onClick={() => { onPlatformsChange([...platforms, ""]); if (onEntitiesChange) onEntitiesChange([...platformEntities, { id: `platform-${crypto.randomUUID()}`, name: "" }]); }}><Plus size={15} /> Agregar plataforma</button>
     </div>
     {subplatformModal && <div className="modal-backdrop" onClick={closeModal}>
@@ -2372,6 +2370,37 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   const clarifications = globalClarifications;
   const platformSubPlatforms = globalPlatformSubPlatforms;
   const boxById = Object.fromEntries((boxes || []).map((box) => [String(box.id), box]));
+  const dedupeSubPlatformEntries = (platform, values) => {
+    const next = [];
+    const seen = new Set();
+    (Array.isArray(values) ? values : []).forEach((sub) => {
+      const name = String(typeof sub === "string" ? sub : (sub?.name || "")).trim();
+      if (!name) return;
+      const signature = `${platform}::${name.toLowerCase()}`;
+      if (seen.has(signature)) return;
+      seen.add(signature);
+      next.push({
+        name,
+        color: typeof sub === "string" ? (config?.platformColors?.[platform] || "teal") : (sub?.color || config?.platformColors?.[platform] || "teal"),
+      });
+    });
+    return next;
+  };
+  const boxSubPlatformsFor = (boxId) => {
+    const seen = new Set();
+    return (config?.platforms || []).flatMap((platform) => {
+      return dedupeSubPlatformEntries(platform, platformSubPlatforms[platform] || []).flatMap((sub) => {
+        const key = `${boxId}::${platform}::${sub.name}`;
+        if (seen.has(key)) return [];
+        seen.add(key);
+        return [{
+          key,
+          label: sub.name,
+          color: sub.color || config?.platformColors?.[platform] || "teal",
+        }];
+      });
+    });
+  };
   const mergeUsers = (userLists) => {
     const merged = new Map();
     userLists.flat().forEach((user) => {
@@ -2408,7 +2437,8 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
         setGlobalClarifications(mergedClarifications);
         const mergedSubPlatforms = {};
         configs.forEach((item) => Object.entries(item.platformSubPlatforms || {}).forEach(([platform, values]) => {
-          mergedSubPlatforms[platform] = [...new Set([...(mergedSubPlatforms[platform] || []), ...(Array.isArray(values) ? values : [])])];
+          const nextValues = dedupeSubPlatformEntries(platform, [...(mergedSubPlatforms[platform] || []), ...(Array.isArray(values) ? values : [])]);
+          mergedSubPlatforms[platform] = nextValues;
         }));
         setGlobalPlatformSubPlatforms(mergedSubPlatforms);
         usersLoadedRef.current = true;
@@ -2546,14 +2576,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
           const userBoxes = selectedUserBoxes.map((boxId) => boxById[boxId]).filter(Boolean);
           const compactName = compactValues(user.names || [], compactValues(user.titulars || [], "Usuario sin nombre"));
           const compactPhone = compactValues(user.phones || [], "Sin teléfono");
-          const userSubPlatforms = (boxes || []).filter((box) => selectedUserBoxes.includes(String(box.id))).flatMap((box) => (config.platforms || []).flatMap((platform) => {
-            const subs = Array.isArray(platformSubPlatforms[platform]) ? platformSubPlatforms[platform] : [];
-            return subs.map((sub) => {
-              const subName = typeof sub === 'string' ? sub : sub?.name || '';
-              const subColor = typeof sub === 'string' ? (config.platformColors?.[platform] || "teal") : (sub?.color || config.platformColors?.[platform] || "teal");
-              return { key: `${box.id}::${platform}::${subName}`, label: subName, color: subColor };
-            });
-          })).filter((option) => (user.subPlatforms || []).includes(option.key));
+          const userSubPlatforms = (boxes || []).filter((box) => selectedUserBoxes.includes(String(box.id))).flatMap((box) => boxSubPlatformsFor(box.id)).filter((option) => (user.subPlatforms || []).includes(option.key));
           const unlinkUser = (linkedUserId) => updateUsers(users.map((item) => item.id === user.id ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== linkedUserId) } : item.id === linkedUserId ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== user.id) } : item));
           return (
           <div className={`user-card ${expanded ? "expanded" : "compact"}`} key={user.id}>
@@ -2588,16 +2611,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
                 <span>Subplataformas</span>
                 <div className="checkbox-list subplatforms-grouped">
                   {(boxes || []).filter((box) => selectedUserBoxes.includes(box.id)).map((box) => {
-                    const platforms = config?.platforms || [];
-                    const subOptions = platforms.flatMap((platform) => {
-                      const subsList = Array.isArray(platformSubPlatforms[platform]) ? platformSubPlatforms[platform] : [];
-                      if (subsList.length === 0) return [];
-                      return subsList.map((sub) => {
-                        const subName = typeof sub === 'string' ? sub : sub?.name || '';
-                        const subColor = typeof sub === 'string' ? (config.platformColors?.[platform] || "teal") : (sub?.color || config.platformColors?.[platform] || "teal");
-                        return { key: `${box.id}::${platform}::${subName}`, label: subName, color: subColor, platform };
-                      });
-                    });
+                    const subOptions = boxSubPlatformsFor(box.id);
                     if (subOptions.length === 0) return null;
                     return <div key={box.id} className="subplatforms-group" style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}><div className="subplatforms-group-title">{box.title}</div>{subOptions.map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={(user.subPlatforms || []).includes(option.key)} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: ((item.subPlatforms || []).includes(option.key)) ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item))} /><i /> <span>{option.label}</span></label>)}</div>;
                   })}
