@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ArrowDownToLine, ArrowLeftRight, Banknote, Coins, FileText, Gift, ReceiptText, Ticket, WalletCards } from "lucide-react";
 
 const n = (value) => Number(value) || 0;
@@ -31,6 +31,15 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
   const bonusSlots = Array.from({ length: 4 }, (_, index) => { const from = (start + index * 2) % 24; const to = (from + 2) % 24; const items = (caja.bonuses || []).filter((bonus) => bonusSlotFor(bonus.createdAt, caja.date, start) === index); return { label: `${String(from).padStart(2, "0")}:00 - ${String(to).padStart(2, "0")}:00`, items }; });
   const granted = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.granted), 0);
   const recovered = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.recovered), 0);
+  useEffect(() => {
+    const platformRows = snapshotRef.current?.querySelectorAll(".report-v5-chip-log .report-v5-line") || [];
+    platformRows.forEach((row) => {
+      const platform = row.querySelector("span")?.textContent?.split("·")[0].trim();
+      const finalValue = row.querySelector(".report-v5-chip-final");
+      if (!finalValue || !platform) return;
+      finalValue.style.color = colors[config.platformColors?.[platform]] || colors.teal;
+    });
+  }, [config.platformColors, chips]);
   const metric = (label, value, hero = false) => <div className={`report-v5-metric ${hero ? "hero" : ""}`}><span>{label}</span><b className={value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
   return <div ref={snapshotRef} className="snapshot-export report-card report-v5">
     <header className="report-v5-header"><div className="report-v5-brand"><span><Banknote size={24} /></span><div><strong>CAJA<span>flow</span></strong><small>Ficha de cierre operativo</small></div></div><div className="report-v5-period"><b>Turno {caja.shift}</b><strong>{period}</strong><small>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</small></div></header>

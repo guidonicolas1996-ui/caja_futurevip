@@ -4101,7 +4101,7 @@ select:focus {
   color: #ef8888;
 }
 .report-v5-chip-log .report-v5-line > .report-v5-chip-final {
-  color: var(--v5-chip-accent, #e8d477) !important;
+  color: var(--v5-chip-accent, #e8d477);
   font-size: 12px !important;
   font-weight: 700 !important;
 }
