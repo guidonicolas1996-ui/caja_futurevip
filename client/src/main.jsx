@@ -396,10 +396,23 @@ function ConfigList({ title, items, onChange, placeholder, sortable = false, onI
 
 function PlatformConfigList({ platforms, platformColors, platformEntities = [], onPlatformsChange, onEntitiesChange, onColorChange, platformSubPlatforms = {}, onSubPlatformsChange }) {
   const [subplatformModal, setSubplatformModal] = useState(null);
+  const [subplatformsInEdit, setSubplatformsInEdit] = useState([]);
   const colorNames = { teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" };
   const normalizeSubPlatforms = (subs) => {
     if (!Array.isArray(subs)) return [];
     return subs.map(sub => typeof sub === "string" ? { name: sub, color: "teal" } : sub);
+  };
+  const openModal = (platform) => {
+    setSubplatformModal(platform);
+    setSubplatformsInEdit(normalizeSubPlatforms(platformSubPlatforms[platform] || []));
+  };
+  const closeModal = () => {
+    setSubplatformModal(null);
+    setSubplatformsInEdit([]);
+  };
+  const saveModal = () => {
+    onSubPlatformsChange({ ...platformSubPlatforms, [subplatformModal]: subplatformsInEdit });
+    closeModal();
   };
   return <>
     <div className="config-list platform-config-list">
@@ -410,26 +423,30 @@ function PlatformConfigList({ platforms, platformColors, platformEntities = [], 
           <i className={`box-swatch ${platformColors[platform] || "teal"}`} />
           <input value={platform} placeholder="Nombre de plataforma" onChange={(event) => { const next = [...platforms]; const previous = next[index]; next[index] = event.target.value; onPlatformsChange(next); if (onEntitiesChange && platformEntities[index]) onEntitiesChange(platformEntities.map((entity, entityIndex) => entityIndex === index ? { ...entity, name: event.target.value } : entity)); if (previous !== event.target.value) onColorChange(event.target.value, platformColors[previous] || "teal", previous); }} />
           <select value={platformColors[platform] || "teal"} aria-label={`Color de ${platform}`} onChange={(event) => onColorChange(platform, event.target.value)}>{Object.entries(colorNames).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>
-          <button className="icon-button" title="Editar subplataformas" onClick={() => setSubplatformModal(platform)} style={{ minWidth: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: `var(--box-accent, #72d7ca)`, color: "white", borderRadius: "4px", fontSize: "0.8em", fontWeight: "bold" }}>{subs.length}</button>
+          <button className="icon-button" title="Editar subplataformas" onClick={() => openModal(platform)} style={{ minWidth: "32px", display: "flex", alignItems: "center", justifyContent: "center", background: `var(--box-accent, #72d7ca)`, color: "white", borderRadius: "4px", fontSize: "0.8em", fontWeight: "bold" }}>{subs.filter(s => s.name).length}</button>
           <button className="delete-button" title="Eliminar plataforma" onClick={async () => { if (await confirmDelete(`¿Eliminar plataforma "${platform}"?`)) { onPlatformsChange(platforms.filter((_, itemIndex) => itemIndex !== index)); if (onEntitiesChange) onEntitiesChange(platformEntities.filter((_, entityIndex) => entityIndex !== index)); const newSubs = { ...platformSubPlatforms }; delete newSubs[platform]; if (onSubPlatformsChange) onSubPlatformsChange(newSubs); } }}><Trash2 size={15} /></button>
         </div>;
       })}
       <button className="config-add" onClick={() => { onPlatformsChange([...platforms, ""]); if (onEntitiesChange) onEntitiesChange([...platformEntities, { id: `platform-${crypto.randomUUID()}`, name: "" }]); }}><Plus size={15} /> Agregar plataforma</button>
     </div>
-    {subplatformModal && <div className="modal-backdrop" onClick={() => setSubplatformModal(null)}>
+    {subplatformModal && <div className="modal-backdrop" onClick={closeModal}>
       <div className="modal" onClick={(event) => event.stopPropagation()} style={{ maxWidth: "500px" }}>
-        <button className="modal-close" type="button" title="Cerrar" onClick={() => setSubplatformModal(null)}><X size={18} /></button>
+        <button className="modal-close" type="button" title="Cerrar" onClick={closeModal}><X size={18} /></button>
         <h2 style={{ marginBottom: "16px" }}>Subplataformas de {subplatformModal}</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
-          {normalizeSubPlatforms(platformSubPlatforms[subplatformModal] || []).map((sub, index) => (
+          {subplatformsInEdit.map((sub, index) => (
             <div key={index} style={{ display: "grid", gridTemplateColumns: "1fr 100px auto", gap: "8px", alignItems: "center" }}>
-              <input value={sub.name} placeholder="Nombre subplataforma" onChange={(event) => { const subs = [...normalizeSubPlatforms(platformSubPlatforms[subplatformModal] || [])]; subs[index].name = event.target.value; onSubPlatformsChange({ ...platformSubPlatforms, [subplatformModal]: subs }); }} />
-              <select value={sub.color || "teal"} onChange={(event) => { const subs = [...normalizeSubPlatforms(platformSubPlatforms[subplatformModal] || [])]; subs[index].color = event.target.value; onSubPlatformsChange({ ...platformSubPlatforms, [subplatformModal]: subs }); }}>{Object.entries({ teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" }).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>
-              <button className="delete-button" title="Eliminar" onClick={async () => { if (await confirmDelete(`¿Eliminar "${sub.name}"?`)) { const subs = normalizeSubPlatforms(platformSubPlatforms[subplatformModal] || []).filter((_, i) => i !== index); onSubPlatformsChange({ ...platformSubPlatforms, [subplatformModal]: subs }); } }}><Trash2 size={15} /></button>
+              <input value={sub.name || ""} placeholder="Nombre subplataforma" onChange={(event) => { const newSubs = [...subplatformsInEdit]; newSubs[index] = { ...newSubs[index], name: event.target.value }; setSubplatformsInEdit(newSubs); }} />
+              <select value={sub.color || "teal"} onChange={(event) => { const newSubs = [...subplatformsInEdit]; newSubs[index] = { ...newSubs[index], color: event.target.value }; setSubplatformsInEdit(newSubs); }}>{Object.entries({ teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" }).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select>
+              <button className="delete-button" title="Eliminar" onClick={async () => { if (await confirmDelete(`¿Eliminar "${sub.name || 'sin nombre'}"?`)) { setSubplatformsInEdit(subplatformsInEdit.filter((_, i) => i !== index)); } }}><Trash2 size={15} /></button>
             </div>
           ))}
         </div>
-        <button className="config-add" onClick={() => { const subs = [...normalizeSubPlatforms(platformSubPlatforms[subplatformModal] || []), { name: "", color: "teal" }]; onSubPlatformsChange({ ...platformSubPlatforms, [subplatformModal]: subs }); }} style={{ width: "100%" }}><Plus size={15} /> Agregar subplataforma</button>
+        <button className="config-add" onClick={() => { setSubplatformsInEdit([...subplatformsInEdit, { name: "", color: "teal" }]); }} style={{ width: "100%", marginBottom: "12px" }}><Plus size={15} /> Agregar subplataforma</button>
+        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+          <button onClick={closeModal} style={{ padding: "8px 16px", borderRadius: "4px", border: "1px solid var(--line)", background: "transparent", cursor: "pointer", color: "var(--text-secondary)" }}>Cancelar</button>
+          <button onClick={saveModal} style={{ padding: "8px 16px", borderRadius: "4px", background: "var(--box-accent)", color: "white", cursor: "pointer", fontWeight: "600", border: "none" }}>Guardar</button>
+        </div>
       </div>
     </div>}
   </>;
@@ -2552,8 +2569,8 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
           })).filter((option) => (user.subPlatforms || []).includes(option.key));
           const unlinkUser = (linkedUserId) => updateUsers(users.map((item) => item.id === user.id ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== linkedUserId) } : item.id === linkedUserId ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== user.id) } : item));
           return (
-          <div className={`user-card ${expanded ? "expanded" : "compact"} ${!editing ? "clickable" : ""}`} key={user.id} onClick={(event) => { if (event.target.closest("button, input, select, textarea")) return; setExpandedUserId(expanded ? null : user.id); setEditingUserId(null); }}>
-            <div className="user-card-head">
+          <div className={`user-card ${expanded ? "expanded" : "compact"}`} key={user.id}>
+            <div className="user-card-head" onClick={() => { setExpandedUserId(expanded ? null : user.id); setEditingUserId(null); }} style={{ cursor: "pointer", borderBottom: "1px solid var(--line)" }}>
               <button className="icon-button user-collapse" type="button" title={expanded ? "Minimizar" : "Expandir"} onClick={(event) => { event.stopPropagation(); setExpandedUserId(expanded ? null : user.id); setEditingUserId(null); }}><ChevronDown size={15} style={{ transform: expanded ? "rotate(0)" : "rotate(-90deg)", transition: "transform 0.2s" }} /></button>
               <div className="user-card-title"><strong>{compactName.toLowerCase()} - {compactPhone}</strong><div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{displayClarifications.map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div></div>
               <div className="user-assignment-pills" aria-label="Cajas y subplataformas del usuario"><div className="user-box-pills">{userBoxes.map((box) => <span key={box.id} style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}>{box.title}</span>)}</div>{userSubPlatforms.length > 0 && <b>|</b>}<div className="user-subplatform-pills">{userSubPlatforms.map((option) => <span key={option.key} style={{ "--box-pill-accent": boxColorStyle(option.color)["--box-accent"] }}>{option.label}</span>)}</div></div>

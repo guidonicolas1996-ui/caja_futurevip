@@ -690,8 +690,8 @@ main {
 .users-list { display: flex; flex-direction: column; gap: 8px; }
 .user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); transition: all 0.2s ease; }
 .user-card.expanded { padding: 16px; }
-.user-card.clickable { cursor: pointer; }
-.user-card.clickable:hover { background: rgba(16, 19, 22, 0.95); border-color: var(--box-accent); }
+.user-card-head { cursor: pointer; transition: background 0.2s; }
+.user-card-head:hover { background: rgba(51, 68, 74, 0.5); }
 .user-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 42%) auto auto; align-items: center; gap: 6px; min-height: 28px; }
 .user-collapse { order: 0; }
 .user-card-title { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 4px; order: 1; }

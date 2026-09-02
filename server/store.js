@@ -181,7 +181,7 @@ function normalizeConfig(config) {
   const platformSubPlatforms = Object.fromEntries(platforms.map((platform) => [platform, (Array.isArray(sourceSubPlatforms[platform]) ? sourceSubPlatforms[platform] : []).map((item) => {
     if (typeof item === 'string') return { name: String(item || '').trim(), color: 'teal' };
     return { name: String(item?.name || '').trim(), color: colors.includes(item?.color) ? item.color : 'teal' };
-  }).filter((sub) => sub.name)]));
+  })]));
   const userClarifications = Array.isArray(config?.userClarifications) ? config.userClarifications.map((clarification) => ({
     id: clarification?.id || `clarification-${crypto.randomUUID()}`,
     text: String(clarification?.text || ''),
