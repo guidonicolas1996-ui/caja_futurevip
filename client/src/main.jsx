@@ -296,22 +296,6 @@ function TransferBoxPicker({ label, boxes, value, excludeId, onChange }) {
   </div>;
 }
 
-function ConfirmDialog({ message, onConfirm, onCancel, title = "¿Eliminar registro?", confirmLabel = "Eliminar", confirmIcon = <Trash2 size={15} />, dialogIcon = <Trash2 size={21} /> }) {
-  return (
-    <div className="modal-backdrop confirm-backdrop" onClick={onCancel}>
-          <div className="modal confirm-dialog" onClick={(event) => event.stopPropagation()}>
-              <div className="modal-icon">{dialogIcon}</div>
-            <h2>{title}</h2>
-        <p>{message}</p>
-        <div className="modal-actions">
-          <button className="ghost-button" onClick={onCancel}>Cancelar</button>
-          <button className="danger-button" onClick={onConfirm}>{confirmLabel} {confirmIcon}</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTransfer, onDeleteTransfer }) {
   const [fromBoxId, setFromBoxId] = useState(activeBoxId);
   const [toBoxId, setToBoxId] = useState(boxes.find((box) => box.id !== activeBoxId)?.id || "");
