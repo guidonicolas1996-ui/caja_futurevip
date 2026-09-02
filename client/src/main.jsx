@@ -2433,23 +2433,37 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     if (groupMode === "linked") return user.linkedUsers?.length ? "Vinculados" : "Sin vínculos";
     return "Todos";
   };
-  const renderListField = (label, valueList, onAdd, onUpdate, editable = true) => (
-    <div className="users-list-field">
-      <span>{label}</span>
-      <div className="users-inline-list">
-        {(valueList.length ? valueList : [""]).map((value, index) => (
-          <input
-            key={`${label}-${index}`}
-            value={value}
-            placeholder={label}
-            disabled={!editable}
-            onChange={(event) => onUpdate(index, event.target.value)}
-          />
-        ))}
-        <button className="config-add" type="button" disabled={!editable || !valueList.length || !String(valueList[valueList.length - 1] || "").trim()} onClick={onAdd}><Plus size={15} /> Agregar</button>
+  const renderListField = (label, valueList, onAdd, onUpdate, onDelete, editable = true) => {
+    const [dragIndex, setDragIndex] = React.useState(null);
+    const reorder = (targetIndex) => {
+      if (dragIndex === null || dragIndex === targetIndex) return;
+      const next = [...valueList];
+      const [moved] = next.splice(dragIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      onUpdate(dragIndex, next[targetIndex]);
+      onUpdate(targetIndex, moved);
+      setDragIndex(null);
+    };
+    return (
+      <div className="users-list-field">
+        <span>{label}</span>
+        <div className="users-inline-list">
+          {(valueList.length ? valueList : [""]).map((value, index) => (
+            <div key={`${label}-${index}`} className="users-list-item" draggable={editable && index > 0} onDragStart={() => index > 0 && setDragIndex(index)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorder(index)} onDragEnd={() => setDragIndex(null)}>
+              <input
+                value={value}
+                placeholder={label}
+                disabled={!editable}
+                onChange={(event) => onUpdate(index, event.target.value)}
+              />
+              {index > 0 && editable && <button type="button" className="delete-button" title={`Eliminar ${label}`} onClick={() => onDelete(index)}><Trash2 size={13} /></button>}
+            </div>
+          ))}
+          <button className="config-add" type="button" disabled={!editable || !valueList.length || !String(valueList[valueList.length - 1] || "").trim()} onClick={onAdd}><Plus size={15} /> Agregar</button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
   const visibleUsers = sortUsers(users.filter((user) => isMatch(user, search)));
   const groupedUsers = groupMode === "none"
     ? [["", visibleUsers]]
@@ -2484,17 +2498,18 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
           const userSubPlatforms = (boxes || []).filter((box) => selectedUserBoxes.includes(String(box.id))).flatMap((box) => (config.platforms || []).flatMap((platform) => normalizeIdList(platformSubPlatforms[platform]).map((subPlatform) => ({ key: `${box.id}::${platform}::${subPlatform}`, label: subPlatform, color: config.platformColors?.[platform] || "teal" })))).filter((option) => (user.subPlatforms || []).includes(option.key));
           const unlinkUser = (linkedUserId) => updateUsers(users.map((item) => item.id === user.id ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== linkedUserId) } : item.id === linkedUserId ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== user.id) } : item));
           return (
-          <div className={`user-card ${expanded ? "expanded" : "compact"}`} key={user.id} onClick={(event) => { if (expanded || event.target.closest("button, input, select, textarea")) return; setExpandedUserId(user.id); setEditingUserId(null); }}>
+          <div className={`user-card ${expanded ? "expanded" : "compact"} ${!editing ? "clickable" : ""}`} key={user.id} onClick={(event) => { if (event.target.closest("button, input, select, textarea")) return; setExpandedUserId(expanded ? null : user.id); setEditingUserId(null); }}>
             <div className="user-card-head">
+              <button className="icon-button user-collapse" type="button" title={expanded ? "Minimizar" : "Expandir"} onClick={(event) => { event.stopPropagation(); setExpandedUserId(expanded ? null : user.id); setEditingUserId(null); }}><ChevronDown size={15} style={{ transform: expanded ? "rotate(0)" : "rotate(-90deg)", transition: "transform 0.2s" }} /></button>
               <div className="user-card-title"><strong>{compactName.toLowerCase()} - {compactPhone}</strong><div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{displayClarifications.map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div></div>
               <div className="user-assignment-pills" aria-label="Cajas y subplataformas del usuario"><div className="user-box-pills">{userBoxes.map((box) => <span key={box.id} style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}>{box.title}</span>)}</div>{userSubPlatforms.length > 0 && <b>|</b>}<div className="user-subplatform-pills">{userSubPlatforms.map((option) => <span key={option.key} style={{ "--box-pill-accent": boxColorStyle(option.color)["--box-accent"] }}>{option.label}</span>)}</div></div>
-              <button className="icon-button user-expand" type="button" title="Editar usuario" onClick={(event) => { event.stopPropagation(); setExpandedUserId(user.id); setEditingUserId(user.id); }}><Pencil size={15} /></button>
-              <button className="delete-button" type="button" title="Eliminar usuario" disabled={!editing} onClick={() => updateUsers(users.filter((item) => item.id !== user.id))}><Trash2 size={15} /></button>
+              <button className="icon-button user-edit" type="button" title="Editar usuario" onClick={(event) => { event.stopPropagation(); setExpandedUserId(user.id); setEditingUserId(user.id); }}><Pencil size={15} /></button>
+              <button className="delete-button user-delete" type="button" title="Eliminar usuario" onClick={(event) => { event.stopPropagation(); updateUsers(users.filter((item) => item.id !== user.id)); }} disabled={editing}><Trash2 size={15} /></button>
             </div>
             {expanded && <>
             <div className="user-fields-grid">
-              {renderListField("Nombre de usuario", Array.isArray(user.names) && user.names.length ? user.names : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || [""]).map((name, nameIndex) => nameIndex === index ? value : name) } : item)), editing)}
-              {renderListField("Número de teléfono", Array.isArray(user.phones) && user.phones.length ? user.phones : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || [""]).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)), editing)}
+              {renderListField("Nombre de usuario", Array.isArray(user.names) && user.names.length ? user.names : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || [""]).map((name, nameIndex) => nameIndex === index ? value : name) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || []).filter((_, nameIndex) => nameIndex !== index) } : item)), editing)}
+              {renderListField("Número de teléfono", Array.isArray(user.phones) && user.phones.length ? user.phones : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || [""]).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || []).filter((_, phoneIndex) => phoneIndex !== index) } : item)), editing)}
               <label className="field-block">
                 <span>Titular</span>
                 <input value={user.titular || ""} disabled={!editing} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titular: event.target.value } : item))} />
@@ -2572,7 +2587,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
         })}</React.Fragment>)}
         {users.length === 0 && <div className="empty-state">No hay usuarios cargados todavía.</div>}
       </div>
-      {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal users-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><p>Completá los datos obligatorios para darlo de alta.</p><div className="user-fields-grid"><div>{renderListField("Nombre de usuario *", newUser.names, () => setNewUser((current) => ({ ...current, names: [...current.names, ""] })), (index, value) => setNewUser((current) => ({ ...current, names: current.names.map((name, nameIndex) => nameIndex === index ? value : name) })))} </div><div>{renderListField("Número de teléfono *", newUser.phones, () => setNewUser((current) => ({ ...current, phones: [...current.phones, ""] })), (index, value) => setNewUser((current) => ({ ...current, phones: current.phones.map((phone, phoneIndex) => phoneIndex === index ? value : phone) })))} </div><label className="field-block"><span>Titular</span><input value={newUser.titular} onChange={(event) => setNewUser((current) => ({ ...current, titular: event.target.value }))} /></label><label className="field-block"><span>Fecha creación</span><input type="datetime-local" value={new Date(newUser.createdAt).toISOString().slice(0, 16)} onChange={(event) => setNewUser((current) => ({ ...current, createdAt: new Date(event.target.value).toISOString() }))} /></label></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
+      {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal users-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><p>Completá los datos obligatorios para darlo de alta.</p><div className="user-fields-grid"><div>{renderListField("Nombre de usuario *", newUser.names, () => setNewUser((current) => ({ ...current, names: [...current.names, ""] })), (index, value) => setNewUser((current) => ({ ...current, names: current.names.map((name, nameIndex) => nameIndex === index ? value : name) })), (index) => setNewUser((current) => ({ ...current, names: current.names.filter((_, nameIndex) => nameIndex !== index) })))} </div><div>{renderListField("Número de teléfono *", newUser.phones, () => setNewUser((current) => ({ ...current, phones: [...current.phones, ""] })), (index, value) => setNewUser((current) => ({ ...current, phones: current.phones.map((phone, phoneIndex) => phoneIndex === index ? value : phone) })), (index) => setNewUser((current) => ({ ...current, phones: current.phones.filter((_, phoneIndex) => phoneIndex !== index) })))} </div><label className="field-block"><span>Titular</span><input value={newUser.titular} onChange={(event) => setNewUser((current) => ({ ...current, titular: event.target.value }))} /></label><label className="field-block"><span>Fecha creación</span><input type="datetime-local" value={new Date(newUser.createdAt).toISOString().slice(0, 16)} onChange={(event) => setNewUser((current) => ({ ...current, createdAt: new Date(event.target.value).toISOString() }))} /></label></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
     </section>
   </main>;
 }
