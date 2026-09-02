@@ -486,7 +486,8 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
   const updateValue = (name, value) => update({ monthlyGoal: { ...monthlyGoal, [name]: number(value) } });
   
   const handleOpenDepositModal = async () => {
-    setDepositValues({});
+    const savedDeposits = draft.monthlyGoal?.platformDeposits || {};
+    setDepositValues(savedDeposits);
     setLoadingPlatforms(true);
     setDepositModalOpen(true);
     
@@ -509,7 +510,7 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
   
   const handleDepositModalSave = () => {
     const total = Object.values(depositValues).reduce((sum, val) => sum + number(val), 0);
-    updateValue("achieved", total);
+    update({ monthlyGoal: { ...monthlyGoal, achieved: total, platformDeposits: depositValues } });
     setDepositModalOpen(false);
     setDepositValues({});
     setPlatformsByBox({});
