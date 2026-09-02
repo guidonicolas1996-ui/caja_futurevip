@@ -668,10 +668,10 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
 
 function getProgressAccentState(percent, fallback) {
   if (percent > 100) {
-    return { accent: "#f55555", glow: "rgba(245, 85, 85, 0.55)", line: "rgba(245, 85, 85, 0.42)" };
+    return { accent: "#ff5a5a", glow: "rgba(255, 90, 90, 0.58)", line: "rgba(255, 90, 90, 0.46)" };
   }
   if (percent > 85) {
-    return { accent: "#f58a3d", glow: "rgba(245, 138, 61, 0.55)", line: "rgba(245, 138, 61, 0.42)" };
+    return { accent: "#ff7a2a", glow: "rgba(255, 122, 42, 0.58)", line: "rgba(255, 122, 42, 0.46)" };
   }
   return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
 }
