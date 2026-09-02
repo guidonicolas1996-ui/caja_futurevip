@@ -4101,9 +4101,20 @@ select:focus {
   color: #ef8888;
 }
 .report-v5-chip-log .report-v5-line > .report-v5-chip-final {
-  color: #e8d477 !important;
+  color: var(--v5-chip-accent, #e8d477) !important;
   font-size: 12px !important;
   font-weight: 700 !important;
+}
+.report-v5-chip-log .report-v5-line > span > b.positive::after,
+.report-v5-chip-log .report-v5-line > span > b.negative::after,
+.report-v5-chip-log .report-v5-line > .report-v5-chip-final::after {
+  content: ",00";
+}
+.report-v5-chip-log .report-v5-line:nth-child(2) > .report-v5-chip-final {
+  --v5-chip-accent: #e8d477;
+}
+.report-v5-chip-log .report-v5-line:nth-child(3) > .report-v5-chip-final {
+  --v5-chip-accent: #83d5a2;
 }
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}
 .modal .modal-icon { display: grid; position: absolute; top: 25px; left: 24px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 0; background: transparent !important; color: var(--box-accent, var(--cyan)); }
