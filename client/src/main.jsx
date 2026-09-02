@@ -666,17 +666,24 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
   </>;
 }
 
+function getProgressAccentState(percent, fallback) {
+  if (percent > 100) {
+    return { accent: "#f55555", glow: "rgba(245, 85, 85, 0.55)", line: "rgba(245, 85, 85, 0.42)" };
+  }
+  if (percent > 85) {
+    return { accent: "#f58a3d", glow: "rgba(245, 138, 61, 0.55)", line: "rgba(245, 138, 61, 0.42)" };
+  }
+  return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
+}
+
 function MonthlyGoalProgress({ config, boxColor }) {
   const goal = config.monthlyGoal || {};
   const finalGoal = Math.max(0, number(goal.final));
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
   const colors = boxColorStyle(boxColor);
-  const aboveThreshold = percentage >= 85;
-  const accent = aboveThreshold ? "#d9b74a" : colors["--box-accent"];
-  const glow = aboveThreshold ? "rgba(217, 183, 74, 0.55)" : colors["--box-glow"];
-  const line = aboveThreshold ? "rgba(217, 183, 74, 0.42)" : colors["--box-line"];
-  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": accent, "--goal-soft": colors["--box-soft"], "--goal-glow": glow, "--goal-line": line }}>
+  const state = getProgressAccentState(percentage, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+  return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line }}>
     <div className="goal-bar-header"><span>Objetivo de Depósitos General</span></div>
     <div className="goal-bar-body">
       <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
@@ -737,12 +744,9 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const currentShiftAchieved = shiftBonusNet(currentShift);
   const colors = boxColorStyle(boxColor);
   const renderBar = (label, value, target, percent) => {
-    const aboveThreshold = percent >= 85;
-    const accent = aboveThreshold ? "#f55555" : colors["--box-accent"];
-    const glow = aboveThreshold ? "rgba(245, 85, 85, 0.55)" : colors["--box-glow"];
-    const line = aboveThreshold ? "rgba(245, 85, 85, 0.42)" : colors["--box-line"];
+    const state = getProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
     return (
-      <div className="bonus-goal-row" style={{ "--goal-accent": accent, "--goal-soft": colors["--box-soft"], "--goal-glow": glow, "--goal-line": line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": line }}>
+      <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
         <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
         <div className="bonus-goal-main">
           <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>
