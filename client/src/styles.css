@@ -749,7 +749,7 @@ main {
 .linked-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 .linked-tag button { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: currentColor; cursor: pointer; }
 .linked-tag button:hover { background: rgba(255, 255, 255, 0.12); }
-.users-create-modal { width: min(1200px, calc(100vw - 32px)); max-height: 90vh; overflow-y: auto; }
+.users-create-modal { width: fit-content; max-width: calc(100vw - 32px); max-height: 90vh; overflow-y: auto; }
 .users-create-modal .user-fields-grid { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
 .users-create-modal .user-checks-grid { grid-template-columns: minmax(220px, .8fr) minmax(420px, 1.6fr); }
 .users-create-modal .subplatforms-group { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
