@@ -60,6 +60,7 @@ const defaultConfig = () => ({
   platformSubPlatforms: Object.fromEntries(plataformas.map((platform) => [platform, []])),
   users: [],
   userClarifications: [],
+  userInfoOptions: [],
 });
 const blankCaja = (id, previous = null, config = defaultConfig()) => {
   const shift = previous ? nextShift[previous.shift] || shiftOrder[0] : shiftOrder[id % shiftOrder.length] || shiftOrder[0];
@@ -189,6 +190,7 @@ function normalizeConfig(config) {
     color: colors.includes(clarification?.color) ? clarification.color : 'teal',
     emoji: String(clarification?.emoji || ''),
   })) : [];
+  const userInfoOptions = Array.isArray(config?.userInfoOptions) ? config.userInfoOptions.map((option) => String(option || '').trim()).filter(Boolean) : [];
   const users = Array.isArray(config?.users) ? config.users.map((user) => ({
     id: user?.id || `user-${crypto.randomUUID()}`,
     names: Array.isArray(user?.names) ? user.names.filter(Boolean).map(String) : [user?.name || ''].filter(Boolean).map(String),
@@ -201,7 +203,7 @@ function normalizeConfig(config) {
     linkedUsers: Array.isArray(user?.linkedUsers) ? user.linkedUsers.filter(Boolean).map(String) : [],
   })) : [];
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformSubPlatforms, userClarifications, users, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformSubPlatforms, userClarifications, userInfoOptions, users, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || (goal.platformDeposits && Object.keys(goal.platformDeposits).length > 0));
