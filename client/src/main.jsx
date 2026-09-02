@@ -2314,6 +2314,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
   const users = editableUsers;
   const clarifications = Array.isArray(config?.userClarifications) ? config.userClarifications : [];
   const platformSubPlatforms = config?.platformSubPlatforms || {};
+  const boxById = Object.fromEntries((boxes || []).map((box) => [String(box.id), box]));
   const updateUsers = (nextUsers) => {
     persistUsersRef.current = true;
     setEditableUsers(nextUsers);
@@ -2341,6 +2342,11 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
     return () => window.clearTimeout(timer);
   }, [editableUsers]);
   const normalizeIdList = (list) => Array.isArray(list) ? list.filter(Boolean).map(String) : [];
+  const compactValues = (values, fallback) => {
+    const cleanValues = values.map((value) => String(value || "").trim()).filter(Boolean);
+    if (!cleanValues.length) return fallback;
+    return `${cleanValues[0]}${cleanValues.length > 1 ? ` (${cleanValues.slice(1).join(" / ")})` : ""}`;
+  };
   const isMatch = (user, query) => {
     if (!query) return true;
     const haystack = [
@@ -2349,8 +2355,10 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
       user.titular,
       user.createdAt,
       ...(user.boxes || []),
+      ...(user.boxes || []).map((boxId) => boxById[String(boxId)]?.title || ""),
       ...(user.subPlatforms || []),
       ...(user.linkedUsers || []),
+      ...clarifications.filter((clarification) => (user.clarifications || []).includes(clarification.id)).map((clarification) => clarification.text),
     ].join(" ").toLowerCase();
     return haystack.includes(query.toLowerCase());
   };
@@ -2391,11 +2399,16 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
           const linkedOptions = users.filter((other) => other.id !== user.id).map((other) => ({ value: other.id, label: [...(other.names || [])].filter(Boolean).join(" / ") || other.titular || "Usuario sin nombre" }));
           const expanded = expandedUserId === user.id;
           const displayClarifications = clarifications.filter((clarification) => selectedClarifications.has(clarification.id));
+          const userBoxes = selectedUserBoxes.map((boxId) => boxById[boxId]).filter(Boolean);
+          const compactName = compactValues(user.names || [], user.titular || "Usuario sin nombre");
+          const compactPhone = compactValues(user.phones || [], "Sin teléfono");
+          const compactClarification = displayClarifications.length ? displayClarifications.map((clarification) => clarification.text || "Aclaración").join(" / ") : "Sin aclaración";
           const unlinkUser = (linkedUserId) => updateUsers(users.map((item) => item.id === user.id ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== linkedUserId) } : item.id === linkedUserId ? { ...item, linkedUsers: (item.linkedUsers || []).filter((id) => id !== user.id) } : item));
           return (
           <div className={`user-card ${expanded ? "expanded" : "compact"}`} key={user.id}>
             <div className="user-card-head">
-              <div className="user-card-title"><strong>{((user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre").trim()}</strong><div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{displayClarifications.map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div></div>
+              <div className="user-card-title"><strong>{compactName.toLowerCase()} - {compactPhone} - {compactClarification.toLowerCase()}</strong><div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{displayClarifications.map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div></div>
+              <div className="user-box-pills" aria-label="Cajas del usuario">{userBoxes.map((box) => <span key={box.id} style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}>{box.title}</span>)}</div>
               <button className="icon-button user-expand" type="button" title={expanded ? "Ocultar usuario" : "Editar usuario"} onClick={() => setExpandedUserId(expanded ? null : user.id)}><Eye size={15} /></button>
               <button className="delete-button" type="button" title="Eliminar usuario" onClick={() => updateUsers(users.filter((item) => item.id !== user.id))}><Trash2 size={15} /></button>
             </div>
