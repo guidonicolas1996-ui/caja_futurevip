@@ -2403,7 +2403,13 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     Promise.all((boxes || []).map((box) => api(`/api/configuracion?boxId=${box.id}`).catch(() => ({ users: [] }))))
       .then((configs) => {
         if (cancelled) return;
-        setEditableUsers(mergeUsers([configUsers, ...configs.map((item) => item.users)]));
+        const mergedUsersList = mergeUsers([configUsers, ...configs.map((item) => item.users)]);
+        // Limpiar subplataformas vacías (migración para arreglar errores)
+        const cleanedUsers = mergedUsersList.map((user) => ({
+          ...user,
+          subPlatforms: Array.isArray(user.subPlatforms) ? user.subPlatforms.filter(Boolean) : []
+        }));
+        setEditableUsers(cleanedUsers);
         const mergedClarifications = [...new Map(configs.flatMap((item) => Array.isArray(item.userClarifications) ? item.userClarifications : []).map((item) => [item.id || item.text, item])).values()];
         setGlobalClarifications(mergedClarifications);
         const mergedSubPlatforms = {};
@@ -2422,6 +2428,12 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   const openNewUser = () => {
     setNewUser({ names: [""], phones: [""], titulars: [""], boxes: [activeBoxId], subPlatforms: [], createdAt: new Date().toISOString() });
     setNewUserOpen(true);
+  };
+  const clearAllSubPlatforms = async () => {
+    if (await confirmDelete("¿Vaciar TODAS las subplataformas de todos los usuarios? Esta acción no se puede deshacer.")) {
+      updateUsers(users.map((user) => ({ ...user, subPlatforms: [] })));
+      onNotify?.("Subplataformas vaciadas. Ahora puedes darlas de alta nuevamente.");
+    }
   };
   const saveNewUser = () => {
     const names = newUser.names.map((name) => name.trim()).filter(Boolean);
@@ -2534,6 +2546,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
       </div>
       <div className="users-actions">
         <button className="config-add" type="button" onClick={openNewUser}><UserPlus size={15} /> Nuevo usuario</button>
+        <button className="config-add" type="button" onClick={clearAllSubPlatforms} style={{ background: "rgba(255, 90, 90, 0.2)", color: "#ff5a5a", borderColor: "rgba(255, 90, 90, 0.3)" }} title="Vaciar todas las subplataformas"><Trash2 size={15} /> Limpiar subplataformas</button>
       </div>
       <div className="users-list">
         {groupedUsers.map(([groupLabelValue, groupUsers]) => <React.Fragment key={groupLabelValue || "all-users"}>{groupMode !== "none" && <div className="users-group-title">{groupLabelValue}</div>}{groupUsers.map((user) => {
@@ -2562,7 +2575,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
               <div className="user-card-title"><strong>{compactName.toLowerCase()} - {compactPhone}</strong><div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{displayClarifications.map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div></div>
               <div className="user-assignment-pills" aria-label="Cajas y subplataformas del usuario"><div className="user-box-pills">{userBoxes.map((box) => <span key={box.id} style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}>{box.title}</span>)}</div>{userSubPlatforms.length > 0 && <b>|</b>}<div className="user-subplatform-pills">{userSubPlatforms.map((option) => <span key={option.key} style={{ "--box-pill-accent": boxColorStyle(option.color)["--box-accent"] }}>{option.label}</span>)}</div></div>
               <button className="icon-button user-edit" type="button" title="Editar usuario" onClick={(event) => { event.stopPropagation(); setExpandedUserId(user.id); setEditingUserId(user.id); }}><Pencil size={15} /></button>
-              <button className="delete-button user-delete" type="button" title="Eliminar usuario" onClick={async (event) => { event.stopPropagation(); if (await confirmDelete(`¿Eliminar a ${user.names?.[0] || "este usuario"}?`)) updateUsers(users.filter((item) => item.id !== user.id)); }} disabled={editing}><Trash2 size={15} /></button>
+              <button className="delete-button user-delete" type="button" title="Eliminar usuario" onClick={async (event) => { event.stopPropagation(); if (await confirmDelete(`¿Eliminar a ${user.names?.[0] || "este usuario"}?`)) updateUsers(users.filter((item) => item.id !== user.id)); }}><Trash2 size={15} /></button>
             </div>
             {expanded && <>
             <div className="user-fields-grid">
