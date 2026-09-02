@@ -57,6 +57,9 @@ const defaultConfig = () => ({
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
+  platformSubPlatforms: Object.fromEntries(plataformas.map((platform) => [platform, []])),
+  users: [],
+  userClarifications: [],
 });
 const blankCaja = (id, previous = null, config = defaultConfig()) => {
   const shift = previous ? nextShift[previous.shift] || shiftOrder[0] : shiftOrder[id % shiftOrder.length] || shiftOrder[0];
@@ -174,8 +177,27 @@ function normalizeConfig(config) {
   };
   const platforms = Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms;
   const platformColors = Object.fromEntries(platforms.map((platform, index) => [platform, colors.includes(config?.platformColors?.[platform]) ? config.platformColors[platform] : defaults.platformColors[platform] || colors[index % colors.length]]));
+  const sourceSubPlatforms = config?.platformSubPlatforms || {};
+  const platformSubPlatforms = Object.fromEntries(platforms.map((platform) => [platform, Array.isArray(sourceSubPlatforms[platform]) ? sourceSubPlatforms[platform].map((item) => String(item || '').trim()).filter(Boolean) : []]));
+  const userClarifications = Array.isArray(config?.userClarifications) ? config.userClarifications.map((clarification) => ({
+    id: clarification?.id || `clarification-${crypto.randomUUID()}`,
+    text: String(clarification?.text || ''),
+    color: colors.includes(clarification?.color) ? clarification.color : 'teal',
+    emoji: String(clarification?.emoji || ''),
+  })) : [];
+  const users = Array.isArray(config?.users) ? config.users.map((user) => ({
+    id: user?.id || `user-${crypto.randomUUID()}`,
+    names: Array.isArray(user?.names) ? user.names.filter(Boolean).map(String) : [user?.name || ''].filter(Boolean).map(String),
+    phones: Array.isArray(user?.phones) ? user.phones.filter(Boolean).map(String) : [user?.phone || ''].filter(Boolean).map(String),
+    boxes: Array.isArray(user?.boxes) ? user.boxes.filter(Boolean).map(String) : [],
+    subPlatforms: Array.isArray(user?.subPlatforms) ? user.subPlatforms.filter(Boolean).map(String) : [],
+    titular: String(user?.titular || ''),
+    createdAt: String(user?.createdAt || new Date().toISOString()),
+    clarifications: Array.isArray(user?.clarifications) ? user.clarifications.filter(Boolean).map(String) : [],
+    linkedUsers: Array.isArray(user?.linkedUsers) ? user.linkedUsers.filter(Boolean).map(String) : [],
+  })) : [];
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformSubPlatforms, userClarifications, users, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0);

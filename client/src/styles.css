@@ -672,6 +672,36 @@ main {
 .bonus-goal-label strong { color: #f0ebff; font-size: 16px; font-weight: 700; letter-spacing: -0.03em; }
 .bonus-goal-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .bonus-goal-main .monthly-goal-track { flex: 1; }
+.users-page { width: 100%; }
+.users-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
+.users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.users-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
+.users-head span { color: var(--muted); font-size: 11px; }
+.users-search { flex: 1; max-width: 420px; }
+.users-search input { width: 100%; }
+.users-actions { display: flex; justify-content: flex-start; }
+.users-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.user-card { display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: rgba(16, 19, 22, 0.82); }
+.user-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.user-card-head strong { font-size: 0.96rem; }
+.user-fields-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.field-block, .users-list-field { display: flex; flex-direction: column; gap: 7px; }
+.field-block span, .users-list-field span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.users-inline-list { display: flex; flex-direction: column; gap: 8px; }
+.user-checks-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px; }
+.check-group { display: flex; flex-direction: column; gap: 8px; }
+.check-group > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.checkbox-list { display: flex; flex-wrap: wrap; gap: 8px; max-height: 180px; overflow: auto; padding-right: 4px; }
+.checkbox-list label { display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; background: rgba(255,255,255,0.02); }
+.checkbox-list.compact label { border-radius: 8px; }
+.user-clarifications, .user-linked-section { display: flex; flex-direction: column; gap: 8px; }
+.user-clarifications > span, .user-linked-section > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.clarification-pill { display: inline-flex; align-items: center; gap: 6px; }
+.clarification-tag, .linked-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; }
+.user-linked-controls { display: flex; gap: 8px; }
+.user-linked-controls input { flex: 1; }
+.linked-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 760px) { .user-fields-grid, .user-checks-grid { grid-template-columns: 1fr; } .users-head { flex-direction: column; align-items: stretch; } .users-search { max-width: none; } }
 @media (max-width: 700px) {
   .monthly-goal-progress { align-items: stretch; flex-direction: column; gap: 8px; }
   .goal-bar-body { width: 100%; }

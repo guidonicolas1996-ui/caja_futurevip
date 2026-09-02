@@ -33,6 +33,8 @@ import {
   Target,
   Ticket,
   Upload,
+  UserPlus,
+  Users,
   WalletCards,
   X,
 } from "lucide-react";
@@ -671,7 +673,7 @@ function getProgressAccentState(percent, fallback) {
     return { accent: "#ff5a5a", glow: "rgba(255, 90, 90, 0.58)", line: "rgba(255, 90, 90, 0.46)" };
   }
   if (percent > 85) {
-    return { accent: "#ff7a2a", glow: "rgba(255, 122, 42, 0.58)", line: "rgba(255, 122, 42, 0.46)" };
+    return { accent: "#ff5a3c", glow: "rgba(255, 91, 60, 0.62)", line: "rgba(255, 91, 60, 0.5)" };
   }
   return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
 }
@@ -818,6 +820,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           <button className={tab === "accounts" ? "active" : ""} onClick={() => setTab("accounts")}><WalletCards size={17} /> Matriz de cuentas</button>
           <button className={tab === "expenses" ? "active" : ""} onClick={() => setTab("expenses")}><ReceiptText size={17} /> Gastos</button>
           <button className={tab === "platforms" ? "active" : ""} onClick={() => setTab("platforms")}><Ticket size={17} /> Control de fichas</button>
+          <button className={tab === "users" ? "active" : ""} onClick={() => setTab("users")}><Users size={17} /> Usuarios</button>
           <button className={tab === "monthly-goal" ? "active" : ""} onClick={() => setTab("monthly-goal")}><Target size={17} /> Objetivos</button>
         </nav>
         <main className="configuration-content">
@@ -829,8 +832,9 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
             <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={() => setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
-          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /></>}
+          {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres y el color de cada una.</p></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} /><div className="config-card"><div className="config-list-head"><h3>Subplataformas</h3><span>{Object.values(draft.platformSubPlatforms || {}).reduce((sum, list) => sum + list.length, 0)} elementos</span></div>{draft.platforms.map((platform) => <div className="platform-config-row" key={`sub-${platform}`} style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "8px" }}><div style={{ display: "flex", alignItems: "center", gap: "8px" }}><i className={`box-swatch ${draft.platformColors?.[platform] || "teal"}`} /><strong style={{ fontSize: "0.76em", color: "var(--text-secondary)" }}>{platform}</strong></div><div className="config-list-row" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "8px" }}><input value={((draft.platformSubPlatforms || {})[platform] || []).join(", ")} onChange={(event) => { const values = event.target.value.split(',').map((item) => item.trim()).filter(Boolean); setDraft((current) => ({ ...current, platformSubPlatforms: { ...(current.platformSubPlatforms || {}), [platform]: values } })); }} placeholder="Agregar subplataformas separadas por coma" /></div></div>)}<button className="config-add" onClick={() => setDraft((current) => ({ ...current, platformSubPlatforms: { ...(current.platformSubPlatforms || {}), [current.platforms[0] || ""]: [...((current.platformSubPlatforms || {})[current.platforms[0] || ""] || []), ""] } }))}><Plus size={15} /> Agregar subplataforma</button></div></>}
           {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y la meta exclusiva de bonos por caja para ese mes.</p></div><MonthlyGoalConfig draft={draft} boxes={boxes} api={api} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
+          {tab === "users" && <><div className="config-intro"><span className="eyebrow">Usuarios</span><h2>Conf. de usuarios y aclaraciones</h2><p>Definí las aclaraciones rápidas que se podrán asociar a cada usuario.</p></div><section className="config-card"><div className="config-list-head"><h3>Aclaraciones</h3><span>{draft.userClarifications?.length || 0} elementos</span></div>{(draft.userClarifications || []).map((clarification, index) => <div className="platform-config-row" key={clarification.id || index} style={{ display: "grid", gridTemplateColumns: "1.2fr 120px 88px auto", gap: "8px", alignItems: "center" }}><input value={clarification.text} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, text: event.target.value } : item) }))} placeholder="Texto aclaración" /><select value={clarification.color} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, color: event.target.value } : item) }))}>{Object.entries({ teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" }).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><input value={clarification.emoji || ""} maxLength={2} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, emoji: event.target.value } : item) }))} placeholder="🙂" /><button className="delete-button" title="Eliminar aclaración" onClick={() => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div> )}<button className="config-add" onClick={() => setDraft((current) => ({ ...current, userClarifications: [...(current.userClarifications || []), { id: `clarification-${crypto.randomUUID()}`, text: "", color: "teal", emoji: "" }] }))}><Plus size={15} /> Agregar aclaración</button></section></>}
           </>}
         </main>
       </div>
@@ -2299,6 +2303,176 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   </main>;
 }
 
+function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
+  const [search, setSearch] = useState("");
+  const users = Array.isArray(config?.users) ? config.users : [];
+  const clarifications = Array.isArray(config?.userClarifications) ? config.userClarifications : [];
+  const platformSubPlatforms = config?.platformSubPlatforms || {};
+  const selectedBoxIds = new Set((boxes || []).map((box) => box.id));
+  const boxById = Object.fromEntries((boxes || []).map((box) => [box.id, box]));
+  const updateUsers = (nextUsers) => onConfigChange({ ...config, users: nextUsers });
+  const normalizeIdList = (list) => Array.isArray(list) ? list.filter(Boolean).map(String) : [];
+  const isMatch = (user, query) => {
+    if (!query) return true;
+    const haystack = [
+      ...(user.names || []),
+      ...(user.phones || []),
+      user.titular,
+      user.createdAt,
+      ...(user.boxes || []),
+      ...(user.subPlatforms || []),
+      ...(user.linkedUsers || []),
+    ].join(" ").toLowerCase();
+    return haystack.includes(query.toLowerCase());
+  };
+  const renderListField = (label, valueList, onAdd, onUpdate) => (
+    <div className="users-list-field">
+      <span>{label}</span>
+      <div className="users-inline-list">
+        {(valueList.length ? valueList : [""]).map((value, index) => (
+          <input
+            key={`${label}-${index}`}
+            value={value}
+            placeholder={label}
+            onChange={(event) => onUpdate(index, event.target.value)}
+          />
+        ))}
+        <button className="config-add" type="button" onClick={onAdd}><Plus size={15} /> Agregar</button>
+      </div>
+    </div>
+  );
+  const getUserSubPlatforms = (user) => {
+    const selectedBoxIds = normalizeIdList(user.boxes);
+    const allOptions = [];
+    (boxes || []).forEach((box) => {
+      if (!selectedBoxIds.includes(box.id)) return;
+      const boxPlatforms = config?.platforms || [];
+      boxPlatforms.forEach((platform) => {
+        const entries = normalizeIdList(platformSubPlatforms[platform]);
+        if (entries.length === 0) {
+          if ((user.subPlatforms || []).includes(platform)) allOptions.push({ key: `${box.id}::${platform}`, label: `${box.title} · ${platform}` });
+          return;
+        }
+        entries.forEach((subPlatform) => {
+          const key = `${box.id}::${platform}::${subPlatform}`;
+          if ((user.subPlatforms || []).includes(key)) allOptions.push({ key, label: `${box.title} · ${platform} · ${subPlatform}` });
+        });
+      });
+    });
+    return allOptions;
+  };
+  return <main className="users-page">
+    <section className="panel users-panel">
+      <div className="users-head">
+        <div>
+          <h2><Users size={18} /> Usuarios</h2>
+          <span>{users.length} registros</span>
+        </div>
+        <div className="users-search">
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nombre, teléfono, titular o caja" />
+        </div>
+      </div>
+      <div className="users-actions">
+        <button className="config-add" type="button" onClick={() => updateUsers([...users, { id: `user-${crypto.randomUUID()}`, names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString(), clarifications: [], linkedUsers: [] }])}><UserPlus size={15} /> Nuevo usuario</button>
+      </div>
+      <div className="users-list">
+        {(users.filter((user) => isMatch(user, search))).map((user) => {
+          const selectedUserBoxes = normalizeIdList(user.boxes);
+          const selectedClarifications = new Set(normalizeIdList(user.clarifications));
+          const linkedOptions = users.filter((other) => other.id !== user.id).map((other) => ({ value: other.id, label: [...(other.names || [])].filter(Boolean).join(" / ") || other.titular || "Usuario sin nombre" }));
+          return (
+          <div className="user-card" key={user.id}>
+            <div className="user-card-head">
+              <strong>{[(user.names || []).filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre"].trim()}</strong>
+              <button className="delete-button" type="button" title="Eliminar usuario" onClick={() => updateUsers(users.filter((item) => item.id !== user.id))}><Trash2 size={15} /></button>
+            </div>
+            <div className="user-fields-grid">
+              {renderListField("Nombre de usuario", normalizeIdList(user.names).length ? normalizeIdList(user.names) : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || []), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || []).map((name, nameIndex) => nameIndex === index ? value : name) } : item)))}
+              {renderListField("Número de teléfono", normalizeIdList(user.phones).length ? normalizeIdList(user.phones) : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || []), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || []).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)))}
+              <label className="field-block">
+                <span>Titular</span>
+                <input value={user.titular || ""} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titular: event.target.value } : item))} />
+              </label>
+              <label className="field-block">
+                <span>Fecha creación</span>
+                <input type="datetime-local" value={user.createdAt ? new Date(user.createdAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, createdAt: new Date(event.target.value).toISOString() } : item))} />
+              </label>
+            </div>
+            <div className="user-checks-grid">
+              <div className="check-group">
+                <span>Cajas</span>
+                <div className="checkbox-list">
+                  {(boxes || []).map((box) => {
+                    const checked = selectedUserBoxes.includes(box.id);
+                    return <label key={box.id}><input type="checkbox" checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, boxes: checked ? (item.boxes || []).filter((id) => id !== box.id) : [...(item.boxes || []), box.id] } : item))} /> {box.title}</label>;
+                  })}
+                </div>
+              </div>
+              <div className="check-group">
+                <span>Subplataformas</span>
+                <div className="checkbox-list">
+                  {(boxes || []).filter((box) => selectedUserBoxes.includes(box.id)).flatMap((box) => {
+                    const platforms = config?.platforms || [];
+                    return platforms.flatMap((platform) => {
+                      const subs = normalizeIdList(platformSubPlatforms[platform]);
+                      if (subs.length === 0) {
+                        const key = platform;
+                        return [{ key: `${box.id}::${platform}`, label: `${box.title} · ${platform}` }];
+                      }
+                      return subs.map((subPlatform) => ({ key: `${box.id}::${platform}::${subPlatform}`, label: `${box.title} · ${platform} · ${subPlatform}` }));
+                    });
+                  }).map((option) => <label key={option.key}><input type="checkbox" checked={((user.subPlatforms || []).includes(option.key) || (user.subPlatforms || []).includes(option.key.split("::").slice(0,2).join("::")))} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: ((item.subPlatforms || []).includes(option.key)) ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item))} /> {option.label}</label>)}
+                </div>
+              </div>
+            </div>
+            <div className="user-clarifications">
+              <span>Aclaraciones</span>
+              <div className="checkbox-list compact">
+                {(clarifications || []).map((clarification) => {
+                  const checked = selectedClarifications.has(clarification.id);
+                  return <label key={clarification.id} className="clarification-pill" style={{ borderColor: clarification.color ? `var(--${clarification.color})` : undefined, color: `var(--${clarification.color || "teal"})` }}>
+                    <input type="checkbox" checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, clarifications: checked ? (item.clarifications || []).filter((id) => id !== clarification.id) : [...(item.clarifications || []), clarification.id] } : item))} />
+                    <span>{clarification.emoji || "•"} {clarification.text || "Aclaración"}</span>
+                  </label>;
+                })}
+              </div>
+              {(clarifications || []).filter((clarification) => selectedClarifications.has(clarification.id)).map((clarification) => <div key={clarification.id} className="clarification-tag" style={{ background: `color-mix(in srgb, var(--${clarification.color || "teal"}) 18%, transparent)`, borderColor: `var(--${clarification.color || "teal"})` }}><span>{clarification.emoji || "•"}</span> {clarification.text}</div>)}
+            </div>
+            <div className="user-linked-section">
+              <span>Usuarios vinculados</span>
+              <div className="user-linked-controls">
+                <input list={`linked-users-${user.id}`} placeholder="Buscar usuario para vincular" />
+                <datalist id={`linked-users-${user.id}`}>
+                  {linkedOptions.map((option) => <option key={option.value} value={option.label} />)}
+                </datalist>
+                <button type="button" className="config-add" onClick={() => {
+                  const list = document.querySelector(`#linked-users-${user.id}`);
+                  const input = list?.previousElementSibling;
+                  if (!input || !input.value) return;
+                  const selected = linkedOptions.find((option) => option.label === input.value);
+                  if (!selected) return;
+                  if ((user.linkedUsers || []).includes(selected.value)) return;
+                  updateUsers(users.map((item) => {
+                    if (item.id === user.id) return { ...item, linkedUsers: [...(item.linkedUsers || []), selected.value] };
+                    if (item.id === selected.value) return { ...item, linkedUsers: [...(item.linkedUsers || []), user.id] };
+                    return item;
+                  }));
+                  input.value = "";
+                }}>Vincular</button>
+              </div>
+              <div className="linked-tags">
+                {((user.linkedUsers || []).map((linkedId) => users.find((entry) => entry.id === linkedId)).filter(Boolean)).map((linkedUser) => <span key={linkedUser.id} className="linked-tag">{[(linkedUser.names || []).filter(Boolean).join(" / ") || linkedUser.titular || "Usuario"].trim()}</span>)}
+              </div>
+            </div>
+          </div>
+          );
+        })}
+        {users.length === 0 && <div className="empty-state">No hay usuarios cargados todavía.</div>}
+      </div>
+    </section>
+  </main>;
+}
+
 function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
   const wallets = config.accounts.wallets;
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
@@ -2389,6 +2563,7 @@ function App() {
   const [snapshotOpen, setSnapshotOpen] = useState(false);
   const [logisticsOpen, setLogisticsOpen] = useState(false);
   const [statisticsOpen, setStatisticsOpen] = useState(false);
+  const [usersOpen, setUsersOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
@@ -2546,6 +2721,11 @@ function App() {
     if (result.config) setConfig(result.config);
   };
   const updateStatisticsConfig = async (nextConfig) => {
+    setConfig(nextConfig);
+    const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    if (result.config) setConfig(result.config);
+  };
+  const updateConfigState = async (nextConfig) => {
     setConfig(nextConfig);
     const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
     if (result.config) setConfig(result.config);
@@ -2732,17 +2912,18 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
-            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setConfigurationOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
-            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setConfigurationOpen(false); setStatisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
+            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setConfigurationOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
+            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setConfigurationOpen(false); setStatisticsOpen(false); setUsersOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
+            <button className="history-trigger users-trigger" onClick={() => { setUsersOpen(!usersOpen); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><Users size={16} /> {usersOpen ? "Caja" : "Usuarios"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
-            <button className="history-trigger" disabled={readOnly} onClick={() => { setConfigurationOpen(!configurationOpen); setStatisticsOpen(false); setLogisticsOpen(false); }}><Settings2 size={16} /> {configurationOpen ? "Caja" : "Configurar"}</button>
+            <button className="history-trigger" disabled={readOnly} onClick={() => { setConfigurationOpen(!configurationOpen); setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); }}><Settings2 size={16} /> {configurationOpen ? "Caja" : "Configurar"}</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
