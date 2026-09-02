@@ -2305,6 +2305,8 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
 
 function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
   const [search, setSearch] = useState("");
+  const [newUserOpen, setNewUserOpen] = useState(false);
+  const [newUser, setNewUser] = useState({ names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString() });
   const configUsers = Array.isArray(config?.users) ? config.users : [];
   const [editableUsers, setEditableUsers] = useState(configUsers);
   const [expandedUserId, setExpandedUserId] = useState(null);
@@ -2315,6 +2317,20 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
   const updateUsers = (nextUsers) => {
     persistUsersRef.current = true;
     setEditableUsers(nextUsers);
+  };
+  const openNewUser = () => {
+    setNewUser({ names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString() });
+    setNewUserOpen(true);
+  };
+  const saveNewUser = () => {
+    const names = newUser.names.map((name) => name.trim()).filter(Boolean);
+    const phones = newUser.phones.map((phone) => phone.trim()).filter(Boolean);
+    if (!names.length || !phones.length) {
+      onNotify?.("El usuario necesita al menos un nombre y un número de teléfono.");
+      return;
+    }
+    updateUsers([...users, { ...newUser, id: `user-${crypto.randomUUID()}`, names, phones, createdAt: new Date(newUser.createdAt).toISOString(), clarifications: [], linkedUsers: [] }]);
+    setNewUserOpen(false);
   };
   useEffect(() => {
     if (!persistUsersRef.current) return undefined;
@@ -2366,7 +2382,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
         </div>
       </div>
       <div className="users-actions">
-        <button className="config-add" type="button" onClick={() => updateUsers([...users, { id: `user-${crypto.randomUUID()}`, names: [""], phones: [""], boxes: [activeBoxId], subPlatforms: [], titular: "", createdAt: new Date().toISOString(), clarifications: [], linkedUsers: [] }])}><UserPlus size={15} /> Nuevo usuario</button>
+        <button className="config-add" type="button" onClick={openNewUser}><UserPlus size={15} /> Nuevo usuario</button>
       </div>
       <div className="users-list">
         {(users.filter((user) => isMatch(user, search))).map((user) => {
@@ -2383,8 +2399,8 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
             </div>
             {expanded && <>
             <div className="user-fields-grid">
-              {renderListField("Nombre de usuario", normalizeIdList(user.names).length ? normalizeIdList(user.names) : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || []), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || []).map((name, nameIndex) => nameIndex === index ? value : name) } : item)))}
-              {renderListField("Número de teléfono", normalizeIdList(user.phones).length ? normalizeIdList(user.phones) : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || []), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || []).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)))}
+              {renderListField("Nombre de usuario", Array.isArray(user.names) && user.names.length ? user.names : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: [...(item.names || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, names: (item.names || [""]).map((name, nameIndex) => nameIndex === index ? value : name) } : item)))}
+              {renderListField("Número de teléfono", Array.isArray(user.phones) && user.phones.length ? user.phones : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: [...(item.phones || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, phones: (item.phones || [""]).map((phone, phoneIndex) => phoneIndex === index ? value : phone) } : item)))}
               <label className="field-block">
                 <span>Titular</span>
                 <input value={user.titular || ""} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titular: event.target.value } : item))} />
@@ -2411,10 +2427,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                     const platforms = config?.platforms || [];
                     return platforms.flatMap((platform) => {
                       const subs = normalizeIdList(platformSubPlatforms[platform]);
-                      if (subs.length === 0) {
-                        const key = platform;
-                        return [{ key: `${box.id}::${platform}`, label: platform, color: config.platformColors?.[platform] || "teal" }];
-                      }
+                      if (subs.length === 0) return [];
                       return subs.map((subPlatform) => ({ key: `${box.id}::${platform}::${subPlatform}`, label: subPlatform, color: config.platformColors?.[platform] || "teal" }));
                     });
                   }).map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" checked={((user.subPlatforms || []).includes(option.key) || (user.subPlatforms || []).includes(option.key.split("::").slice(0,2).join("::")))} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: ((item.subPlatforms || []).includes(option.key)) ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item))} /><i /> <span>{option.label}</span></label>)}
@@ -2432,7 +2445,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
                   </label>;
                 })}
               </div>
-              {(clarifications || []).filter((clarification) => selectedClarifications.has(clarification.id)).map((clarification) => <div key={clarification.id} className="clarification-tag" style={{ background: `color-mix(in srgb, var(--${clarification.color || "teal"}) 18%, transparent)`, borderColor: `var(--${clarification.color || "teal"})` }}><span>{clarification.emoji || "•"}</span> {clarification.text}</div>)}
+              <div className="clarification-underline" aria-label="Aclaraciones seleccionadas">{(clarifications || []).filter((clarification) => selectedClarifications.has(clarification.id)).map((clarification) => <i key={clarification.id} title={clarification.text} style={{ background: boxColorStyle(clarification.color || "teal")["--box-accent"] }} />)}</div>
             </div>
             <div className="user-linked-section">
               <span>Usuarios vinculados</span>
@@ -2466,6 +2479,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
         })}
         {users.length === 0 && <div className="empty-state">No hay usuarios cargados todavía.</div>}
       </div>
+      {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal users-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><p>Completá los datos obligatorios para darlo de alta.</p><div className="user-fields-grid"><div>{renderListField("Nombre de usuario *", newUser.names, () => setNewUser((current) => ({ ...current, names: [...current.names, ""] })), (index, value) => setNewUser((current) => ({ ...current, names: current.names.map((name, nameIndex) => nameIndex === index ? value : name) })))} </div><div>{renderListField("Número de teléfono *", newUser.phones, () => setNewUser((current) => ({ ...current, phones: [...current.phones, ""] })), (index, value) => setNewUser((current) => ({ ...current, phones: current.phones.map((phone, phoneIndex) => phoneIndex === index ? value : phone) })))} </div><label className="field-block"><span>Titular</span><input value={newUser.titular} onChange={(event) => setNewUser((current) => ({ ...current, titular: event.target.value }))} /></label><label className="field-block"><span>Fecha creación</span><input type="datetime-local" value={new Date(newUser.createdAt).toISOString().slice(0, 16)} onChange={(event) => setNewUser((current) => ({ ...current, createdAt: new Date(event.target.value).toISOString() }))} /></label></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
     </section>
   </main>;
 }

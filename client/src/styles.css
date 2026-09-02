@@ -706,11 +706,15 @@ main {
 .checkbox-list.compact label { border-radius: 8px; }
 .user-clarifications, .user-linked-section { display: flex; flex-direction: column; gap: 8px; }
 .user-clarifications > span, .user-linked-section > span { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.clarification-underline { display: flex; gap: 4px; min-height: 3px; }
+.clarification-underline i { display: block; width: 26px; height: 3px; border-radius: 2px; }
 .clarification-pill { display: inline-flex; align-items: center; gap: 6px; }
 .clarification-tag, .linked-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; }
 .user-linked-controls { display: flex; gap: 8px; }
 .user-linked-controls input { flex: 1; }
 .linked-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.users-create-modal { width: min(620px, calc(100vw - 32px)); }
+.users-create-modal .users-list-field { min-width: 0; }
 @media (max-width: 760px) { .user-fields-grid, .user-checks-grid { grid-template-columns: 1fr; } .users-head { flex-direction: column; align-items: stretch; } .users-search { max-width: none; } }
 @media (max-width: 700px) {
   .monthly-goal-progress { align-items: stretch; flex-direction: column; gap: 8px; }
