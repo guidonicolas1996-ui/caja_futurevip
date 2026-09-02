@@ -170,6 +170,7 @@
   --green: #83d5a2;
   --orange: #f5ad69;
   --red: #ec817f;
+  --danger: #e74c3c;
 }
 .configuration-page { min-height: 100vh; background: var(--bg); color: #e7edf1; }
 .configuration-page.embedded { min-height: 0; background: transparent; }
