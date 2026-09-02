@@ -272,7 +272,7 @@
 @media (max-width: 700px) { .wallet-config-row { grid-template-columns: 16px minmax(0, 1fr) 28px; } .wallet-config-row select { grid-column: 2; } .wallet-config-row select:nth-of-type(2) { grid-row: 3; } .wallet-config-row .delete-button { grid-column: 3; grid-row: 1; } }
 @media (min-width: 701px) and (max-width: 850px) { .configuration-layout { padding: 30px; } .config-two-columns { grid-template-columns: 1fr; } }
 /* Logistics board */
-.logistics-page { padding: 28px 34px 50px; }
+.logistics-page { width: 100%; max-width: none; padding: 28px 34px 50px; }
 .logistics-title { align-items: flex-end; margin-bottom: 22px; }
 .logistics-title h1 { margin: 5px 0 3px; font-size: 24px; }
 .logistics-title p { margin: 0; color: var(--muted); font-size: 11px; }
@@ -530,8 +530,9 @@ button {
 }
 .danger-button { border: 0; border-radius: 7px; height: 34px; padding: 0 14px; background: var(--red); color: #241719; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; }
 main {
-  max-width: 1500px;
-  margin: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 38px 34px 20px;
 }
 .page-title {
@@ -673,7 +674,7 @@ main {
 .bonus-goal-label strong { color: #f0ebff; font-size: 16px; font-weight: 700; letter-spacing: -0.03em; }
 .bonus-goal-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .bonus-goal-main .monthly-goal-track { flex: 1; }
-.users-page { width: 100%; }
+.users-page { width: 100%; max-width: none; }
 .users-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
 .users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .users-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
@@ -2778,6 +2779,8 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+  max-width: none;
 }
 .statistics-toolbar {
   display: grid;
