@@ -2910,7 +2910,7 @@ function App() {
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = caja?.status !== "ABIERTA";
   const isSubpage = configurationOpen || logisticsOpen || statisticsOpen || usersOpen || bonusesOpen;
-  const currentPage = configurationOpen ? "Configuración" : logisticsOpen ? "Logística" : statisticsOpen ? "Estadísticas" : usersOpen ? "Usuarios" : bonusesOpen ? "Bonos" : `CAJA ${activeBox?.title || ""}`;
+  const currentPage = configurationOpen ? "Configuración" : logisticsOpen ? "Logística" : statisticsOpen ? "Estadísticas" : usersOpen ? "Usuarios" : bonusesOpen ? "Bonos" : `Caja ${activeBox?.title || ""}`;
   const isReadOnlyAction = (element) => Boolean(element.closest?.(".modal-close, .ghost-button, button[title^='Ver'], button[title^='Cerrar']"));
   useEffect(() => {
     const preventInputDrag = (event) => {
