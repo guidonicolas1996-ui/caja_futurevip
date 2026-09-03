@@ -13,6 +13,7 @@ const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
 let bonusOperationQueue = Promise.resolve();
+let spacesReadPromise = null;
 const withBonusOperationLock = (operation) => {
   const queued = bonusOperationQueue.catch(() => undefined).then(async () => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -154,8 +155,9 @@ async function writeSpaces(spaces, { allowSpaceDeletion = false } = {}) {
   if (error) throw new Error(`No se pudo guardar en Supabase: ${error.message}`);
   if (!data) throw new Error('No se guardó el cambio porque la BDD cambió desde la última lectura. Recargá la página e intentá nuevamente.');
   spaces.updatedAt = updatedAt;
+  spacesReadPromise = null;
 }
-async function readSpaces() {
+async function readSpacesFromDatabase() {
   const database = requireSupabase();
   const { data, error } = await database.from('app_state').select('spaces, updated_at').eq('id', 'main').maybeSingle();
   if (error) throw new Error(`No se pudo leer Supabase: ${error.message}`);
@@ -165,6 +167,17 @@ async function readSpaces() {
     return spaces;
   }
   throw new Error('La BDD no contiene el estado de la aplicación. No se crearán datos iniciales automáticamente.');
+}
+async function readSpaces() {
+  if (!spacesReadPromise) {
+    const readPromise = readSpacesFromDatabase();
+    spacesReadPromise = readPromise;
+    readPromise.then(
+      () => { if (spacesReadPromise === readPromise) spacesReadPromise = null; },
+      () => { if (spacesReadPromise === readPromise) spacesReadPromise = null; },
+    );
+  }
+  return spacesReadPromise;
 }
 async function getSpace(boxId) { const spaces = await readSpaces(); return spaces.find((space) => space.id === boxId) || spaces[0]; }
 function normalizeConfig(config) {
