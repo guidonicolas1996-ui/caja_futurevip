@@ -1018,7 +1018,7 @@ main {
 .publicity-derived > div { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .publicity-numbers label, .publicity-derived label { display: grid; gap: 3px; min-width: 0; text-align: center; }
 .publicity-stepper { display: grid; grid-template-columns: 16px minmax(30px, 1fr) 16px; align-items: center; min-width: 0; }
-.publicity-stepper button { display: grid; place-items: center; width: 16px; height: 24px; padding: 0; border: 1px solid #667276; border-radius: 3px; background: transparent; color: var(--muted); }
+.publicity-stepper button { display: grid; place-items: center; width: 16px; height: 24px; padding: 0; border: 1px solid rgba(102, 114, 118, 0.32); border-radius: 3px; background: transparent; color: var(--muted); }
 .publicity-stepper button:hover { border-color: var(--cyan); background: #203333; color: var(--cyan); }
 .publicity-stepper input { min-width: 30px; }
 .publicity-numbers span, .publicity-derived > span, .publicity-derived small { color: var(--muted); font-size: 8px; white-space: nowrap; text-align: center; }
