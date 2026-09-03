@@ -2909,7 +2909,8 @@ function App() {
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = caja?.status !== "ABIERTA";
-  const currentPage = configurationOpen ? "Configuración" : logisticsOpen ? "Logística" : statisticsOpen ? "Estadísticas" : usersOpen ? "Usuarios" : bonusesOpen ? "Bonos" : "Caja";
+  const isSubpage = configurationOpen || logisticsOpen || statisticsOpen || usersOpen || bonusesOpen;
+  const currentPage = configurationOpen ? "Configuración" : logisticsOpen ? "Logística" : statisticsOpen ? "Estadísticas" : usersOpen ? "Usuarios" : bonusesOpen ? "Bonos" : `CAJA ${activeBox?.title || ""}`;
   const isReadOnlyAction = (element) => Boolean(element.closest?.(".modal-close, .ghost-button, button[title^='Ver'], button[title^='Cerrar']"));
   useEffect(() => {
     const preventInputDrag = (event) => {
@@ -3267,7 +3268,7 @@ function App() {
             </h1>
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
-           <div className={`history-actions ${currentPage !== "Caja" ? "has-back" : ""}`}>
+           <div className={`history-actions ${isSubpage ? "has-back" : ""}`}>
              {(statisticsOpen || logisticsOpen || usersOpen || bonusesOpen || configurationOpen) && <button className="history-trigger back-to-caja" title="Volver a Caja" aria-label="Volver a Caja" onClick={() => { setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setConfigurationOpen(false); }}><ArrowLeft size={17} /></button>}
              {!statisticsOpen && <button className="history-trigger statistics-trigger" title="Estadísticas" aria-label="Estadísticas" onClick={() => { setStatisticsOpen(true); setConfigurationOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={17} /></button>}
              {!logisticsOpen && <button className="history-trigger logistics-trigger" title="Logística" aria-label="Logística" onClick={() => { setLogisticsOpen(true); setConfigurationOpen(false); setStatisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={17} /></button>}

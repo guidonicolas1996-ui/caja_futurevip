@@ -2585,6 +2585,7 @@ select:focus {
   }
 }
 .page-title {
+  position: relative;
   align-items: flex-start;
 }
 .current-shift-heading h1 {
@@ -2636,7 +2637,7 @@ select:focus {
 }
 .history-actions.has-back { grid-template-columns: 57px repeat(5, 38px); }
 .current-shift-heading h1 { display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
-.current-page-label { display: inline-flex; align-items: center; margin-left: 32px; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); font-size: inherit; font-weight: 800; letter-spacing: 0; text-transform: uppercase; }
+.current-page-label { position: absolute; top: 50%; left: 50%; display: inline-flex; align-items: center; margin: 0; padding: 4px 9px; border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--cyan) 12%, transparent); color: var(--cyan); font-size: inherit; font-weight: 800; letter-spacing: 0; transform: translate(-50%, -50%); }
 .pending-notes {
   grid-column: 1 / -1;
   justify-self: end;
