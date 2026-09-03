@@ -1939,7 +1939,7 @@ select:focus {
 .transfer-row b.transfer-in { color: var(--red); }
 .transfer-modal { width: min(620px, calc(100% - 32px)); }
 .transfer-edit-list { max-height: 52vh; overflow-y: auto; }
-.transfer-edit-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px 30px 30px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(82,101,103,.35); }
+.transfer-edit-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 110px 30px 30px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(82,101,103,.35); }
 .transfer-edit-row > div { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
 .transfer-edit-row > div b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
 .transfer-edit-row > div span { color: var(--muted); font-size: 10px; white-space: nowrap; }
@@ -1965,7 +1965,7 @@ select:focus {
 }
 @media (max-width: 700px) { .notes-column { grid-template-columns: 1fr; } }
 @media (max-width: 850px) { .transfer-edit-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .transfer-edit-fields { grid-template-columns: 1fr; } .transfer-edit-row { grid-template-columns: minmax(0, 1fr) 90px 28px 28px; } }
+@media (max-width: 700px) { .transfer-edit-fields { grid-template-columns: 1fr; } .transfer-edit-row { grid-template-columns: 76px minmax(0, 1fr) 90px 28px 28px; gap: 5px; } }
 .modal-backdrop {
   position: fixed;
   inset: 0;
