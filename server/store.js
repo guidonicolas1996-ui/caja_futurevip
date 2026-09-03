@@ -281,7 +281,11 @@ async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
 export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
 export async function downloadBonusImage(id, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const bonus = normalizeConfig(space.config).bonuses.find((item) => item.id === id); if (!bonus?.imagePath) throw new Error('El bono no tiene imagen');
-  const { data, error } = await requireSupabase().storage.from('bonos').download(bonus.imagePath); if (error) throw new Error(`No se pudo descargar la imagen: ${error.message}`); return { data, name: bonus.imageName || `${id}.bin`, type: bonus.imageType || 'application/octet-stream' };
+  const { data, error } = await requireSupabase().storage.from('bonos').download(bonus.imagePath); if (error) throw new Error(`No se pudo descargar la imagen: ${error.message}`);
+  const originalName = bonus.imageName || bonus.imagePath.split('/').pop() || `${id}.bin`;
+  const extension = originalName.includes('.') ? originalName.split('.').pop().replace(/[^a-z0-9]/gi, '').toLowerCase() : 'bin';
+  const safeBonusName = bonus.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '').replace(/[. ]+$/g, '').trim() || id;
+  return { data, name: `${safeBonusName}.${extension || 'bin'}`, type: bonus.imageType || 'application/octet-stream' };
 }
 export async function updateCurrent(patch, boxId) {
   const spaces = await readSpaces();
