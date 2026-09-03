@@ -2551,9 +2551,15 @@ select:focus {
 .mini-user-form span { color: var(--muted); font-size: 10px; }
 .user-detail-popup { width: min(720px, calc(100% - 32px)); }
 .mini-user-fields input[readonly] { opacity: .78; }
+.mini-user-readonly-field { display: grid; gap: 5px; }
+.mini-user-readonly-field > span { color: var(--muted); font-size: 10px; }
+.mini-user-readonly-field input + input { margin-top: 2px; }
 .mini-user-sections { margin-top: 8px; }
 .mini-user-block { display: grid; gap: 7px; margin-top: 10px; }
 .mini-user-block > span, .mini-user-sections .check-group > span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
+.mini-user-colored-list { display: flex; flex-direction: column; gap: 5px; padding: 2px 0; }
+.mini-user-colored-list > span { font-size: 11px; font-weight: 700; }
+.mini-user-colored-list > small { color: var(--muted); font-size: 10px; }
 .mini-user-details > div { display: grid; gap: 3px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .mini-user-details span, .mini-user-form span { color: var(--muted); font-size: 10px; }
 .mini-user-details strong { font-size: 12px; }
