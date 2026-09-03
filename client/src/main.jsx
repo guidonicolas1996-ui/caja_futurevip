@@ -1934,6 +1934,7 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
   const moveRoute = (offset) => requestInUse(items[(currentIndex + offset + items.length) % items.length]);
 
   return <section className="panel wallet-route" aria-label="Seguimiento de billeteras">
+    <div className="wallet-route-title"><h2><WalletCards size={16} /> Logística</h2></div>
     <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>{recommendationReason} · {formatRestart(recommended.restart)}</small></div>
     <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => requestInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
     <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : "clickable"}`} key={`${item.key}-${index}`} onClick={() => index > 0 && requestInUse(item)} role={index > 0 ? "button" : undefined} tabIndex={index > 0 ? 0 : undefined} onKeyDown={(event) => { if (index > 0 && (event.key === "Enter" || event.key === " ")) requestInUse(item); }}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
@@ -2432,7 +2433,6 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
     onUpdateAccounts(nextAccounts);
   };
   return <main className="logistics-page">
-    <div className="logistics-title"><SectionHead icon={<WalletCards size={18} />} title="Logística" /></div>
     <section className="panel logistics-panel">
       <SectionHead icon={<WalletCards size={18} />} title="Ruta de Cuentas" action={<select className="logistics-add" onChange={addWallet} value=""><option value="">Agregar billetera...</option>{addable.map((item) => <option key={item.key} value={item.key}>{item.holder} · {item.wallet}</option>)}</select>} />
       <div className="logistics-board">
