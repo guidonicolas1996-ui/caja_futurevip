@@ -2509,6 +2509,14 @@ select:focus {
 .mini-users-empty { padding: 16px 6px; color: var(--muted); font-size: 10px; text-align: center; }
 .mini-user-modal { width: min(440px, calc(100% - 32px)); }
 .mini-user-details { display: grid; gap: 10px; max-height: 52vh; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: #526567 transparent; }
+.mini-user-form { display: grid; gap: 10px; }
+.mini-user-form label { display: grid; gap: 5px; }
+.mini-user-form span { color: var(--muted); font-size: 10px; }
+.user-detail-popup { width: min(720px, calc(100% - 32px)); }
+.mini-user-fields input[readonly] { opacity: .78; }
+.mini-user-sections { margin-top: 8px; }
+.mini-user-block { display: grid; gap: 7px; margin-top: 10px; }
+.mini-user-block > span, .mini-user-sections .check-group > span { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; }
 .mini-user-details > div { display: grid; gap: 3px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .mini-user-details span, .mini-user-form span { color: var(--muted); font-size: 10px; }
 .mini-user-details strong { font-size: 12px; }
