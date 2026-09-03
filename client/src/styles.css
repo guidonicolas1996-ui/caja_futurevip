@@ -222,6 +222,10 @@
 .config-list-row input, .expense-config-row input { min-width: 0; flex: 1; }
 .delete-button { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: #293638; color: var(--red); }
 .config-add { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 7px 9px; border: 1px solid #365a59; border-radius: 5px; background: #203333; color: var(--cyan); font-size: 10px; }
+.users-panel .config-add:disabled,
+.users-panel select:disabled,
+.users-create-modal .config-add:disabled,
+.users-create-modal select:disabled { border-color: var(--line); background: rgba(0, 0, 0, 0.2); color: var(--muted); opacity: 0.55; cursor: not-allowed; }
 .box-management-list { max-width: 760px; }
 .box-management-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) 130px 28px; gap: 9px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(43,56,59,.55); }
 .box-management-row input, .box-management-row select { min-width: 0; }
