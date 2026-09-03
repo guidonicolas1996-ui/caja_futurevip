@@ -2115,6 +2115,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
 }
 
 function SummaryCard({ caja, calculations, update }) {
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const metric = (label, value, className = "", valueClass = "") => (
     <div className={className}>
       <span>{label}</span>
