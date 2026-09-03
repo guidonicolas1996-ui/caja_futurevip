@@ -2567,13 +2567,15 @@ select:focus {
   background: #294342;
 }
 .history-actions {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(5, max-content);
   align-items: center;
   justify-content: flex-end;
   gap: 5px;
 }
 .pending-notes {
+  grid-column: 1 / -1;
+  justify-self: start;
   color: var(--red);
   font-size: 18px;
   font-weight: 800;
