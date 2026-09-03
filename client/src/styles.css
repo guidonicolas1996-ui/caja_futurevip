@@ -692,10 +692,19 @@ main {
 .bonuses-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .bonuses-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
 .bonuses-head span { color: var(--muted); font-size: 11px; }
-.bonuses-toolbar { display: flex; align-items: center; gap: 7px; }
+.bonuses-toolbar { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 7px; }
 .bonuses-toolbar input { width: min(300px, 22vw); }
 .bonuses-toolbar select { width: 150px; }
+.bonuses-toolbar label { display: grid; gap: 4px; color: var(--muted); font-size: 9px; }
+.bonuses-toolbar label span { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.bonuses-toolbar .sort-direction { width: 32px; height: 32px; margin-bottom: 0; border: 1px solid var(--line); border-radius: 5px; background: #202a2c; color: var(--box-accent); font-size: 18px; line-height: 1; }
+.bonuses-toolbar .sort-direction:hover { border-color: var(--box-accent); background: var(--box-soft); }
 .bonus-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.bonus-groups { display: grid; gap: 18px; }
+.bonus-group { display: grid; gap: 9px; }
+.bonus-group-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.bonus-group-heading h3 { margin: 0; color: var(--box-accent); font-size: 12px; }
+.bonus-group-heading span { color: var(--muted); font-size: 10px; }
 .bonus-card-item { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); }
 .bonus-card-item > img, .bonus-image-empty { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #0d1112; }
 .bonus-image-empty { display: grid; place-items: center; color: var(--muted); font-size: 11px; }
@@ -713,7 +722,7 @@ main {
 .bonus-condition-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
 .bonus-condition-editor-head .config-add { margin-top: 0; }
 .bonus-condition-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 28px; gap: 7px; }
-@media (max-width: 760px) { .bonuses-head { flex-direction: column; align-items: stretch; } .bonuses-toolbar { flex-wrap: wrap; } .bonuses-toolbar input { width: 100%; } .bonuses-toolbar select { flex: 1; } }
+@media (max-width: 760px) { .bonuses-head { flex-direction: column; align-items: stretch; } .bonuses-toolbar { align-items: stretch; } .bonuses-toolbar input { width: 100%; } .bonuses-toolbar select { flex: 1; } .bonuses-toolbar label { flex: 1; } .bonuses-toolbar .sort-direction { align-self: end; } }
 .users-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
 .users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .users-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
