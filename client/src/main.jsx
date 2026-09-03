@@ -219,7 +219,7 @@ function BoxSelector({ boxes, activeBoxId, onChange, label = "CAJA" }) {
   const activeBox = boxes.find((box) => box.id === activeBoxId) || boxes[0];
   return <div className={`box-selector ${open ? "open" : ""}`} style={boxColorStyle(activeBox?.color)}>
     <span>{label}</span>
-    <button className="box-selector-trigger" onClick={() => setOpen(!open)} aria-expanded={open}><b>{activeBox?.title}</b><i /></button>
+      <button className="box-selector-trigger" onClick={() => setOpen(!open)} aria-expanded={open}><b>{activeBox?.title}</b><i /></button>
     {open && <div className="box-options">{boxes.map((box) => <button className={box.id === activeBox?.id ? "selected" : ""} key={box.id} onClick={() => { onChange(box.id); setOpen(false); }}><i className={box.color} />{box.title}</button>)}</div>}
   </div>;
 }
@@ -231,7 +231,7 @@ function WalletAssignmentSelector({ boxes, value, onChange, showLabel = true }) 
   const menuRef = React.useRef(null);
   const buttonRef = React.useRef(null);
   const selected = boxes.find((box) => box.id === value);
-  const assignmentStyle = (box) => {
+    const assignmentStyle = (box) => {
     if (!box) return undefined;
     const palette = boxColorStyle(box.color);
     return { "--assignment-accent": palette["--box-accent"], "--assignment-line": palette["--box-line"] };
@@ -2464,10 +2464,22 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
       onNotify?.("El usuario necesita al menos un nombre y un número de teléfono.");
       return;
     }
+    if (!userInfoValueFor(newUser.userInfo)) {
+      onNotify?.("El usuario necesita un panel.");
+      return;
+    }
+    if (!newUser.boxes.length) {
+      onNotify?.("El usuario necesita al menos una caja.");
+      return;
+    }
+    if (!newUser.subPlatforms.length) {
+      onNotify?.("El usuario necesita al menos una plataforma.");
+      return;
+    }
     updateUsers([...users, { ...newUser, id: `user-${crypto.randomUUID()}`, names, phones, titulars, createdAt: new Date(newUser.createdAt).toISOString(), clarifications: [], linkedUsers: [] }]);
     setNewUserOpen(false);
   };
-  const userInfoOptionsFor = (selectedBoxes) => selectedBoxes.flatMap((boxId) => (userInfoOptionsByBox[String(boxId)] || []).map((label) => ({ value: `${boxId}::${label}`, label: `${boxById[String(boxId)]?.title || "Caja"} · ${label}`, boxId, value: label })));
+  const userInfoOptionsFor = (selectedBoxes) => selectedBoxes.flatMap((boxId) => (userInfoOptionsByBox[String(boxId)] || []).map((label) => ({ value: `${boxId}::${label}`, label: `${boxById[String(boxId)]?.title || "Caja"} · ${label}`, boxId })));
   const userInfoValueFor = (userInfo) => typeof userInfo === "object" ? (userInfo?.boxId && userInfo?.value ? `${userInfo.boxId}::${userInfo.value}` : "") : String(userInfo || "");
   const userInfoFromValue = (value) => { const separator = value.indexOf("::"); return separator < 0 ? null : { boxId: value.slice(0, separator), value: value.slice(separator + 2) }; };
   useEffect(() => {
@@ -2603,7 +2615,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
               {renderListField("Titular", Array.isArray(user.titulars) && user.titulars.length ? user.titulars : [""], () => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: [...(item.titulars || [""]), ""] } : item)), (index, value) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: (item.titulars || [""]).map((titular, titularIndex) => titularIndex === index ? value : titular) } : item)), (index) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: (item.titulars || []).filter((_, titularIndex) => titularIndex !== index) } : item)), (newTitulars) => updateUsers(users.map((item) => item.id === user.id ? { ...item, titulars: newTitulars } : item)), editing)}
               <label className="field-block">
                 <span>Panel</span>
-                <select disabled={!editing} value={userInfoValueFor(user.userInfo)} onChange={(event) => updateUsers(users.map((item) => item.id === user.id ? { ...item, userInfo: userInfoFromValue(event.target.value) } : item))}><option value="">Sin seleccionar</option>{userInfoOptionsFor(selectedUserBoxes).map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select>
+                <select required disabled={!editing} value={userInfoValueFor(user.userInfo)} onChange={(event) => { if (!event.target.value) { onNotify?.("El usuario necesita un panel."); return; } updateUsers(users.map((item) => item.id === user.id ? { ...item, userInfo: userInfoFromValue(event.target.value) } : item)); }}><option value="">Sin seleccionar</option>{userInfoOptionsFor(selectedUserBoxes).map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select>
               </label>
               <label className="field-block">
                 <span>Fecha creación</span>
@@ -2616,17 +2628,17 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
                 <div className="checkbox-list">
                   {(boxes || []).map((box) => {
                     const checked = selectedUserBoxes.includes(box.id);
-                    return <label className="user-switch" key={box.id} style={{ "--switch-accent": boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, boxes: checked ? (item.boxes || []).filter((id) => id !== box.id) : [...(item.boxes || []), box.id] } : item))} /><i /> <span>{box.title}</span></label>;
+                    return <label className="user-switch" key={box.id} style={{ "--switch-accent": boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={checked} onChange={() => { if (checked && selectedUserBoxes.length <= 1) { onNotify?.("El usuario necesita al menos una caja."); return; } if (checked && (user.subPlatforms || []).filter((key) => key.startsWith(`${box.id}::`)).length === (user.subPlatforms || []).length) { onNotify?.("El usuario necesita al menos una plataforma."); return; } updateUsers(users.map((item) => item.id === user.id ? { ...item, boxes: checked ? (item.boxes || []).filter((id) => id !== box.id) : [...(item.boxes || []), box.id], subPlatforms: checked ? (item.subPlatforms || []).filter((key) => !key.startsWith(`${box.id}::`)) : (item.subPlatforms || []) } : item)); }} /><i /> <span>{box.title}</span></label>;
                   })}
                 </div>
               </div>
               <div className="check-group">
-                <span>Subplataformas</span>
+                <span>Plataformas</span>
                 <div className="checkbox-list subplatforms-grouped">
                   {(boxes || []).filter((box) => selectedUserBoxes.includes(box.id)).map((box) => {
                     const subOptions = boxSubPlatformsFor(box.id);
                     if (subOptions.length === 0) return null;
-                    return <div key={box.id} className="subplatforms-group" style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}><div className="subplatforms-group-title">{box.title}</div>{subOptions.map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={(user.subPlatforms || []).includes(option.key)} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: ((item.subPlatforms || []).includes(option.key)) ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item))} /><i /> <span>{option.label}</span></label>)}</div>;
+                    return <div key={box.id} className="subplatforms-group" style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}><div className="subplatforms-group-title">{box.title}</div>{subOptions.map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={(user.subPlatforms || []).includes(option.key)} onChange={() => { const checked = (user.subPlatforms || []).includes(option.key); if (checked && (user.subPlatforms || []).length <= 1) { onNotify?.("El usuario necesita al menos una plataforma."); return; } updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: checked ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item)); }} /><i /> <span>{option.label}</span></label>)}</div>;
                   })}
                 </div>
               </div>
@@ -2648,7 +2660,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
               <div className="user-linked-controls">
                 <input list={`linked-users-${user.id}`} disabled={!editing} placeholder="Buscar usuario para vincular" />
                 <datalist id={`linked-users-${user.id}`}>
-                  {linkedOptions.map((option) => <option key={option.value} value={option.label} />)}
+                  {linkedOptions.length ? linkedOptions.map((option) => <option key={option.value} value={option.label} />) : <option value="No se encontraron usuarios" disabled />}
                 </datalist>
                 <button type="button" className="config-add" disabled={!editing} onClick={() => {
                   const list = document.querySelector(`#linked-users-${user.id}`);

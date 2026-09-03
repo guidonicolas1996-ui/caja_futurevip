@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+.users-create-modal .user-checks-grid > .check-group:nth-child(2) > span { font-size: 0; }
+.users-create-modal .user-checks-grid > .check-group:nth-child(2) > span::after { content: "Plataformas"; font-size: 12px; }
 @media (max-width: 700px) {
   .current-shift-heading h1 {
     font-size: 20px;
