@@ -1935,8 +1935,8 @@ select:focus {
 .transfer-submit:disabled { opacity: .45; cursor: not-allowed; }
 .transfer-error { display: block; margin-top: 8px; color: var(--red); font-size: 10px; }
 .transfer-history { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
-.transfer-row b.transfer-out { color: var(--green); }
-.transfer-row b.transfer-in { color: var(--red); }
+.transfer-row b.transfer-out { color: var(--red); }
+.transfer-row b.transfer-in { color: var(--green); }
 .transfer-modal { width: 50vw; }
 .transfer-edit-list { max-height: 52vh; overflow-y: auto; }
 .transfer-edit-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 110px 30px 30px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(82,101,103,.35); }
