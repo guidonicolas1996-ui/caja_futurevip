@@ -2575,7 +2575,7 @@ select:focus {
 }
 .pending-notes {
   grid-column: 1 / -1;
-  justify-self: start;
+  justify-self: end;
   color: var(--red);
   font-size: 18px;
   font-weight: 800;
