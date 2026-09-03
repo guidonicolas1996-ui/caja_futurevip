@@ -2577,25 +2577,28 @@ select:focus {
   margin: 7px 0 0;
 }
 .history-trigger {
+  width: 38px;
   height: 38px;
   margin-top: 2px;
-  padding: 0 13px;
+  padding: 0;
   border: 1px solid #3d5d5d;
   border-radius: 7px;
   background: #203333;
   color: var(--cyan);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 17px;
   font-weight: 700;
 }
+.history-trigger span { display: block; line-height: 1; }
 .history-trigger:hover {
   background: #294342;
 }
 .history-actions {
   display: grid;
-  grid-template-columns: repeat(5, max-content);
+  grid-template-columns: repeat(6, 38px);
   align-items: center;
   justify-content: flex-end;
   gap: 5px;
