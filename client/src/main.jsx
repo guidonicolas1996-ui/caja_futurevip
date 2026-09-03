@@ -1472,13 +1472,14 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     setRecoveredMode(false);
     setEditorOpen(true);
   };
+  const calculatedBonusAmount = Math.ceil(number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1));
   const addEditedBonus = () => {
     const amountValue = number(editorAmount);
     const withdrawalValue = number(editorWithdrawal);
     const percentValue = number(editorPercent);
     
     if (!amountValue || (recoveredMode && !withdrawalValue)) return;
-    const amount = Math.round(amountValue * (percentValue > 0 ? percentValue / 100 : 1) * 100) / 100;
+    const amount = calculatedBonusAmount;
     if (!amount) return;
     update({
       bonuses: [
@@ -1575,12 +1576,12 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
             <div className="bonus-editor-preview">
               {recoveredMode
                 ? <>
-                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(editorWithdrawal - editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
-                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(number(editorWithdrawal) - calculatedBonusAmount)}</b></div>
+                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(calculatedBonusAmount)}</b></div>
                 </>
                 : <>
-                  {Number(editorPercent) > 0 && Number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(editorAmount + editorAmount * (editorPercent / 100))}</b></div>}
-                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(editorAmount * (editorPercent > 0 ? editorPercent / 100 : 1))}</b></div>
+                  {number(editorPercent) > 0 && number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(number(editorAmount) + calculatedBonusAmount)}</b></div>}
+                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(calculatedBonusAmount)}</b></div>
                 </>}
             </div>
             <div className="modal-actions">
