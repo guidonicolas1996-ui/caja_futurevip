@@ -703,8 +703,12 @@ main {
 .users-list { display: flex; flex-direction: column; gap: 8px; }
 .user-card { display: flex; flex-direction: column; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); transition: all 0.2s ease; }
 .user-card.compact { gap: 0; padding: 2px 0; border: 0; border-radius: 0; background: transparent; }
-.user-card.expanded { padding: 16px; }
-.user-card.expanded .user-card-head { padding-bottom: 12px; margin-bottom: 2px; }
+.user-card.expanded { padding: 0 0 16px; }
+.user-card.expanded .user-card-head { padding: 16px; margin-bottom: 2px; }
+.user-card.expanded > .user-fields-grid,
+.user-card.expanded > .user-checks-grid,
+.user-card.expanded > .user-clarifications,
+.user-card.expanded > .user-linked-section { margin-left: 16px; margin-right: 16px; }
 .user-card-head { cursor: pointer; transition: background 0.2s; }
 .user-card-head:hover { background: rgba(51, 68, 74, 0.5); }
 .user-card-head { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 42%) auto auto; align-items: center; gap: 6px; min-height: 28px; border-bottom: none; }
