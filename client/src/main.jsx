@@ -826,6 +826,12 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   </div>;
 }
 
+function BonusConfig({ draft, setDraft }) {
+  const types = draft.bonusTypes || [];
+  const conditions = draft.bonusConditions || [];
+  return <div className="config-two-columns"><section className="config-card"><div className="config-list-head"><h3>Tipos de bonos</h3><span>{types.length} elementos</span></div>{types.map((type, index) => <div className="config-list-row" key={type.id}><input value={type.name} placeholder="Nombre del tipo" onChange={(event) => setDraft((current) => ({ ...current, bonusTypes: types.map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} /><input className="bonus-type-count" type="number" min="1" max="20" value={type.percentageCount || 1} title="Cantidad de porcentajes" onChange={(event) => setDraft((current) => ({ ...current, bonusTypes: types.map((item, itemIndex) => itemIndex === index ? { ...item, percentageCount: Math.max(1, Math.min(20, Number(event.target.value) || 1)) } : item) }))} /><button className="delete-button" type="button" title="Eliminar tipo" onClick={() => setDraft((current) => ({ ...current, bonusTypes: types.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, bonusTypes: [...types, { id: `bonus-type-${crypto.randomUUID()}`, name: "", percentageCount: 1 }] }))}><Plus size={15} /> Agregar tipo</button></section><section className="config-card"><div className="config-list-head"><h3>Condiciones de bono</h3><span>{conditions.length} elementos</span></div>{conditions.map((condition, index) => <div className="config-list-row" key={condition.id}><input value={condition.label} placeholder="Etiqueta de condición" onChange={(event) => setDraft((current) => ({ ...current, bonusConditions: conditions.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} /><button className="delete-button" type="button" title="Eliminar condición" onClick={() => setDraft((current) => ({ ...current, bonusConditions: conditions.filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, bonusConditions: [...conditions, { id: `bonus-condition-${crypto.randomUUID()}`, label: "" }] }))}><Plus size={15} /> Agregar condición</button></section></div>;
+}
+
 function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, onNotify, api, embedded = false }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
@@ -881,10 +887,12 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           <button className={tab === "expenses" ? "active" : ""} onClick={() => setTab("expenses")}><ReceiptText size={17} /> Gastos</button>
           <button className={tab === "platforms" ? "active" : ""} onClick={() => setTab("platforms")}><Ticket size={17} /> Control de fichas</button>
           <button className={tab === "users" ? "active" : ""} onClick={() => setTab("users")}><Users size={17} /> Usuarios</button>
+          <button className={tab === "bonuses" ? "active" : ""} onClick={() => setTab("bonuses")}><Gift size={17} /> Bonos</button>
           <button className={tab === "monthly-goal" ? "active" : ""} onClick={() => setTab("monthly-goal")}><Target size={17} /> Objetivos</button>
         </nav>
         <main className="configuration-content">
           {tab === "users" && !loadingConfig && draft && <UserInfoOptionsConfig draft={draft} setDraft={setDraft} />}
+          {tab === "bonuses" && !loadingConfig && draft && <BonusConfig draft={draft} setDraft={setDraft} />}
           {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
           {!loadingConfig && draft && <>
           {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section></>}
@@ -2697,6 +2705,47 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   </main>;
 }
 
+function BonusesPage({ config, activeBoxId, api, onNotify }) {
+  const [bonuses, setBonuses] = useState([]);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const types = config.bonusTypes || [];
+  const conditions = config.bonusConditions || [];
+  const imageUrl = (id, download = false) => `${import.meta.env.VITE_API_URL || ""}/api/bonos/${id}/imagen?boxId=${activeBoxId}${download ? "&download=1" : ""}`;
+  const loadBonuses = async () => setBonuses(await api(`/api/bonos?boxId=${activeBoxId}`));
+  const conditionsForType = (typeId) => { const count = types.find((type) => type.id === typeId)?.percentageCount || 0; return Array.from({ length: count }, (_, index) => conditions[index] ? { conditionId: conditions[index].id, percentage: "" } : { conditionId: "", percentage: "" }); };
+  useEffect(() => { loadBonuses().catch((error) => onNotify(error.message)); }, [activeBoxId]);
+  const openEditor = (bonus = null) => {
+    setEditing(bonus);
+    setForm(bonus ? { name: bonus.name, typeId: bonus.typeId, conditions: bonus.conditions || conditionsForType(bonus.typeId) } : { name: "", typeId: types[0]?.id || "", conditions: conditionsForType(types[0]?.id || "") });
+    setImageFile(null);
+  };
+  const updateCondition = (index, patch) => setForm((current) => ({ ...current, conditions: current.conditions.map((item, itemIndex) => itemIndex === index ? { ...item, ...patch } : item) }));
+  const save = async () => {
+    if (!form?.name.trim() || !form.typeId || (!editing && !imageFile)) { onNotify("Completá nombre, tipo e imagen."); return; }
+    try {
+      const result = editing ? await api(`/api/bonos/${editing.id}?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(form) }) : await api(`/api/bonos?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify(form) });
+      if (imageFile) { const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bonos/${result.bonus.id}/imagen?boxId=${activeBoxId}`, { method: "POST", headers: { "Content-Type": imageFile.type, "X-File-Name": encodeURIComponent(imageFile.name) }, body: imageFile }); const uploadResult = await uploadResponse.json(); if (!uploadResponse.ok || uploadResult.error) throw new Error(uploadResult.error || "No se pudo subir la imagen"); }
+      await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono guardado");
+    } catch (error) { onNotify(error.message); }
+  };
+  const remove = async (bonus) => { if (!window.confirm(`¿Eliminar el bono "${bonus.name}"?`)) return; try { await api(`/api/bonos/${bonus.id}?boxId=${activeBoxId}`, { method: "DELETE" }); await loadBonuses(); onNotify("Bono eliminado"); } catch (error) { onNotify(error.message); } };
+  const filtered = bonuses.filter((bonus) => (!typeFilter || bonus.typeId === typeFilter) && `${bonus.name} ${types.find((type) => type.id === bonus.typeId)?.name || ""} ${(bonus.conditions || []).map((item) => `${item.percentage}% ${conditions.find((condition) => condition.id === item.conditionId)?.label || ""}`).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
+  const changeType = (typeId) => setForm((current) => ({ ...current, typeId, conditions: conditionsForType(typeId) }));
+  return (
+    <main className="bonuses-page">
+      <section className="panel bonuses-panel">
+        <div className="bonuses-head"><div><h2><Gift size={18} /> Bonos</h2><span>{bonuses.length} registros</span></div><div className="bonuses-toolbar"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar bono, porcentaje o condición" /><select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="">Todos los tipos</option>{types.map((type) => <option value={type.id} key={type.id}>{type.name}</option>)}</select><button className="config-add" type="button" onClick={() => openEditor()}><Plus size={15} /> Nuevo bono</button></div></div>
+        <div className="bonus-cards">{filtered.map((bonus) => <article className="bonus-card-item" key={bonus.id}>{bonus.imagePath ? <img src={imageUrl(bonus.id)} alt={bonus.name} /> : <div className="bonus-image-empty">Sin imagen</div>}<footer><strong>{bonus.name}</strong><span>{types.find((type) => type.id === bonus.typeId)?.name || "Sin tipo"}</span><div className="bonus-condition-list">{(bonus.conditions || []).map((item, index) => <small key={`${item.conditionId}-${index}`}>{conditions.find((condition) => condition.id === item.conditionId)?.label || "Condición"}: {item.percentage}%</small>)}</div><div className="bonus-card-actions"><button className="icon-button" title="Editar bono" onClick={() => openEditor(bonus)}><Pencil size={15} /></button><a className="icon-button" title="Descargar imagen original" href={imageUrl(bonus.id, true)}><Download size={15} /></a><button className="delete-button" title="Eliminar bono" onClick={() => remove(bonus)}><Trash2 size={15} /></button></div></footer></article>)}{filtered.length === 0 && <div className="empty-state">No se encontraron bonos.</div>}</div>
+      </section>
+      {form && <div className="modal-backdrop" onClick={() => setForm(null)}><div className="modal bonus-create-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cancelar" onClick={() => setForm(null)}><X size={18} /></button><div className="modal-icon"><Gift size={21} /></div><h2>{editing ? "Editar bono" : "Nuevo bono"}</h2><label><span>Imagen</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] || null)} /></label>{editing?.imageName && !imageFile && <small>Imagen actual: {editing.imageName}</small>}<label><span>Nombre</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></label><label><span>Tipo de bono</span><select value={form.typeId} onChange={(event) => changeType(event.target.value)}>{types.map((type) => <option value={type.id} key={type.id}>{type.name}</option>)}</select></label><div className="bonus-condition-editor"><div className="bonus-condition-editor-head"><span>Porcentajes y condiciones</span></div>{form.conditions.map((item, index) => <div className="bonus-condition-row" key={`${item.conditionId}-${index}`}><input type="number" min="0" max="100" value={item.percentage} placeholder="%" onChange={(event) => updateCondition(index, { percentage: event.target.value })} /><select value={item.conditionId} onChange={(event) => updateCondition(index, { conditionId: event.target.value })}>{conditions.map((condition) => <option value={condition.id} key={condition.id}>{condition.label}</option>)}</select></div>)}</div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setForm(null)}>Cancelar</button><button className="close-button" type="button" onClick={save}>Guardar <Check size={16} /></button></div></div></div>}
+    </main>
+  );
+}
+
 function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
   const wallets = config.accounts.wallets;
   const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
@@ -2816,6 +2865,7 @@ function App() {
   const [logisticsOpen, setLogisticsOpen] = useState(false);
   const [statisticsOpen, setStatisticsOpen] = useState(false);
   const [usersOpen, setUsersOpen] = useState(false);
+  const [bonusesOpen, setBonusesOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
@@ -3190,18 +3240,19 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <div className="history-actions">
-            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setConfigurationOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
-            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setConfigurationOpen(false); setStatisticsOpen(false); setUsersOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
-            <button className="history-trigger users-trigger" onClick={() => { setUsersOpen(!usersOpen); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><Users size={16} /> {usersOpen ? "Caja" : "Usuarios"}</button>
+            <button className="history-trigger statistics-trigger" onClick={() => { setStatisticsOpen(!statisticsOpen); setConfigurationOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={16} /> {statisticsOpen ? "Caja" : "Estadísticas"}</button>
+            <button className="history-trigger logistics-trigger" onClick={() => { setLogisticsOpen(!logisticsOpen); setConfigurationOpen(false); setStatisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><WalletCards size={16} /> {logisticsOpen ? "Caja" : "Logística"}</button>
+            <button className="history-trigger users-trigger" onClick={() => { setUsersOpen(!usersOpen); setBonusesOpen(false); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><Users size={16} /> {usersOpen ? "Caja" : "Usuarios"}</button>
+            <button className="history-trigger bonuses-trigger" onClick={() => { setBonusesOpen(!bonusesOpen); setUsersOpen(false); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><Gift size={16} /> {bonusesOpen ? "Caja" : "Bonos"}</button>
             <button className="history-trigger" onClick={() => setHistoryOpen(true)}><Clock3 size={16} /> Cajas recientes</button>
-            <button className="history-trigger" disabled={readOnly} onClick={() => { setConfigurationOpen(!configurationOpen); setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); }}><Settings2 size={16} /> {configurationOpen ? "Caja" : "Configurar"}</button>
+            <button className="history-trigger" disabled={readOnly} onClick={() => { setConfigurationOpen(!configurationOpen); setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); }}><Settings2 size={16} /> {configurationOpen ? "Caja" : "Configurar"}</button>
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
           </div>
         </div>
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}

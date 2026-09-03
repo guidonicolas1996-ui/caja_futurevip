@@ -61,6 +61,9 @@ const defaultConfig = () => ({
   users: [],
   userClarifications: [],
   userInfoOptions: [],
+  bonusTypes: [],
+  bonusConditions: [],
+  bonuses: [],
 });
 const blankCaja = (id, previous = null, config = defaultConfig()) => {
   const shift = previous ? nextShift[previous.shift] || shiftOrder[0] : shiftOrder[id % shiftOrder.length] || shiftOrder[0];
@@ -191,6 +194,19 @@ function normalizeConfig(config) {
     emoji: String(clarification?.emoji || ''),
   })) : [];
   const userInfoOptions = Array.isArray(config?.userInfoOptions) ? config.userInfoOptions.map((option) => String(option || '').trim()).filter(Boolean) : [];
+  const bonusTypes = Array.isArray(config?.bonusTypes) ? config.bonusTypes.map((type) => ({ id: String(type?.id || `bonus-type-${crypto.randomUUID()}`), name: String(type?.name || '').trim(), percentageCount: Math.max(1, Math.min(20, Number(type?.percentageCount) || 1)) })).filter((type) => type.name) : [];
+  const bonusConditions = Array.isArray(config?.bonusConditions) ? config.bonusConditions.map((condition) => ({ id: String(condition?.id || `bonus-condition-${crypto.randomUUID()}`), label: String(condition?.label || '').trim() })).filter((condition) => condition.label) : [];
+  const bonuses = Array.isArray(config?.bonuses) ? config.bonuses.map((bonus) => ({
+    id: String(bonus?.id || `bonus-${crypto.randomUUID()}`),
+    name: String(bonus?.name || '').trim(),
+    typeId: String(bonus?.typeId || ''),
+    conditions: Array.isArray(bonus?.conditions) ? bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })).filter((item) => item.conditionId) : [],
+    imagePath: String(bonus?.imagePath || ''),
+    imageName: String(bonus?.imageName || ''),
+    imageType: String(bonus?.imageType || ''),
+    createdAt: String(bonus?.createdAt || new Date().toISOString()),
+    updatedAt: String(bonus?.updatedAt || bonus?.createdAt || new Date().toISOString()),
+  })) : [];
   const users = Array.isArray(config?.users) ? config.users.map((user) => ({
     id: user?.id || `user-${crypto.randomUUID()}`,
     names: Array.isArray(user?.names) ? user.names.filter(Boolean).map(String) : [user?.name || ''].filter(Boolean).map(String),
@@ -205,7 +221,7 @@ function normalizeConfig(config) {
     linkedUsers: Array.isArray(user?.linkedUsers) ? user.linkedUsers.filter(Boolean).map(String) : [],
   })) : [];
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformSubPlatforms, userClarifications, userInfoOptions, users, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || (goal.platformDeposits && Object.keys(goal.platformDeposits).length > 0));
@@ -219,6 +235,37 @@ export async function createPreviousCaja(boxId) { const spaces = await readSpace
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
 export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }
+export async function createBonus(payload = {}, boxId) {
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config);
+  const bonus = { id: `bonus-${crypto.randomUUID()}`, name: String(payload.name || '').trim(), typeId: String(payload.typeId || ''), conditions: Array.isArray(payload.conditions) ? payload.conditions : [], imagePath: '', imageName: '', imageType: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  if (!bonus.name || !config.bonusTypes.some((type) => type.id === bonus.typeId)) throw new Error('Completá el nombre y el tipo de bono');
+  bonus.conditions = bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })).filter((item) => config.bonusConditions.some((condition) => condition.id === item.conditionId));
+  space.config = { ...config, bonuses: [...config.bonuses, bonus] }; await writeSpaces(spaces); return { bonus };
+}
+export async function updateBonus(id, payload = {}, boxId) {
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const index = config.bonuses.findIndex((bonus) => bonus.id === id);
+  if (index < 0) throw new Error('Bono no encontrado');
+  const current = config.bonuses[index]; const next = { ...current, name: String(payload.name ?? current.name).trim(), typeId: String(payload.typeId ?? current.typeId), conditions: Array.isArray(payload.conditions) ? payload.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })) : current.conditions, updatedAt: new Date().toISOString() };
+  if (!next.name || !config.bonusTypes.some((type) => type.id === next.typeId)) throw new Error('Completá el nombre y el tipo de bono');
+  next.conditions = next.conditions.filter((item) => config.bonusConditions.some((condition) => condition.id === item.conditionId)); config.bonuses[index] = next; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: next };
+}
+export async function deleteBonus(id, boxId) {
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const bonus = config.bonuses.find((item) => item.id === id);
+  if (!bonus) throw new Error('Bono no encontrado');
+  if (bonus.imagePath) await requireSupabase().storage.from('bonos').remove([bonus.imagePath]);
+  space.config = { ...config, bonuses: config.bonuses.filter((item) => item.id !== id) }; await writeSpaces(spaces); return { ok: true };
+}
+export async function uploadBonusImage(id, buffer, metadata, boxId) {
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const index = config.bonuses.findIndex((bonus) => bonus.id === id);
+  if (index < 0) throw new Error('Bono no encontrado'); if (!buffer?.length) throw new Error('No se recibió ninguna imagen');
+  const extension = String(metadata?.name || '').split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin'; const path = `${space.id}/${id}.${extension}`; const storage = requireSupabase().storage.from('bonos');
+  const { error } = await storage.upload(path, buffer, { contentType: metadata?.type || 'application/octet-stream', upsert: true }); if (error) throw new Error(`No se pudo subir la imagen: ${error.message}`);
+  const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: config.bonuses[index] };
+}
+export async function downloadBonusImage(id, boxId) {
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const bonus = normalizeConfig(space.config).bonuses.find((item) => item.id === id); if (!bonus?.imagePath) throw new Error('El bono no tiene imagen');
+  const { data, error } = await requireSupabase().storage.from('bonos').download(bonus.imagePath); if (error) throw new Error(`No se pudo descargar la imagen: ${error.message}`); return { data, name: bonus.imageName || `${id}.bin`, type: bonus.imageType || 'application/octet-stream' };
+}
 export async function updateCurrent(patch, boxId) {
   const spaces = await readSpaces();
   const space = spaces.find((item) => item.id === boxId) || spaces[0];

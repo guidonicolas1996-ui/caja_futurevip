@@ -687,6 +687,32 @@ main {
 .bonus-goal-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .bonus-goal-main .monthly-goal-track { flex: 1; }
 .users-page { width: 100% !important; max-width: none !important; }
+.bonuses-page { width: 100% !important; max-width: none !important; }
+.bonuses-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
+.bonuses-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.bonuses-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
+.bonuses-head span { color: var(--muted); font-size: 11px; }
+.bonuses-toolbar { display: flex; align-items: center; gap: 7px; }
+.bonuses-toolbar input { width: min(300px, 22vw); }
+.bonuses-toolbar select { width: 150px; }
+.bonus-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.bonus-card-item { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: rgba(16, 19, 22, 0.82); }
+.bonus-card-item > img, .bonus-image-empty { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: #0d1112; }
+.bonus-image-empty { display: grid; place-items: center; color: var(--muted); font-size: 11px; }
+.bonus-card-item footer { display: flex; flex-direction: column; gap: 6px; padding: 11px; }
+.bonus-card-item footer > strong { color: var(--text-primary); font-size: 12px; }
+.bonus-card-item footer > span { color: var(--box-accent); font-size: 10px; }
+.bonus-condition-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.bonus-condition-list small { color: var(--muted); font-size: 9px; }
+.bonus-card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+.bonus-card-actions a { text-decoration: none; }
+.bonus-create-modal { width: min(560px, calc(100% - 32px)); display: flex; flex-direction: column; gap: 12px; }
+.bonus-create-modal > label { display: grid; gap: 6px; color: var(--muted); font-size: 10px; }
+.bonus-condition-editor { display: flex; flex-direction: column; gap: 8px; }
+.bonus-condition-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
+.bonus-condition-editor-head .config-add { margin-top: 0; }
+.bonus-condition-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 28px; gap: 7px; }
+@media (max-width: 760px) { .bonuses-head { flex-direction: column; align-items: stretch; } .bonuses-toolbar { flex-wrap: wrap; } .bonuses-toolbar input { width: 100%; } .bonuses-toolbar select { flex: 1; } }
 .users-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
 .users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .users-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
