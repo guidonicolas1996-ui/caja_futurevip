@@ -2486,11 +2486,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     if (!persistUsersRef.current) return undefined;
     const timer = window.setTimeout(() => {
       persistUsersRef.current = false;
-      onConfigChange({ ...config, users: editableUsers, userClarifications: globalClarifications, platformSubPlatforms: globalPlatformSubPlatforms });
-      Promise.all((boxes || []).map(async (box) => {
-        const boxConfig = await api(`/api/configuracion?boxId=${box.id}`);
-        return api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, users: editableUsers, userClarifications: globalClarifications, platformSubPlatforms: globalPlatformSubPlatforms }) });
-      })).catch((error) => onNotify?.(error.message));
+      Promise.resolve(onConfigChange({ ...config, users: editableUsers, userClarifications: globalClarifications, platformSubPlatforms: globalPlatformSubPlatforms })).catch((error) => onNotify?.(error.message));
     }, 350);
     return () => window.clearTimeout(timer);
   }, [editableUsers, globalClarifications, globalPlatformSubPlatforms, activeBoxId, boxes, api, config, onConfigChange, onNotify]);
@@ -2824,6 +2820,7 @@ function App() {
   const pendingSaveRef = React.useRef(null);
   const saveTimerRef = React.useRef(null);
   const saveInFlightRef = React.useRef(false);
+  const configSaveChainRef = React.useRef(Promise.resolve());
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const readOnly = caja?.status !== "ABIERTA";
@@ -2973,39 +2970,43 @@ function App() {
   };
   const updateLogisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
-    const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) }));
     if (result.config) setConfig(result.config);
   };
   const updateStatisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
-    const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) }));
     if (result.config) setConfig(result.config);
   };
   const updateConfigState = async (nextConfig) => {
     setConfig(nextConfig);
-    const result = await api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) }));
     if (result.config) setConfig(result.config);
   };
   const updateAccountsFromLogistics = (accounts) => update({ accounts }, true);
-  const saveConfig = async (nextConfig, boxId) => {
+  const enqueueConfigSave = (operation) => {
+    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(operation);
+    configSaveChainRef.current = queuedSave.catch(() => undefined);
+    return queuedSave;
+  };
+  const saveConfig = (nextConfig, boxId) => enqueueConfigSave(async () => {
     const result = await api(`/api/configuracion?boxId=${boxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
     if (boxId === activeBoxId) {
       setConfig(result.config);
       setCaja(result.current);
     }
     // Replicate global user config (clarifications and platformSubPlatforms) to all boxes
-    if (nextConfig.userClarifications || nextConfig.platformSubPlatforms) {
+    if (nextConfig.userClarifications !== undefined || nextConfig.platformSubPlatforms !== undefined || nextConfig.users !== undefined) {
       const globalUpdate = {};
-      if (nextConfig.userClarifications) globalUpdate.userClarifications = nextConfig.userClarifications;
-      if (nextConfig.platformSubPlatforms) globalUpdate.platformSubPlatforms = nextConfig.platformSubPlatforms;
-      await Promise.all((boxes || []).filter((box) => box.id !== boxId).map(async (box) => {
-        const boxConfig = await api(`/api/configuracion?boxId=${box.id}`).catch(() => null);
-        if (boxConfig) {
-          await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate }) });
-        }
-      })).catch((error) => onNotify?.(error.message));
+      if (nextConfig.userClarifications !== undefined) globalUpdate.userClarifications = nextConfig.userClarifications;
+      if (nextConfig.platformSubPlatforms !== undefined) globalUpdate.platformSubPlatforms = nextConfig.platformSubPlatforms;
+      if (nextConfig.users !== undefined) globalUpdate.users = nextConfig.users;
+      for (const box of (boxes || []).filter((item) => item.id !== boxId)) {
+        const boxConfig = await api(`/api/configuracion?boxId=${box.id}`);
+        await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate }) });
+      }
     }
-  };
+  });
   const manageBoxes = async ({ type, id, patch }) => {
     if (type === "create") { const created = await api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue" }) }); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
     if (type === "delete") { const next = await api(`/api/cajas/${id}`, { method: "DELETE" }); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
