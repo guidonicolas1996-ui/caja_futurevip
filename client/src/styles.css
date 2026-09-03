@@ -692,11 +692,17 @@ main {
 .bonuses-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .bonuses-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
 .bonuses-head span { color: var(--muted); font-size: 11px; }
-.bonuses-toolbar { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 7px; }
+.bonuses-toolbar { position: relative; display: flex; align-items: flex-end; flex-wrap: wrap; gap: 7px; }
 .bonuses-toolbar input { width: min(300px, 22vw); }
 .bonuses-toolbar select { width: 150px; }
 .bonuses-toolbar label { display: grid; gap: 4px; color: var(--muted); font-size: 9px; }
 .bonuses-toolbar label span { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; }
+.bonuses-toolbar .filter-toggle { position: relative; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: #202a2c; color: var(--box-accent); }
+.bonuses-toolbar .filter-toggle:hover, .bonuses-toolbar .filter-toggle.active { border-color: var(--box-accent); background: var(--box-soft); }
+.bonuses-toolbar .filter-toggle i { position: absolute; top: 5px; right: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+.bonuses-toolbar .new-bonus-button { flex: 0 0 32px; }
+.bonus-filters { position: absolute; top: calc(100% + 8px); right: 40px; z-index: 5; display: grid; grid-template-columns: repeat(3, minmax(130px, 1fr)) auto; align-items: end; gap: 9px; min-width: 480px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #171d20; box-shadow: 0 12px 28px rgba(0, 0, 0, .35); }
+.bonus-filters .sort-direction { margin: 0; }
 .bonuses-toolbar .sort-direction { width: 32px; height: 32px; margin-bottom: 0; border: 1px solid var(--line); border-radius: 5px; background: #202a2c; color: var(--box-accent); font-size: 18px; line-height: 1; }
 .bonuses-toolbar .sort-direction:hover { border-color: var(--box-accent); background: var(--box-soft); }
 .bonus-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
@@ -722,7 +728,7 @@ main {
 .bonus-condition-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
 .bonus-condition-editor-head .config-add { margin-top: 0; }
 .bonus-condition-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 28px; gap: 7px; }
-@media (max-width: 760px) { .bonuses-head { flex-direction: column; align-items: stretch; } .bonuses-toolbar { align-items: stretch; } .bonuses-toolbar input { width: 100%; } .bonuses-toolbar select { flex: 1; } .bonuses-toolbar label { flex: 1; } .bonuses-toolbar .sort-direction { align-self: end; } }
+@media (max-width: 760px) { .bonuses-head { flex-direction: column; align-items: stretch; } .bonuses-toolbar { align-items: stretch; } .bonuses-toolbar input { width: calc(100% - 71px); flex: 1 1 auto; } .bonuses-toolbar .filter-toggle, .bonuses-toolbar .new-bonus-button { flex: 0 0 32px; } .bonus-filters { right: 0; grid-template-columns: 1fr 1fr; min-width: 0; width: min(100%, 360px); } .bonuses-toolbar select { flex: 1; } .bonuses-toolbar label { flex: 1; } .bonuses-toolbar .sort-direction { align-self: end; } }
 .users-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
 .users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .users-head h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; }
