@@ -2556,7 +2556,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
               {index > 0 && editable && <button type="button" className="delete-button" title={`Eliminar ${label}`} onClick={async () => { if (await confirmDelete(`¿Eliminar "${value || "vacío"}"?`)) onDelete(index); }}><Trash2 size={13} /></button>}
             </div>
           ))}
-          <button className="config-add" type="button" disabled={!editable || !valueList.length || !String(valueList[valueList.length - 1] || "").trim()} onClick={onAdd}><Plus size={15} /> {addLabel}</button>
+          {editable && <button className="config-add" type="button" disabled={!valueList.length || !String(valueList[valueList.length - 1] || "").trim()} onClick={onAdd}><Plus size={15} /> {addLabel}</button>}
         </div>
       </div>
       {valueList === newUser.titulars && <label className="field-block"><span>Panel</span><select value={userInfoValueFor(newUser.userInfo)} onChange={(event) => setNewUser((current) => ({ ...current, userInfo: userInfoFromValue(event.target.value) }))}><option value="">Sin seleccionar</option>{userInfoOptionsFor(newUser.boxes || []).map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>}
