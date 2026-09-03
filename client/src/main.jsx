@@ -1941,31 +1941,19 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
   </section>;
 }
 
-function MiniUsersPanel({ config, boxes, activeBoxId, onConfigChange, onNotify }) {
+function MiniUsersPanel({ config, boxes, onOpenUsers }) {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [newUserOpen, setNewUserOpen] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", phone: "", titular: "", boxId: activeBoxId });
   const users = Array.isArray(config.users) ? config.users : [];
   const boxById = Object.fromEntries((boxes || []).map((box) => [String(box.id), box]));
+  const panelValueFor = (user) => typeof user.userInfo === "object" ? user.userInfo?.value : user.userInfo;
   const displayName = (user) => user.names?.filter(Boolean).join(" / ") || user.name || user.titulars?.filter(Boolean).join(" / ") || user.titular || "Usuario sin nombre";
   const visibleUsers = users.filter((user) => `${displayName(user)} ${user.phones?.join(" ") || user.phone || ""} ${user.titulars?.join(" ") || user.titular || ""}`.toLowerCase().includes(search.toLowerCase()));
-  const saveNewUser = () => {
-    const name = newUser.name.trim();
-    const phone = newUser.phone.trim();
-    if (!name || !phone) { onNotify?.("Completá nombre y teléfono."); return; }
-    const nextUser = { id: `user-${crypto.randomUUID()}`, names: [name], phones: [phone], titulars: newUser.titular.trim() ? [newUser.titular.trim()] : [], boxes: [newUser.boxId || activeBoxId], subPlatforms: [], clarifications: [], linkedUsers: [], createdAt: new Date().toISOString() };
-    onConfigChange({ ...config, users: [...users, nextUser] });
-    setNewUser({ name: "", phone: "", titular: "", boxId: activeBoxId });
-    setNewUserOpen(false);
-    onNotify?.("Usuario dado de alta.");
-  };
   return <section className="panel mini-users-panel">
-    <div className="section-head mini-users-head"><div className="section-title"><Users size={18} /><div><h2>Usuarios</h2></div></div><button className="icon-button" type="button" title="Dar de alta usuario" onClick={() => { setNewUser({ name: "", phone: "", titular: "", boxId: activeBoxId }); setNewUserOpen(true); }}><UserPlus size={16} /></button></div>
+    <div className="section-head mini-users-head"><div className="section-title"><Users size={18} /><div><h2>Usuarios</h2></div></div><button className="config-add mini-users-add" type="button" title="Dar de alta usuario" onClick={onOpenUsers}><UserPlus size={15} /> Nuevo usuario</button></div>
     <div className="mini-users-search"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar usuario" aria-label="Buscar usuario" /></div>
     <div className="mini-users-list">{visibleUsers.map((user) => <button className="mini-user-row" type="button" key={user.id} onClick={() => setSelectedUser(user)}><span className="mini-user-avatar"><UserPlus size={13} /></span><span><strong>{displayName(user)}</strong><small>{user.phones?.[0] || user.phone || "Sin teléfono"}</small></span><ChevronRight size={14} /></button>)}{visibleUsers.length === 0 && <span className="mini-users-empty">No se encontraron usuarios.</span>}</div>
-    {selectedUser && <div className="modal-backdrop" onClick={() => setSelectedUser(null)}><div className="modal mini-user-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cerrar" onClick={() => setSelectedUser(null)}><X size={18} /></button><div className="modal-icon"><Users size={21} /></div><h2>{displayName(selectedUser)}</h2><div className="mini-user-details"><div><span>Teléfono</span><strong>{selectedUser.phones?.join(" / ") || selectedUser.phone || "Sin teléfono"}</strong></div><div><span>Titular</span><strong>{selectedUser.titulars?.join(" / ") || selectedUser.titular || "Sin titular"}</strong></div><div><span>Cajas</span><strong>{(selectedUser.boxes || []).map((boxId) => boxById[String(boxId)]?.title).filter(Boolean).join(" / ") || "Sin caja"}</strong></div><div><span>Alta</span><strong>{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString("es-AR") : "Sin fecha"}</strong></div></div><div className="modal-actions"><button className="close-button" type="button" onClick={() => setSelectedUser(null)}>Listo <Check size={16} /></button></div></div></div>}
-    {newUserOpen && <div className="modal-backdrop" onClick={() => setNewUserOpen(false)}><div className="modal mini-user-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cerrar" onClick={() => setNewUserOpen(false)}><X size={18} /></button><div className="modal-icon"><UserPlus size={21} /></div><h2>Nuevo usuario</h2><div className="mini-user-form"><label><span>Nombre</span><input value={newUser.name} onChange={(event) => setNewUser((current) => ({ ...current, name: event.target.value }))} /></label><label><span>Teléfono</span><input value={newUser.phone} onChange={(event) => setNewUser((current) => ({ ...current, phone: event.target.value }))} /></label><label><span>Titular</span><input value={newUser.titular} onChange={(event) => setNewUser((current) => ({ ...current, titular: event.target.value }))} /></label><label><span>Caja</span><select value={newUser.boxId || ""} onChange={(event) => setNewUser((current) => ({ ...current, boxId: event.target.value }))}>{boxes.map((box) => <option value={box.id} key={box.id}>{box.title}</option>)}</select></label></div><div className="modal-actions"><button className="ghost-button" type="button" onClick={() => setNewUserOpen(false)}>Cancelar</button><button className="close-button" type="button" onClick={saveNewUser}>Guardar <Check size={16} /></button></div></div></div>}
+    {selectedUser && <div className="modal-backdrop" onClick={() => setSelectedUser(null)}><div className="modal mini-user-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" type="button" title="Cerrar" onClick={() => setSelectedUser(null)}><X size={18} /></button><div className="modal-icon"><Users size={21} /></div><h2>{displayName(selectedUser)}</h2><div className="mini-user-details"><div><span>Teléfono</span><strong>{selectedUser.phones?.join(" / ") || selectedUser.phone || "Sin teléfono"}</strong></div><div><span>Titular</span><strong>{selectedUser.titulars?.join(" / ") || selectedUser.titular || "Sin titular"}</strong></div><div><span>Panel</span><strong>{panelValueFor(selectedUser) || "Sin panel"}</strong></div><div><span>Fecha creación</span><strong>{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString("es-AR") : "Sin fecha"}</strong></div><div><span>Cajas</span><strong>{(selectedUser.boxes || []).map((boxId) => boxById[String(boxId)]?.title).filter(Boolean).join(" / ") || "Sin caja"}</strong></div><div><span>Subplataformas</span><strong>{(selectedUser.subPlatforms || []).map((key) => key.split("::").at(-1)).filter(Boolean).join(" / ") || "Sin subplataforma"}</strong></div><div><span>Aclaraciones</span><strong>{(selectedUser.clarifications || []).map((id) => config.userClarifications?.find((item) => item.id === id)?.text).filter(Boolean).join(" / ") || "Sin aclaraciones"}</strong></div><div><span>Usuarios vinculados</span><strong>{(selectedUser.linkedUsers || []).map((id) => users.find((item) => item.id === id)).filter(Boolean).map(displayName).join(" / ") || "Sin vínculos"}</strong></div></div><div className="modal-actions"><button className="close-button" type="button" onClick={() => setSelectedUser(null)}>Listo <Check size={16} /></button></div></div></div>}
   </section>;
 }
 
@@ -3321,7 +3309,7 @@ function App() {
             <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
             <div className="dashboard-route-grid">
               <WalletRoute caja={caja} config={config} onUpdateAccounts={updateAccountsFromLogistics} />
-              <MiniUsersPanel config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} />
+              <MiniUsersPanel config={config} boxes={boxes} onOpenUsers={() => { setUsersOpen(true); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setBonusesOpen(false); }} />
             </div>
             <div className="operations-grid">
               <QuickMovementSection

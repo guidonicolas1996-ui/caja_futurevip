@@ -2508,7 +2508,7 @@ select:focus {
 .mini-user-avatar { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--box-line); border-radius: 50%; color: var(--box-accent); }
 .mini-users-empty { padding: 16px 6px; color: var(--muted); font-size: 10px; text-align: center; }
 .mini-user-modal { width: min(440px, calc(100% - 32px)); }
-.mini-user-details, .mini-user-form { display: grid; gap: 10px; }
+.mini-user-details { display: grid; gap: 10px; max-height: 52vh; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: #526567 transparent; }
 .mini-user-details > div { display: grid; gap: 3px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .mini-user-details span, .mini-user-form span { color: var(--muted); font-size: 10px; }
 .mini-user-details strong { font-size: 12px; }
