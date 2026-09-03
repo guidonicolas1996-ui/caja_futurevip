@@ -1937,7 +1937,7 @@ select:focus {
 .transfer-history { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .transfer-row b.transfer-out { color: var(--green); }
 .transfer-row b.transfer-in { color: var(--red); }
-.transfer-modal { width: min(620px, calc(100% - 32px)); }
+.transfer-modal { width: min(760px, calc(100% - 32px)); }
 .transfer-edit-list { max-height: 52vh; overflow-y: auto; }
 .transfer-edit-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 110px 30px 30px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(82,101,103,.35); }
 .transfer-edit-row > div { display: flex; gap: 6px; align-items: baseline; min-width: 0; }
