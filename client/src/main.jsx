@@ -1999,7 +1999,7 @@ function MiniBonusesPanel({ config, activeBoxId, api }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const types = config.bonusTypes || [];
   const conditions = config.bonusConditions || [];
-  const imageUrl = (id, download = false) => `${import.meta.env.VITE_API_URL || ""}/api/bonos/${id}/imagen?boxId=${activeBoxId}&mini=1${download ? "&download=1" : ""}`;
+  const imageUrl = (id, download = false) => `${import.meta.env.VITE_API_URL || ""}/api/bonos/${id}/imagen?boxId=${activeBoxId}${download ? "&download=1" : "&mini=1"}`;
   useEffect(() => {
     let cancelled = false;
     api(`/api/bonos?boxId=${activeBoxId}`).then((nextBonuses) => { if (!cancelled) setBonuses(nextBonuses); }).catch(() => { if (!cancelled) setBonuses([]); });
