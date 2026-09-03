@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import sharp from 'sharp';
 
 const supabaseUrl = process.env.SUPABASE_URL?.trim();
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -289,12 +290,53 @@ async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
   if (index < 0) throw new Error('Bono no encontrado'); if (!buffer?.length) throw new Error('No se recibió ninguna imagen');
   const extension = String(metadata?.name || '').split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin'; const path = `${space.id}/${id}.${extension}`; const storage = requireSupabase().storage.from('bonos');
   const { error } = await storage.upload(path, buffer, { contentType: metadata?.type || 'application/octet-stream', upsert: true }); if (error) throw new Error(`No se pudo subir la imagen: ${error.message}`);
+  try {
+    const thumbnail = await sharp(buffer).resize({ width: 180, height: 320, fit: 'inside', withoutEnlargement: true }).png({ compressionLevel: 9, palette: true }).toBuffer();
+    await storage.upload(`mini-${space.id}/${id}.${extension}`, thumbnail, { contentType: 'image/png', upsert: true });
+  } catch (thumbnailError) {
+    console.error(`No se pudo generar la miniatura de ${id}: ${thumbnailError.message}`);
+  }
   const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: config.bonuses[index] };
 }
 export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
-export async function downloadBonusImage(id, boxId) {
+const thumbnailPathFor = (spaceId, imagePath) => {
+  const fileName = String(imagePath || '').split('/').pop();
+  return fileName ? `mini-${spaceId}/${fileName}` : '';
+};
+export async function createBonusThumbnails() {
+  const spaces = await readSpaces();
+  const storage = requireSupabase().storage.from('bonos');
+  let created = 0;
+  let skipped = 0;
+  let failed = 0;
+  for (const space of spaces) {
+    const config = normalizeConfig(space.config);
+    for (const bonus of config.bonuses) {
+      if (!bonus.imagePath) { skipped += 1; continue; }
+      try {
+        const { data, error } = await storage.download(bonus.imagePath);
+        if (error) throw new Error(error.message);
+        const thumbnail = await sharp(Buffer.from(await data.arrayBuffer()))
+          .resize({ width: 180, height: 320, fit: 'inside', withoutEnlargement: true })
+          .png({ compressionLevel: 9, palette: true })
+          .toBuffer();
+        const { error: uploadError } = await storage.upload(thumbnailPathFor(space.id, bonus.imagePath), thumbnail, { contentType: 'image/png', upsert: true });
+        if (uploadError) throw new Error(uploadError.message);
+        created += 1;
+      } catch (error) {
+        failed += 1;
+        console.error(`No se pudo crear la miniatura de ${space.id}/${bonus.id}: ${error.message}`);
+      }
+    }
+  }
+  return { created, skipped, failed };
+}
+export async function downloadBonusImage(id, boxId, mini = false) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const bonus = normalizeConfig(space.config).bonuses.find((item) => item.id === id); if (!bonus?.imagePath) throw new Error('El bono no tiene imagen');
-  const { data, error } = await requireSupabase().storage.from('bonos').download(bonus.imagePath); if (error) throw new Error(`No se pudo descargar la imagen: ${error.message}`);
+  const storage = requireSupabase().storage.from('bonos');
+  let { data, error } = await storage.download(mini ? thumbnailPathFor(space.id, bonus.imagePath) : bonus.imagePath);
+  if (mini && error) ({ data, error } = await storage.download(bonus.imagePath));
+  if (error) throw new Error(`No se pudo descargar la imagen: ${error.message}`);
   const originalName = bonus.imageName || bonus.imagePath.split('/').pop() || `${id}.bin`;
   const extension = originalName.includes('.') ? originalName.split('.').pop().replace(/[^a-z0-9]/gi, '').toLowerCase() : 'bin';
   const safeBonusName = bonus.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '').replace(/[. ]+$/g, '').trim() || id;

@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, createBonus, updateBonus, deleteBonus, uploadBonusImage, downloadBonusImage, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
+import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, createBonus, updateBonus, deleteBonus, uploadBonusImage, downloadBonusImage, createBonusThumbnails, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
 
 const app = express();
 app.use(cors());
@@ -26,8 +26,9 @@ app.post('/api/bonos/:id/imagen', express.raw({ type: '*/*', limit: '20mb' }), a
   try { res.json(await uploadBonusImage(req.params.id, req.body, { name: req.headers['x-file-name'], type: req.headers['content-type'] }, req.query.boxId)); }
   catch (error) { res.status(400).json({ error: error.message }); }
 });
+app.post('/api/bonos/miniaturas', handle(() => createBonusThumbnails()));
 app.get('/api/bonos/:id/imagen', async (req, res) => {
-  try { const image = await downloadBonusImage(req.params.id, req.query.boxId); res.set('Content-Type', image.type); res.set('Content-Disposition', `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="${encodeURIComponent(image.name)}"`); res.send(Buffer.from(await image.data.arrayBuffer())); }
+  try { const image = await downloadBonusImage(req.params.id, req.query.boxId, req.query.mini === '1'); res.set('Content-Type', image.type); res.set('Content-Disposition', `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="${encodeURIComponent(image.name)}"`); res.send(Buffer.from(await image.data.arrayBuffer())); }
   catch (error) { res.status(404).json({ error: error.message }); }
 });
 app.put('/api/caja/actualizar', handle((req) => updateCurrent(req.body, req.query.boxId)));
