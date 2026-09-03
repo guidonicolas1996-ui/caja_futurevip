@@ -2604,8 +2604,9 @@ select:focus {
   justify-content: flex-end;
   gap: 5px;
 }
+.history-actions.has-back { grid-template-columns: 57px repeat(5, 38px); }
 .current-shift-heading h1 { display: flex; align-items: center; flex-wrap: wrap; gap: 0; }
-.current-page-label { margin-left: 32px; color: var(--muted); font-size: 0.58em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.current-page-label { margin-left: 32px; color: var(--cyan); font-size: inherit; font-weight: 800; letter-spacing: 0; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; }
 .pending-notes {
   grid-column: 1 / -1;
   justify-self: end;
