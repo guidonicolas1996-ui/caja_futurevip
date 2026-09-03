@@ -722,6 +722,9 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
 }
 
 function getProgressAccentState(percent, fallback) {
+  if (percent >= 85) {
+    return { accent: "#e8d477", glow: "rgba(232, 212, 119, 0.58)", line: "rgba(232, 212, 119, 0.46)" };
+  }
   return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
 }
 
