@@ -2498,7 +2498,7 @@ select:focus {
 .mini-users-head { flex: 0 0 auto; }
 .mini-users-search { padding: 0 18px 10px; }
 .mini-users-search input { width: 100%; min-width: 0; }
-.mini-users-list { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; gap: 5px; overflow-y: auto; padding: 0 12px 12px; }
+.mini-users-list { display: flex; flex: 1 1 auto; min-height: 0; flex-direction: column; gap: 5px; overflow-y: auto; padding: 0 12px 12px; scrollbar-width: thin; scrollbar-color: #526567 transparent; }
 .mini-user-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) 14px; align-items: center; gap: 8px; width: 100%; padding: 7px 6px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #dce8e6; text-align: left; }
 .mini-user-row:hover, .mini-user-row:focus-visible { border-color: var(--box-line); background: var(--box-soft); outline: 0; }
 .mini-user-row > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
