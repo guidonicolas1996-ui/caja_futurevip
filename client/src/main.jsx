@@ -193,7 +193,7 @@ let confirmDialogController = null;
 const confirmDelete = (message = "¿Estás seguro?") =>
   new Promise((resolve) => {
     if (confirmDialogController) {
-      confirmDialogController({ message, onConfirm: resolve });
+      confirmDialogController({ message, onConfirm: () => resolve(true), onCancel: () => resolve(false), confirmLabel: "Eliminar" });
     } else {
       const confirmed = window.confirm(message);
       resolve(confirmed);
@@ -2843,14 +2843,15 @@ function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, ac
   );
 }
 
-function ConfirmDialog({ dialog, onClose }) {
-  if (!dialog) return null;
+function ConfirmDialog({ dialog, onClose, message, onConfirm, onCancel, confirmLabel = "Confirmar" }) {
+  const currentDialog = dialog || (message ? { message, onConfirm, onCancel, confirmLabel } : null);
+  if (!currentDialog) return null;
   const handleConfirm = () => {
-    dialog.onConfirm(true);
+    currentDialog.onConfirm?.(true);
     onClose();
   };
   const handleCancel = () => {
-    dialog.onConfirm(false);
+    currentDialog.onCancel?.(false);
     onClose();
   };
   return createPortal(
@@ -2860,10 +2861,10 @@ function ConfirmDialog({ dialog, onClose }) {
           <h2 style={{ margin: 0, fontSize: "18px", fontWeight: "600" }}>Confirmar acción</h2>
           <button className="modal-close" type="button" title="Cerrar" onClick={handleCancel}><X size={18} /></button>
         </div>
-        <p style={{ marginBottom: "28px", color: "#c5cdd2", lineHeight: "1.6", fontSize: "15px" }}>{dialog.message}</p>
+        <p style={{ marginBottom: "28px", color: "#c5cdd2", lineHeight: "1.6", fontSize: "15px" }}>{currentDialog.message}</p>
         <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
           <button onClick={handleCancel} style={{ padding: "10px 20px", borderRadius: "6px", border: "1px solid var(--line)", background: "transparent", color: "#e7edf1", cursor: "pointer", fontWeight: "500", fontSize: "14px", transition: "all 0.2s", hover: { background: "var(--panel)" } }}>Cancelar</button>
-          <button onClick={handleConfirm} style={{ padding: "10px 20px", borderRadius: "6px", background: "var(--danger)", color: "white", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "14px", transition: "all 0.2s" }}>Eliminar</button>
+          <button onClick={handleConfirm} style={{ padding: "10px 20px", borderRadius: "6px", background: "var(--danger)", color: "white", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "14px", transition: "all 0.2s" }}>{currentDialog.confirmLabel || "Confirmar"}</button>
         </div>
       </div>
     </div>,
@@ -2921,8 +2922,8 @@ function App() {
     return () => document.removeEventListener("dragstart", preventInputDrag);
   }, []);
   useEffect(() => {
-    confirmDialogController = ({ message, onConfirm }) => {
-      setConfirmDialog({ message, onConfirm });
+    confirmDialogController = ({ message, onConfirm, onCancel, confirmLabel }) => {
+      setConfirmDialog({ message, onConfirm, onCancel, confirmLabel });
     };
     return () => {
       confirmDialogController = null;
