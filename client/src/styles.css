@@ -728,7 +728,15 @@ main {
 .bonus-condition-editor { display: flex; flex-direction: column; gap: 8px; }
 .bonus-condition-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; }
 .bonus-condition-editor-head .config-add { margin-top: 0; }
-.bonus-condition-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) 28px; gap: 7px; }
+.bonus-condition-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) minmax(120px, 1fr); gap: 7px; }
+.bonus-condition-config-row { align-items: center; }
+.bonus-platform-toggle { display: flex; align-items: center; gap: 6px; flex: 0 0 112px; color: var(--muted); font-size: 9px; white-space: nowrap; }
+.bonus-platform-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.bonus-platform-toggle span { width: 28px; height: 16px; position: relative; border-radius: 10px; background: #354447; cursor: pointer; }
+.bonus-platform-toggle span::after { content: ""; position: absolute; width: 12px; height: 12px; top: 2px; left: 2px; border-radius: 50%; background: #718083; transition: transform 120ms ease; }
+.bonus-platform-toggle input:checked + span { background: #34746d; }
+.bonus-platform-toggle input:checked + span::after { background: #c5fff1; transform: translateX(12px); }
+@media (max-width: 700px) { .bonus-condition-config-row { flex-wrap: wrap; } .bonus-condition-config-row > input { flex: 1 1 100%; } .bonus-condition-row { grid-template-columns: 78px minmax(0, 1fr); } .bonus-condition-row select:last-child { grid-column: 1 / -1; } }
 @media (max-width: 760px) { .bonuses-head { flex-direction: column; align-items: stretch; } .bonuses-toolbar { align-items: stretch; } .bonuses-toolbar input { width: calc(100% - 71px); flex: 1 1 auto; } .bonuses-toolbar .filter-toggle, .bonuses-toolbar .new-bonus-button { flex: 0 0 32px; } .bonus-filters { right: 0; grid-template-columns: 1fr; min-width: 0; width: calc(100vw - 32px); max-width: 620px; } .bonuses-toolbar select { flex: 1; } .bonuses-toolbar label { flex: 1; } .bonuses-toolbar .sort-direction { align-self: end; } }
 .users-panel { display: flex; flex-direction: column; gap: 18px; padding: 18px; }
 .users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

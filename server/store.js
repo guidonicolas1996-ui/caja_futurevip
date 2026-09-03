@@ -208,12 +208,12 @@ function normalizeConfig(config) {
   })) : [];
   const userInfoOptions = Array.isArray(config?.userInfoOptions) ? config.userInfoOptions.map((option) => String(option || '').trim()).filter(Boolean) : [];
   const bonusTypes = Array.isArray(config?.bonusTypes) ? config.bonusTypes.map((type) => ({ id: String(type?.id || `bonus-type-${crypto.randomUUID()}`), name: String(type?.name || '').trim(), percentageCount: Math.max(1, Math.min(20, Number(type?.percentageCount) || 1)) })).filter((type) => type.name) : [];
-  const bonusConditions = Array.isArray(config?.bonusConditions) ? config.bonusConditions.map((condition) => ({ id: String(condition?.id || `bonus-condition-${crypto.randomUUID()}`), label: String(condition?.label || '').trim() })).filter((condition) => condition.label) : [];
+  const bonusConditions = Array.isArray(config?.bonusConditions) ? config.bonusConditions.map((condition) => ({ id: String(condition?.id || `bonus-condition-${crypto.randomUUID()}`), label: String(condition?.label || '').trim(), allowPlatform: condition?.allowPlatform === true })).filter((condition) => condition.label) : [];
   const bonuses = Array.isArray(config?.bonuses) ? config.bonuses.map((bonus) => ({
     id: String(bonus?.id || `bonus-${crypto.randomUUID()}`),
     name: String(bonus?.name || '').trim(),
     typeId: String(bonus?.typeId || ''),
-    conditions: Array.isArray(bonus?.conditions) ? bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })) : [],
+    conditions: Array.isArray(bonus?.conditions) ? bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0, platform: String(item?.platform || '') })) : [],
     imagePath: String(bonus?.imagePath || ''),
     imageName: String(bonus?.imageName || ''),
     imageType: String(bonus?.imageType || ''),
@@ -252,14 +252,14 @@ async function createBonusUnsafe(payload = {}, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config);
   const bonus = { id: `bonus-${crypto.randomUUID()}`, name: String(payload.name || '').trim(), typeId: String(payload.typeId || ''), conditions: Array.isArray(payload.conditions) ? payload.conditions : [], imagePath: '', imageName: '', imageType: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   if (!bonus.name || !config.bonusTypes.some((type) => type.id === bonus.typeId)) throw new Error('Completá el nombre y el tipo de bono');
-  bonus.conditions = bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })).filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId));
+  bonus.conditions = bonus.conditions.map((item) => { const condition = config.bonusConditions.find((candidate) => candidate.id === String(item?.conditionId || '')); const platform = String(item?.platform || ''); return { conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0, platform: condition?.allowPlatform && config.platforms.includes(platform) ? platform : '' }; }).filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId));
   space.config = { ...config, bonuses: [...config.bonuses, bonus] }; await writeSpaces(spaces); return { bonus };
 }
 export const createBonus = (payload, boxId) => withBonusOperationLock(() => createBonusUnsafe(payload, boxId));
 async function updateBonusUnsafe(id, payload = {}, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const index = config.bonuses.findIndex((bonus) => bonus.id === id);
   if (index < 0) throw new Error('Bono no encontrado');
-  const current = config.bonuses[index]; const next = { ...current, name: String(payload.name ?? current.name).trim(), typeId: String(payload.typeId ?? current.typeId), conditions: Array.isArray(payload.conditions) ? payload.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })) : current.conditions, updatedAt: new Date().toISOString() };
+  const current = config.bonuses[index]; const next = { ...current, name: String(payload.name ?? current.name).trim(), typeId: String(payload.typeId ?? current.typeId), conditions: Array.isArray(payload.conditions) ? payload.conditions.map((item) => { const condition = config.bonusConditions.find((candidate) => candidate.id === String(item?.conditionId || '')); const platform = String(item?.platform || ''); return { conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0, platform: condition?.allowPlatform && config.platforms.includes(platform) ? platform : '' }; }) : current.conditions, updatedAt: new Date().toISOString() };
   if (!next.name || !config.bonusTypes.some((type) => type.id === next.typeId)) throw new Error('Completá el nombre y el tipo de bono');
   next.conditions = next.conditions.filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId)); config.bonuses[index] = next; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: next };
 }
