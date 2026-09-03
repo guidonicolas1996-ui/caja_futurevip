@@ -2622,7 +2622,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
               <div className="check-group">
                 <span>Cajas</span>
                 <div className="checkbox-list">
-                  {(boxes || []).map((box) => {
+                  {(boxes || []).filter((box) => editing || selectedUserBoxes.includes(box.id)).map((box) => {
                     const checked = selectedUserBoxes.includes(box.id);
                     return <label className="user-switch" key={box.id} style={{ "--switch-accent": boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={checked} onChange={() => { if (checked && selectedUserBoxes.length <= 1) { onNotify?.("El usuario necesita al menos una caja."); return; } if (checked && (user.subPlatforms || []).filter((key) => key.startsWith(`${box.id}::`)).length === (user.subPlatforms || []).length) { onNotify?.("El usuario necesita al menos una plataforma."); return; } updateUsers(users.map((item) => item.id === user.id ? { ...item, boxes: checked ? (item.boxes || []).filter((id) => id !== box.id) : [...(item.boxes || []), box.id], subPlatforms: checked ? (item.subPlatforms || []).filter((key) => !key.startsWith(`${box.id}::`)) : (item.subPlatforms || []) } : item)); }} /><i /> <span>{box.title}</span></label>;
                   })}
@@ -2633,8 +2633,9 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
                 <div className="checkbox-list subplatforms-grouped">
                   {(boxes || []).filter((box) => selectedUserBoxes.includes(box.id)).map((box) => {
                     const subOptions = boxSubPlatformsFor(box.id);
-                    if (subOptions.length === 0) return null;
-                    return <div key={box.id} className="subplatforms-group" style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}><div className="subplatforms-group-title">{box.title}</div>{subOptions.map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={(user.subPlatforms || []).includes(option.key)} onChange={() => { const checked = (user.subPlatforms || []).includes(option.key); if (checked && (user.subPlatforms || []).length <= 1) { onNotify?.("El usuario necesita al menos una plataforma."); return; } updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: checked ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item)); }} /><i /> <span>{option.label}</span></label>)}</div>;
+                    const visibleOptions = subOptions.filter((option) => editing || (user.subPlatforms || []).includes(option.key));
+                    if (visibleOptions.length === 0) return null;
+                    return <div key={box.id} className="subplatforms-group" style={{ "--box-pill-accent": boxColorStyle(box.color)["--box-accent"] }}><div className="subplatforms-group-title">{box.title}</div>{visibleOptions.map((option) => <label className="user-switch" key={option.key} style={{ "--switch-accent": boxColorStyle(option.color)["--box-accent"] }}><input type="checkbox" disabled={!editing} checked={(user.subPlatforms || []).includes(option.key)} onChange={() => { const checked = (user.subPlatforms || []).includes(option.key); if (checked && (user.subPlatforms || []).length <= 1) { onNotify?.("El usuario necesita al menos una plataforma."); return; } updateUsers(users.map((item) => item.id === user.id ? { ...item, subPlatforms: checked ? (item.subPlatforms || []).filter((sub) => sub !== option.key) : [...(item.subPlatforms || []), option.key] } : item)); }} /><i /> <span>{option.label}</span></label>)}</div>;
                   })}
                 </div>
               </div>
@@ -2642,7 +2643,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
             <div className="user-clarifications">
               <span>Aclaraciones</span>
               <div className="checkbox-list compact">
-                {(clarifications || []).map((clarification) => {
+                {(clarifications || []).filter((clarification) => editing || selectedClarifications.has(clarification.id)).map((clarification) => {
                   const checked = selectedClarifications.has(clarification.id);
                   return <label key={clarification.id} className="clarification-pill user-switch" style={{ "--switch-accent": boxColorStyle(clarification.color || "teal")["--box-accent"], borderColor: clarification.color ? `var(--${clarification.color})` : undefined, color: `var(--${clarification.color || "teal"})` }}>
                     <input type="checkbox" disabled={!editing} checked={checked} onChange={() => updateUsers(users.map((item) => item.id === user.id ? { ...item, clarifications: checked ? (item.clarifications || []).filter((id) => id !== clarification.id) : [...(item.clarifications || []), clarification.id] } : item))} />
