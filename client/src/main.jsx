@@ -2440,7 +2440,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
     Promise.all((boxes || []).map((box) => api(`/api/configuracion?boxId=${box.id}`).catch(() => ({ users: [] }))))
       .then((configs) => {
         if (cancelled) return;
-        setEditableUsers(mergeUsers([configUsers, ...configs.map((item) => item.users)]));
+        setEditableUsers(configUsers);
         setGlobalClarifications(Array.isArray(config?.userClarifications) ? config.userClarifications : []);
         setGlobalPlatformSubPlatforms(config?.platformSubPlatforms || {});
         setUserInfoOptionsByBox(Object.fromEntries((boxes || []).map((box, index) => [String(box.id), Array.isArray(configs[index]?.userInfoOptions) ? configs[index].userInfoOptions : []])));
