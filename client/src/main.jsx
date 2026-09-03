@@ -1969,6 +1969,26 @@ function MiniUsersPanel({ config, boxes, activeBoxId, onConfigChange, onNotify }
   </section>;
 }
 
+function MiniBonusesPanel({ config, activeBoxId, api }) {
+  const [bonuses, setBonuses] = useState([]);
+  const [search, setSearch] = useState("");
+  const types = config.bonusTypes || [];
+  const conditions = config.bonusConditions || [];
+  const imageUrl = (id, download = false) => `${import.meta.env.VITE_API_URL || ""}/api/bonos/${id}/imagen?boxId=${activeBoxId}${download ? "&download=1" : ""}`;
+  useEffect(() => {
+    let cancelled = false;
+    api(`/api/bonos?boxId=${activeBoxId}`).then((nextBonuses) => { if (!cancelled) setBonuses(nextBonuses); }).catch(() => { if (!cancelled) setBonuses([]); });
+    return () => { cancelled = true; };
+  }, [activeBoxId]);
+  const typeNameFor = (bonus) => types.find((type) => type.id === bonus.typeId)?.name || "Sin tipo";
+  const visibleBonuses = bonuses.filter((bonus) => `${bonus.name} ${typeNameFor(bonus)} ${(bonus.conditions || []).map((item) => `${item.percentage} ${conditions.find((condition) => condition.id === item.conditionId)?.label || ""} ${item.platform || ""}`).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
+  return <section className="panel mini-bonuses-panel">
+    <div className="section-head mini-bonuses-head"><div className="section-title"><Gift size={18} /><div><h2>Bonos</h2></div></div></div>
+    <div className="mini-bonuses-search"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar bono" aria-label="Buscar bono" /></div>
+    <div className="mini-bonuses-list">{visibleBonuses.map((bonus) => <article className="mini-bonus-row" key={bonus.id}><div className="mini-bonus-image">{bonus.imagePath ? <img src={imageUrl(bonus.id)} alt={bonus.name} /> : <Gift size={15} />}</div><div className="mini-bonus-info"><strong>{bonus.name}</strong><small>{typeNameFor(bonus)}</small><span>{(bonus.conditions || []).map((item, index) => `${item.percentage}%${item.platform ? ` · ${item.platform}` : ""}${index < bonus.conditions.length - 1 ? " / " : ""}`)}</span></div>{bonus.imagePath && <a className="icon-button" title="Descargar bono" aria-label={`Descargar ${bonus.name}`} href={imageUrl(bonus.id, true)}><Download size={14} /></a>}</article>)}{visibleBonuses.length === 0 && <span className="mini-users-empty">No se encontraron bonos.</span>}</div>
+  </section>;
+}
+
 function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onConfigChange }) {
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -3321,6 +3341,7 @@ function App() {
             <AccountsGrid caja={caja} update={update} config={config} boxes={boxes} activeBoxId={activeBoxId} onAssignWallet={assignWallet} notesEnabled={notesEnabled} />
             <div className="dashboard-route-grid">
               <WalletRoute caja={caja} config={config} onUpdateAccounts={updateAccountsFromLogistics} />
+              <MiniBonusesPanel config={config} activeBoxId={activeBoxId} api={api} />
               <MiniUsersPanel config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} />
             </div>
             <div className="operations-grid">
