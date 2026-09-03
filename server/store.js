@@ -267,7 +267,7 @@ export const updateBonus = (id, payload, boxId) => withBonusOperationLock(() => 
 async function deleteBonusUnsafe(id, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const bonus = config.bonuses.find((item) => item.id === id);
   if (!bonus) throw new Error('Bono no encontrado');
-  if (bonus.imagePath) await requireSupabase().storage.from('bonos').remove([bonus.imagePath]);
+  if (bonus.imagePath) { const { error } = await requireSupabase().storage.from('bonos').remove([bonus.imagePath]); if (error) throw new Error(`No se pudo eliminar la imagen: ${error.message}`); }
   space.config = { ...config, bonuses: config.bonuses.filter((item) => item.id !== id) }; await writeSpaces(spaces); return { ok: true };
 }
 export const deleteBonus = (id, boxId) => withBonusOperationLock(() => deleteBonusUnsafe(id, boxId));

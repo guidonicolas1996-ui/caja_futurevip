@@ -706,6 +706,7 @@ main {
 .bonus-condition-list small { color: var(--muted); font-size: 9px; }
 .bonus-card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
 .bonus-card-actions a { text-decoration: none; }
+.bonus-delete-action { margin-right: auto; }
 .bonus-create-modal { width: min(560px, calc(100% - 32px)); display: flex; flex-direction: column; gap: 12px; }
 .bonus-create-modal > label { display: grid; gap: 6px; color: var(--muted); font-size: 10px; }
 .bonus-condition-editor { display: flex; flex-direction: column; gap: 8px; }
