@@ -12,6 +12,19 @@ const billeteras = ['Ualá', 'Mercado Pago', 'Personal Pay', 'Naranja X', 'Bruba
 const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
 const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
+let bonusOperationQueue = Promise.resolve();
+const withBonusOperationLock = (operation) => {
+  const queued = bonusOperationQueue.catch(() => undefined).then(async () => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try { return await operation(); }
+      catch (error) {
+        if (!error.message?.includes('BDD cambió desde la última lectura') || attempt === 2) throw error;
+      }
+    }
+  });
+  bonusOperationQueue = queued.catch(() => undefined);
+  return queued;
+};
 const nextShift = { Noche: 'Mañana', Mañana: 'Tarde', Tarde: 'Noche' };
 const previousShiftFor = { Noche: 'Tarde', Mañana: 'Noche', Tarde: 'Mañana' };
 const shiftOrder = ['Noche', 'Mañana', 'Tarde'];
@@ -200,7 +213,7 @@ function normalizeConfig(config) {
     id: String(bonus?.id || `bonus-${crypto.randomUUID()}`),
     name: String(bonus?.name || '').trim(),
     typeId: String(bonus?.typeId || ''),
-    conditions: Array.isArray(bonus?.conditions) ? bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })).filter((item) => item.conditionId) : [],
+    conditions: Array.isArray(bonus?.conditions) ? bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })) : [],
     imagePath: String(bonus?.imagePath || ''),
     imageName: String(bonus?.imageName || ''),
     imageType: String(bonus?.imageType || ''),
@@ -235,33 +248,37 @@ export async function createPreviousCaja(boxId) { const spaces = await readSpace
 export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
 export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }
-export async function createBonus(payload = {}, boxId) {
+async function createBonusUnsafe(payload = {}, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config);
   const bonus = { id: `bonus-${crypto.randomUUID()}`, name: String(payload.name || '').trim(), typeId: String(payload.typeId || ''), conditions: Array.isArray(payload.conditions) ? payload.conditions : [], imagePath: '', imageName: '', imageType: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   if (!bonus.name || !config.bonusTypes.some((type) => type.id === bonus.typeId)) throw new Error('Completá el nombre y el tipo de bono');
-  bonus.conditions = bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })).filter((item) => config.bonusConditions.some((condition) => condition.id === item.conditionId));
+  bonus.conditions = bonus.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })).filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId));
   space.config = { ...config, bonuses: [...config.bonuses, bonus] }; await writeSpaces(spaces); return { bonus };
 }
-export async function updateBonus(id, payload = {}, boxId) {
+export const createBonus = (payload, boxId) => withBonusOperationLock(() => createBonusUnsafe(payload, boxId));
+async function updateBonusUnsafe(id, payload = {}, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const index = config.bonuses.findIndex((bonus) => bonus.id === id);
   if (index < 0) throw new Error('Bono no encontrado');
   const current = config.bonuses[index]; const next = { ...current, name: String(payload.name ?? current.name).trim(), typeId: String(payload.typeId ?? current.typeId), conditions: Array.isArray(payload.conditions) ? payload.conditions.map((item) => ({ conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0 })) : current.conditions, updatedAt: new Date().toISOString() };
   if (!next.name || !config.bonusTypes.some((type) => type.id === next.typeId)) throw new Error('Completá el nombre y el tipo de bono');
-  next.conditions = next.conditions.filter((item) => config.bonusConditions.some((condition) => condition.id === item.conditionId)); config.bonuses[index] = next; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: next };
+  next.conditions = next.conditions.filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId)); config.bonuses[index] = next; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: next };
 }
-export async function deleteBonus(id, boxId) {
+export const updateBonus = (id, payload, boxId) => withBonusOperationLock(() => updateBonusUnsafe(id, payload, boxId));
+async function deleteBonusUnsafe(id, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const bonus = config.bonuses.find((item) => item.id === id);
   if (!bonus) throw new Error('Bono no encontrado');
   if (bonus.imagePath) await requireSupabase().storage.from('bonos').remove([bonus.imagePath]);
   space.config = { ...config, bonuses: config.bonuses.filter((item) => item.id !== id) }; await writeSpaces(spaces); return { ok: true };
 }
-export async function uploadBonusImage(id, buffer, metadata, boxId) {
+export const deleteBonus = (id, boxId) => withBonusOperationLock(() => deleteBonusUnsafe(id, boxId));
+async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const index = config.bonuses.findIndex((bonus) => bonus.id === id);
   if (index < 0) throw new Error('Bono no encontrado'); if (!buffer?.length) throw new Error('No se recibió ninguna imagen');
   const extension = String(metadata?.name || '').split('.').pop()?.replace(/[^a-z0-9]/gi, '').toLowerCase() || 'bin'; const path = `${space.id}/${id}.${extension}`; const storage = requireSupabase().storage.from('bonos');
   const { error } = await storage.upload(path, buffer, { contentType: metadata?.type || 'application/octet-stream', upsert: true }); if (error) throw new Error(`No se pudo subir la imagen: ${error.message}`);
   const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: config.bonuses[index] };
 }
+export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
 export async function downloadBonusImage(id, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const bonus = normalizeConfig(space.config).bonuses.find((item) => item.id === id); if (!bonus?.imagePath) throw new Error('El bono no tiene imagen');
   const { data, error } = await requireSupabase().storage.from('bonos').download(bonus.imagePath); if (error) throw new Error(`No se pudo descargar la imagen: ${error.message}`); return { data, name: bonus.imageName || `${id}.bin`, type: bonus.imageType || 'application/octet-stream' };
