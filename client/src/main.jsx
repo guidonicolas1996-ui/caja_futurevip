@@ -722,11 +722,15 @@ function MonthlyGoalConfig({ draft, boxes, api, update }) {
 }
 
 function getProgressAccentState(percent, fallback) {
-  if (percent > 100) {
+  return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
+}
+
+function getBonusProgressAccentState(percent, fallback) {
+  if (percent >= 100) {
     return { accent: "#ff5a5a", glow: "rgba(255, 90, 90, 0.58)", line: "rgba(255, 90, 90, 0.46)" };
   }
-  if (percent > 85) {
-    return { accent: "#ff5a3c", glow: "rgba(255, 91, 60, 0.62)", line: "rgba(255, 91, 60, 0.5)" };
+  if (percent >= 85) {
+    return { accent: "#ff9f43", glow: "rgba(255, 159, 67, 0.62)", line: "rgba(255, 159, 67, 0.5)" };
   }
   return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
 }
@@ -799,7 +803,7 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const currentShiftAchieved = shiftBonusNet(currentShift);
   const colors = boxColorStyle(boxColor);
   const renderBar = (label, value, target, percent) => {
-    const state = getProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+    const state = getBonusProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
     return (
       <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
         <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
