@@ -1972,6 +1972,11 @@ function MiniUsersPanel({ config, boxes, activeBoxId, onConfigChange, onNotify }
 function MiniBonusesPanel({ config, activeBoxId, api }) {
   const [bonuses, setBonuses] = useState([]);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [sortBy, setSortBy] = useState("percentage");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [groupBy, setGroupBy] = useState("type");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const types = config.bonusTypes || [];
   const conditions = config.bonusConditions || [];
   const imageUrl = (id, download = false) => `${import.meta.env.VITE_API_URL || ""}/api/bonos/${id}/imagen?boxId=${activeBoxId}${download ? "&download=1" : ""}`;
@@ -1981,11 +1986,27 @@ function MiniBonusesPanel({ config, activeBoxId, api }) {
     return () => { cancelled = true; };
   }, [activeBoxId]);
   const typeNameFor = (bonus) => types.find((type) => type.id === bonus.typeId)?.name || "Sin tipo";
-  const visibleBonuses = bonuses.filter((bonus) => `${bonus.name} ${typeNameFor(bonus)} ${(bonus.conditions || []).map((item) => `${item.percentage} ${conditions.find((condition) => condition.id === item.conditionId)?.label || ""} ${item.platform || ""}`).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
+  const percentageFor = (bonus) => number(bonus.conditions?.at(-1)?.percentage);
+  const platformFor = (bonus) => bonus.conditions?.at(-1)?.platform || "Todas";
+  const filtered = bonuses.filter((bonus) => (!typeFilter || bonus.typeId === typeFilter) && `${bonus.name} ${typeNameFor(bonus)} ${(bonus.conditions || []).map((item) => `${item.percentage} ${conditions.find((condition) => condition.id === item.conditionId)?.label || ""} ${item.platform || ""}`).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
+  const sorted = filtered.slice().sort((left, right) => {
+    const values = sortBy === "name" ? [left.name, right.name] : sortBy === "type" ? [typeNameFor(left), typeNameFor(right)] : sortBy === "percentage" ? [percentageFor(left), percentageFor(right)] : [left.createdAt || "", right.createdAt || ""];
+    const comparison = typeof values[0] === "number" ? values[0] - values[1] : String(values[0]).localeCompare(String(values[1]), "es", { sensitivity: "base" });
+    return (sortDirection === "asc" ? comparison : -comparison) || left.name.localeCompare(right.name, "es", { sensitivity: "base" });
+  });
+  const groups = sorted.reduce((result, bonus) => {
+    const groupValue = groupBy === "type" ? typeNameFor(bonus) : groupBy === "percentage" ? `${percentageFor(bonus)}%` : groupBy === "platform" ? platformFor(bonus) : "Todos los estados";
+    const group = result.find((item) => item.label === groupValue);
+    if (group) group.items.push(bonus);
+    else result.push({ label: groupValue, items: [bonus], value: groupBy === "percentage" ? percentageFor(bonus) : groupValue });
+    return result;
+  }, []);
+  if (groupBy === "percentage") groups.sort((left, right) => left.value - right.value);
+  else if (groupBy === "type" || groupBy === "platform") groups.sort((left, right) => left.label.localeCompare(right.label, "es", { sensitivity: "base" }));
   return <section className="panel mini-bonuses-panel">
-    <div className="section-head mini-bonuses-head"><div className="section-title"><Gift size={18} /><div><h2>Bonos</h2></div></div></div>
+    <div className="section-head mini-bonuses-head"><div className="section-title"><Gift size={18} /><div><h2>Estados</h2></div></div><button className={`filter-toggle mini-bonuses-filter-toggle ${filtersOpen ? "active" : ""}`} type="button" title="Mostrar filtros" aria-label="Mostrar filtros" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal size={14} />{(typeFilter || sortBy !== "percentage" || sortDirection !== "asc" || groupBy !== "type") && <i />}</button>{filtersOpen && <div className="bonus-filters mini-bonus-filters"><label><span>Tipo</span><select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="">Todos los tipos</option>{types.map((type) => <option value={type.id} key={type.id}>{type.name}</option>)}</select></label><label><span>Ordenar por</span><select value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="percentage">Porcentaje</option><option value="name">Nombre</option><option value="type">Tipo de bono</option><option value="date">Fecha de alta</option></select></label><label><span>Agrupar por</span><select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}><option value="type">Tipo de bono</option><option value="percentage">Porcentaje</option><option value="platform">Plataforma del porcentaje</option><option value="none">Sin agrupación</option></select></label><button className="sort-direction" type="button" title={sortDirection === "asc" ? "Orden ascendente" : "Orden descendente"} aria-label={sortDirection === "asc" ? "Cambiar a orden descendente" : "Cambiar a orden ascendente"} onClick={() => setSortDirection((direction) => direction === "asc" ? "desc" : "asc")}>{sortDirection === "asc" ? "↑" : "↓"}</button></div>}</div>
     <div className="mini-bonuses-search"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar bono" aria-label="Buscar bono" /></div>
-    <div className="mini-bonuses-list">{visibleBonuses.map((bonus) => <article className="mini-bonus-row" key={bonus.id}><div className="mini-bonus-image">{bonus.imagePath ? <img src={imageUrl(bonus.id)} alt={bonus.name} /> : <Gift size={15} />}</div><div className="mini-bonus-info"><strong>{bonus.name}</strong><small>{typeNameFor(bonus)}</small><span>{(bonus.conditions || []).map((item, index) => `${item.percentage}%${item.platform ? ` · ${item.platform}` : ""}${index < bonus.conditions.length - 1 ? " / " : ""}`)}</span></div>{bonus.imagePath && <a className="icon-button" title="Descargar bono" aria-label={`Descargar ${bonus.name}`} href={imageUrl(bonus.id, true)}><Download size={14} /></a>}</article>)}{visibleBonuses.length === 0 && <span className="mini-users-empty">No se encontraron bonos.</span>}</div>
+    <div className="mini-bonuses-list">{groups.map((group) => <section className="mini-bonus-group" key={group.label}><div className="mini-bonus-group-heading"><strong>{groupBy === "none" ? "Resultados" : group.label}</strong><span>{group.items.length}</span></div>{group.items.map((bonus) => <article className="mini-bonus-row" key={bonus.id}><div className="mini-bonus-image">{bonus.imagePath ? <img src={imageUrl(bonus.id)} alt={bonus.name} /> : <Gift size={15} />}</div><div className="mini-bonus-info"><strong>{bonus.name}</strong><small>{typeNameFor(bonus)}</small><span>{(bonus.conditions || []).map((item, index) => `${item.percentage}%${item.platform ? ` · ${item.platform}` : ""}${index < bonus.conditions.length - 1 ? " / " : ""}`)}</span></div>{bonus.imagePath && <a className="icon-button" title="Descargar bono" aria-label={`Descargar ${bonus.name}`} href={imageUrl(bonus.id, true)}><Download size={14} /></a>}</article>)}</section>)}{groups.length === 0 && <span className="mini-users-empty">No se encontraron bonos.</span>}</div>
   </section>;
 }
 
@@ -2411,6 +2432,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
     onUpdateAccounts(nextAccounts);
   };
   return <main className="logistics-page">
+    <div className="logistics-title"><SectionHead icon={<WalletCards size={18} />} title="Logística" /></div>
     <section className="panel logistics-panel">
       <SectionHead icon={<WalletCards size={18} />} title="Ruta de Cuentas" action={<select className="logistics-add" onChange={addWallet} value=""><option value="">Agregar billetera...</option>{addable.map((item) => <option key={item.key} value={item.key}>{item.holder} · {item.wallet}</option>)}</select>} />
       <div className="logistics-board">
