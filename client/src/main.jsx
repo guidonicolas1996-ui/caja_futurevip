@@ -126,17 +126,21 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
     const elapsed = minutes - shiftStart * 60;
     return elapsed < 0 ? 0 : Math.min(3, Math.floor(elapsed / 120));
   };
-const isShiftOutOfTime = (shift) => {
-  const now = new Date();
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const currentMinutes = hour * 60 + minute;
+const isShiftOutOfTime = (caja) => {
+  const shiftDate = new Date(caja?.date);
+  if (Number.isNaN(shiftDate.getTime())) return false;
 
-  if (shift === "Noche") return currentMinutes >= 8 * 60;
-  if (shift === "Mañana") return currentMinutes >= 16 * 60;
-  if (shift === "Tarde") return currentMinutes < 16 * 60;
-  return false;
+  const shiftEnd = new Date(shiftDate);
+  if (caja.shift === "Noche") shiftEnd.setHours(8, 0, 0, 0);
+  else if (caja.shift === "Mañana") shiftEnd.setHours(16, 0, 0, 0);
+  else if (caja.shift === "Tarde") {
+    shiftEnd.setDate(shiftEnd.getDate() + 1);
+    shiftEnd.setHours(0, 0, 0, 0);
+  } else return false;
+
+  return new Date() >= shiftEnd;
 };
+
 const walletBelongsToBox = (row, wallet, config, boxId) => {
   const setting = config.accounts.walletSettings[row.holder]?.[wallet];
   return config.accounts.availability[row.holder]?.[wallet] !== false && (setting?.category === "Normal" || !setting?.category ? true : row.walletBoxes?.[wallet] === boxId);
