@@ -2806,7 +2806,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   </main>;
 }
 
-function BonusesPage({ config, activeBoxId, api, onNotify, updatedAt, onVersionChange, onConflict }) {
+function BonusesPage({ config, activeBoxId, api, onNotify, onWrite, onVersionChange, onConflict }) {
   const [bonuses, setBonuses] = useState([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -2836,13 +2836,19 @@ function BonusesPage({ config, activeBoxId, api, onNotify, updatedAt, onVersionC
     if (!form?.name.trim() || !form.typeId || (!editing && !imageFile)) { onNotify("Completá nombre, tipo e imagen."); return; }
     setSaving(true);
     try {
-      const result = editing ? await api(`/api/bonos/${editing.id}?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify({ ...form, updatedAt }) }) : await api(`/api/bonos?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify({ ...form, updatedAt }) });
-      onVersionChange?.(result.updatedAt);
-      if (imageFile) { const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bonos/${result.bonus.id}/imagen?boxId=${activeBoxId}`, { method: "POST", headers: { "Content-Type": imageFile.type, "X-File-Name": encodeURIComponent(imageFile.name), "X-Updated-At": result.updatedAt }, body: imageFile }); const uploadResult = await uploadResponse.json(); if (!uploadResponse.ok || uploadResult.error) throw new Error(uploadResult.message || uploadResult.error || "No se pudo subir la imagen"); onVersionChange?.(uploadResult.updatedAt); }
+      const saved = await onWrite(async (version) => {
+        const result = editing ? await api(`/api/bonos/${editing.id}?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify({ ...form, updatedAt: version }) }) : await api(`/api/bonos?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify({ ...form, updatedAt: version }) });
+        if (!imageFile) return result;
+        const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bonos/${result.bonus.id}/imagen?boxId=${activeBoxId}`, { method: "POST", headers: { "Content-Type": imageFile.type, "X-File-Name": encodeURIComponent(imageFile.name), "X-Updated-At": result.updatedAt }, body: imageFile });
+        const uploadResult = await uploadResponse.json();
+        if (!uploadResponse.ok || uploadResult.error) throw new Error(uploadResult.message || uploadResult.error || "No se pudo subir la imagen");
+        return { ...result, updatedAt: uploadResult.updatedAt };
+      });
+      onVersionChange?.(saved.updatedAt);
       await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono guardado");
     } catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await onConflict?.(); else onNotify(error.message); } finally { setSaving(false); }
   };
-  const remove = async (bonus) => { if (!window.confirm(`¿Eliminar el bono "${bonus.name}"?`)) return; setSaving(true); try { const result = await api(`/api/bonos/${bonus.id}?boxId=${activeBoxId}`, { method: "DELETE", body: JSON.stringify({ updatedAt }) }); onVersionChange?.(result.updatedAt); await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono eliminado"); } catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await onConflict?.(); else onNotify(error.message); } finally { setSaving(false); } };
+  const remove = async (bonus) => { if (!window.confirm(`¿Eliminar el bono "${bonus.name}"?`)) return; setSaving(true); try { const result = await onWrite((version) => api(`/api/bonos/${bonus.id}?boxId=${activeBoxId}`, { method: "DELETE", body: JSON.stringify({ updatedAt: version }) })); onVersionChange?.(result.updatedAt); await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono eliminado"); } catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await onConflict?.(); else onNotify(error.message); } finally { setSaving(false); } };
   const createThumbnails = async () => {
     setCreatingThumbnails(true);
     try {
@@ -3021,12 +3027,18 @@ function App() {
   const saveTimerRef = React.useRef(null);
   const saveInFlightRef = React.useRef(false);
   const configSaveChainRef = React.useRef(Promise.resolve());
+  const writeQueueRef = React.useRef(Promise.resolve());
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
   const rememberUpdatedAt = (value) => {
     if (!value) return;
     updatedAtRef.current = value;
     setUpdatedAt(value);
+  };
+  const enqueueWrite = (operation) => {
+    const queuedWrite = writeQueueRef.current.catch(() => undefined).then(() => operation(updatedAtRef.current));
+    writeQueueRef.current = queuedWrite.catch(() => undefined);
+    return queuedWrite;
   };
   const readOnly = caja?.status !== "ABIERTA";
   const isSubpage = configurationOpen || logisticsOpen || statisticsOpen || usersOpen || bonusesOpen;
@@ -3140,7 +3152,7 @@ function App() {
   }, [statisticsOpen, boxes]);
   const assignWallet = async (holder, wallet, boxId) => {
     try {
-      const result = await api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId, updatedAt: updatedAtRef.current }) });
+      const result = await enqueueWrite((version) => api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId, updatedAt: version }) }));
       if (result.error) return;
       rememberUpdatedAt(result.updatedAt);
       setCaja(result.currents[activeBoxId]);
@@ -3167,10 +3179,10 @@ function App() {
     pendingSaveRef.current = null;
     saveInFlightRef.current = true;
     try {
-      const savedCaja = await api(`${queuedSave.selectedIndex === 0 ? `/api/caja/actualizar?boxId=${queuedSave.boxId}` : `/api/caja/${queuedSave.cajaId}?boxId=${queuedSave.boxId}`}`, {
+      const savedCaja = await enqueueWrite((version) => api(`${queuedSave.selectedIndex === 0 ? `/api/caja/actualizar?boxId=${queuedSave.boxId}` : `/api/caja/${queuedSave.cajaId}?boxId=${queuedSave.boxId}`}`, {
         method: "PUT",
-        body: JSON.stringify({ ...queuedSave.patch, updatedAt: queuedSave.updatedAt }),
-      });
+        body: JSON.stringify({ ...queuedSave.patch, updatedAt: version }),
+      }));
       rememberUpdatedAt(savedCaja.updatedAt);
       if (!pendingSaveRef.current) setCaja(savedCaja);
     } catch (error) {
@@ -3224,7 +3236,7 @@ function App() {
   };
   const updateAccountsFromLogistics = (accounts) => update({ accounts }, true);
   const enqueueConfigSave = (operation) => {
-    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(operation).catch(async (error) => {
+    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(() => enqueueWrite(() => operation())).catch(async (error) => {
       if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
       throw error;
     });
@@ -3253,9 +3265,9 @@ function App() {
   });
   const manageBoxes = async ({ type, id, patch }) => {
     try {
-      if (type === "create") { const created = await api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue", updatedAt: updatedAtRef.current }) }); rememberUpdatedAt(created.updatedAt); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
-      if (type === "delete") { const result = await api(`/api/cajas/${id}`, { method: "DELETE", body: JSON.stringify({ updatedAt: updatedAtRef.current }) }); const next = result.boxes; rememberUpdatedAt(result.updatedAt); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
-      const updated = await api(`/api/cajas/${id}`, { method: "PUT", body: JSON.stringify({ ...patch, updatedAt: updatedAtRef.current }) }); setBoxes(boxes.map((box) => box.id === id ? updated : box)); rememberUpdatedAt(updated.updatedAt);
+      if (type === "create") { const created = await enqueueWrite((version) => api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue", updatedAt: version }) })); rememberUpdatedAt(created.updatedAt); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
+      if (type === "delete") { const result = await enqueueWrite((version) => api(`/api/cajas/${id}`, { method: "DELETE", body: JSON.stringify({ updatedAt: version }) })); const next = result.boxes; rememberUpdatedAt(result.updatedAt); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
+      const updated = await enqueueWrite((version) => api(`/api/cajas/${id}`, { method: "PUT", body: JSON.stringify({ ...patch, updatedAt: version }) })); setBoxes(boxes.map((box) => box.id === id ? updated : box)); rememberUpdatedAt(updated.updatedAt);
     } catch (error) {
       if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
       else notify(error.message);
@@ -3278,7 +3290,7 @@ function App() {
     setCreatingPrevious(true);
     setCreatePreviousError("");
     try {
-      const previous = await api(`/api/caja/crear-anterior?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify({ updatedAt: updatedAtRef.current }) });
+      const previous = await enqueueWrite((version) => api(`/api/caja/crear-anterior?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify({ updatedAt: version }) }));
       rememberUpdatedAt(previous.updatedAt);
       setHistory((currentHistory) => [...currentHistory, previous]);
       setSelectedIndex(history.length);
@@ -3347,10 +3359,10 @@ function App() {
     );
   if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
   const close = () =>
-    api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
+    enqueueWrite((version) => api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
-      body: JSON.stringify({ ...caja, updatedAt: updatedAtRef.current }),
-    }).then((next) => {
+      body: JSON.stringify({ ...caja, updatedAt: version }),
+    })).then((next) => {
       rememberUpdatedAt(next.updatedAt);
       setCaja(next);
       setHistory([next, ...history]);
@@ -3450,7 +3462,7 @@ function App() {
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} updatedAt={updatedAt} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
@@ -3525,7 +3537,7 @@ function App() {
                 transfers={caja.transfers || []}
                 onCreate={async (transfer) => {
                   let result;
-                  try { result = await api("/api/traspasos", { method: "POST", body: JSON.stringify({ ...transfer, updatedAt: updatedAtRef.current }) }); }
+                  try { result = await enqueueWrite((version) => api("/api/traspasos", { method: "POST", body: JSON.stringify({ ...transfer, updatedAt: version }) })); }
                   catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict(); throw error; }
                   if (result.error) throw new Error(result.error);
                   rememberUpdatedAt(result.updatedAt);
@@ -3533,7 +3545,7 @@ function App() {
                 }}
                 onUpdateTransfer={async (transfer) => {
                   let result;
-                  try { result = await api(`/api/traspasos/${transfer.id}`, { method: "PUT", body: JSON.stringify({ ...transfer, updatedAt: updatedAtRef.current }) }); }
+                  try { result = await enqueueWrite((version) => api(`/api/traspasos/${transfer.id}`, { method: "PUT", body: JSON.stringify({ ...transfer, updatedAt: version }) })); }
                   catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict(); throw error; }
                   if (result.error) throw new Error(result.error);
                   rememberUpdatedAt(result.updatedAt);
@@ -3541,7 +3553,7 @@ function App() {
                 }}
                 onDeleteTransfer={async (transferId) => {
                   let result;
-                  try { result = await api(`/api/traspasos/${transferId}`, { method: "DELETE", body: JSON.stringify({ updatedAt: updatedAtRef.current }) }); }
+                  try { result = await enqueueWrite((version) => api(`/api/traspasos/${transferId}`, { method: "DELETE", body: JSON.stringify({ updatedAt: version }) })); }
                   catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict(); throw error; }
                   if (result.error) throw new Error(result.error);
                   rememberUpdatedAt(result.updatedAt);
