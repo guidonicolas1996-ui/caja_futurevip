@@ -395,16 +395,17 @@ export async function updateCaja(id, patch, boxId, clientUpdatedAt = null) {
 }
 export async function setWalletAssignment({ holder, wallet, boxId, updatedAt: clientUpdatedAt }) {
   const spaces = await readSpaces();
-  const targetSpace = boxId ? spaces.find((space) => space.id === boxId) : spaces[0];
-  if (!targetSpace) throw new Error('Caja no encontrada');
-  const current = targetSpace.cajas.at(-1);
-  const account = current.accounts.find((item) => item.holder === holder);
-  if (!account) throw new Error('Titular no encontrado');
+  if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada');
   const assignmentUpdatedAt = new Date().toISOString();
-  account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' };
-  account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: assignmentUpdatedAt };
+  spaces.forEach((space) => {
+    const current = space.cajas.at(-1);
+    const account = current.accounts.find((item) => item.holder === holder);
+    if (!account || !(wallet in (account.values || {}))) return;
+    account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' };
+    account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: assignmentUpdatedAt };
+  });
   const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
-  return { currents: { [boxId || targetSpace.id]: { ...current, updatedAt } }, updatedAt };
+  return { currents: Object.fromEntries(spaces.map((space) => [space.id, { ...space.cajas.at(-1), updatedAt }])), updatedAt };
 }
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '', updatedAt: clientUpdatedAt }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
