@@ -3162,12 +3162,15 @@ function App() {
     }
   };
   const syncAfterConflict = async () => {
-    pendingSaveRef.current = null;
     clearTimeout(saveTimerRef.current);
     try {
       const current = await api(`/api/caja/actual?boxId=${activeBoxId}`);
       rememberUpdatedAt(current.updatedAt);
-      if (selectedIndex === 0) setCaja(current);
+      const pendingPatch = pendingSaveRef.current?.patch;
+      if (selectedIndex === 0) setCaja((localCaja) => pendingPatch ? { ...current, ...pendingPatch } : current);
+      if (pendingSaveRef.current) {
+        pendingSaveRef.current = { ...pendingSaveRef.current, updatedAt: current.updatedAt };
+      }
     } finally {
       setSaving(false);
     }
@@ -3186,7 +3189,13 @@ function App() {
       rememberUpdatedAt(savedCaja.updatedAt);
       if (!pendingSaveRef.current) setCaja(savedCaja);
     } catch (error) {
-      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
+      if (error.status === 409 || error.code === "OUTDATED_STATE") {
+        const newerPending = pendingSaveRef.current;
+        pendingSaveRef.current = newerPending
+          ? { ...queuedSave, ...newerPending, patch: { ...queuedSave.patch, ...newerPending.patch } }
+          : queuedSave;
+        await syncAfterConflict();
+      }
       else notify(error.message);
     } finally {
       saveInFlightRef.current = false;
