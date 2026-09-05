@@ -3151,11 +3151,20 @@ function App() {
     return () => { cancelled = true; };
   }, [statisticsOpen, boxes]);
   const assignWallet = async (holder, wallet, boxId) => {
+    const optimisticCaja = caja && {
+      ...caja,
+      accounts: caja.accounts.map((row) => row.holder === holder ? {
+        ...row,
+        walletBoxes: { ...(row.walletBoxes || {}), [wallet]: boxId || "" },
+        walletBoxUpdatedAt: { ...(row.walletBoxUpdatedAt || {}), [wallet]: new Date().toISOString() },
+      } : row),
+    };
+    if (optimisticCaja) setCaja(optimisticCaja);
     try {
       const result = await enqueueWrite((version) => api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId, updatedAt: version }) }));
       if (result.error) return;
       rememberUpdatedAt(result.updatedAt);
-      setCaja(result.currents[activeBoxId]);
+      setCaja((current) => result.currents?.[activeBoxId] || current || result.currents?.[boxId] || optimisticCaja || current);
     } catch (error) {
       if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
       else notify(error.message);

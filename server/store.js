@@ -393,7 +393,19 @@ export async function updateCaja(id, patch, boxId, clientUpdatedAt = null) {
   const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
   return { ...space.cajas[index], updatedAt };
 }
-export async function setWalletAssignment({ holder, wallet, boxId, updatedAt: clientUpdatedAt }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); const assignmentUpdatedAt = new Date().toISOString(); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) { account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: assignmentUpdatedAt }; } }); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])), updatedAt }; }
+export async function setWalletAssignment({ holder, wallet, boxId, updatedAt: clientUpdatedAt }) {
+  const spaces = await readSpaces();
+  const targetSpace = boxId ? spaces.find((space) => space.id === boxId) : spaces[0];
+  if (!targetSpace) throw new Error('Caja no encontrada');
+  const current = targetSpace.cajas.at(-1);
+  const account = current.accounts.find((item) => item.holder === holder);
+  if (!account) throw new Error('Titular no encontrado');
+  const assignmentUpdatedAt = new Date().toISOString();
+  account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' };
+  account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: assignmentUpdatedAt };
+  const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
+  return { currents: { [boxId || targetSpace.id]: { ...current, updatedAt } }, updatedAt };
+}
 export async function createTransfer({ fromBoxId, toBoxId, amount, note = '', updatedAt: clientUpdatedAt }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
   const value = Number(amount) || 0;
