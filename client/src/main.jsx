@@ -3174,7 +3174,7 @@ function App() {
     } finally {
       setSaving(false);
     }
-    notify("Los datos se actualizaron desde otro dispositivo. Por favor revisa tus cambios.");
+    //notify("Los datos se actualizaron desde otro dispositivo. Por favor revisa tus cambios.");
   };
   const flushSave = async () => {
     if (saveInFlightRef.current || !pendingSaveRef.current) return;
