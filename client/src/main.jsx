@@ -188,7 +188,12 @@ const api = (url, options) =>
       throw new Error("La API no está respondiendo: el servidor devolvió HTML en lugar de JSON. Verificá que VITE_API_URL apunte al backend y que esté actualizado.");
     }
     const result = await response.json();
-    if (!response.ok || result?.error) throw new Error(result?.error || `Error de API (${response.status})`);
+    if (!response.ok || result?.error) {
+      const error = new Error(result?.message || result?.error || `Error de API (${response.status})`);
+      error.status = response.status;
+      error.code = result?.error;
+      throw error;
+    }
     return result;
   });
 
@@ -2801,7 +2806,7 @@ function UsersPage({ config, boxes, activeBoxId, onConfigChange, onNotify, api }
   </main>;
 }
 
-function BonusesPage({ config, activeBoxId, api, onNotify }) {
+function BonusesPage({ config, activeBoxId, api, onNotify, updatedAt, onVersionChange, onConflict }) {
   const [bonuses, setBonuses] = useState([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
@@ -2831,12 +2836,13 @@ function BonusesPage({ config, activeBoxId, api, onNotify }) {
     if (!form?.name.trim() || !form.typeId || (!editing && !imageFile)) { onNotify("Completá nombre, tipo e imagen."); return; }
     setSaving(true);
     try {
-      const result = editing ? await api(`/api/bonos/${editing.id}?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(form) }) : await api(`/api/bonos?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify(form) });
-      if (imageFile) { const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bonos/${result.bonus.id}/imagen?boxId=${activeBoxId}`, { method: "POST", headers: { "Content-Type": imageFile.type, "X-File-Name": encodeURIComponent(imageFile.name) }, body: imageFile }); const uploadResult = await uploadResponse.json(); if (!uploadResponse.ok || uploadResult.error) throw new Error(uploadResult.error || "No se pudo subir la imagen"); }
+      const result = editing ? await api(`/api/bonos/${editing.id}?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify({ ...form, updatedAt }) }) : await api(`/api/bonos?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify({ ...form, updatedAt }) });
+      onVersionChange?.(result.updatedAt);
+      if (imageFile) { const uploadResponse = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/bonos/${result.bonus.id}/imagen?boxId=${activeBoxId}`, { method: "POST", headers: { "Content-Type": imageFile.type, "X-File-Name": encodeURIComponent(imageFile.name), "X-Updated-At": result.updatedAt }, body: imageFile }); const uploadResult = await uploadResponse.json(); if (!uploadResponse.ok || uploadResult.error) throw new Error(uploadResult.message || uploadResult.error || "No se pudo subir la imagen"); onVersionChange?.(uploadResult.updatedAt); }
       await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono guardado");
-    } catch (error) { onNotify(error.message); } finally { setSaving(false); }
+    } catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await onConflict?.(); else onNotify(error.message); } finally { setSaving(false); }
   };
-  const remove = async (bonus) => { if (!window.confirm(`¿Eliminar el bono "${bonus.name}"?`)) return; setSaving(true); try { await api(`/api/bonos/${bonus.id}?boxId=${activeBoxId}`, { method: "DELETE" }); await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono eliminado"); } catch (error) { onNotify(error.message); } finally { setSaving(false); } };
+  const remove = async (bonus) => { if (!window.confirm(`¿Eliminar el bono "${bonus.name}"?`)) return; setSaving(true); try { const result = await api(`/api/bonos/${bonus.id}?boxId=${activeBoxId}`, { method: "DELETE", body: JSON.stringify({ updatedAt }) }); onVersionChange?.(result.updatedAt); await loadBonuses(); setForm(null); setEditing(null); onNotify("Bono eliminado"); } catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await onConflict?.(); else onNotify(error.message); } finally { setSaving(false); } };
   const createThumbnails = async () => {
     setCreatingThumbnails(true);
     try {
@@ -3007,6 +3013,8 @@ function App() {
   const [config, setConfig] = useState(null);
   const [boxes, setBoxes] = useState(null);
   const [boxHistories, setBoxHistories] = useState({});
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const updatedAtRef = React.useRef(null);
   const [activeBoxId, setActiveBoxId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const pendingSaveRef = React.useRef(null);
@@ -3015,6 +3023,11 @@ function App() {
   const configSaveChainRef = React.useRef(Promise.resolve());
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
+  const rememberUpdatedAt = (value) => {
+    if (!value) return;
+    updatedAtRef.current = value;
+    setUpdatedAt(value);
+  };
   const readOnly = caja?.status !== "ABIERTA";
   const isSubpage = configurationOpen || logisticsOpen || statisticsOpen || usersOpen || bonusesOpen;
   const currentPage = configurationOpen ? "Configuración" : logisticsOpen ? "Logística" : statisticsOpen ? "Estadísticas" : usersOpen ? "Usuarios" : bonusesOpen ? "Bonos" : `Caja ${activeBox?.title || ""}`;
@@ -3086,42 +3099,67 @@ function App() {
       const boxId = availableBoxes[0]?.id;
       setBoxes(availableBoxes);
       setActiveBoxId(boxId);
-      return Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`), ...availableBoxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))]).then(
-      ([current, past, settings, ...allPast]) => {
+      return Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(
+      ([current, past, settings]) => {
         setCaja(current);
         setHistory(past);
-        setBoxHistories(Object.fromEntries(availableBoxes.map((box, index) => [box.id, allPast[index]])));
+        setBoxHistories({ [boxId]: past });
         setConfig(settings);
+        rememberUpdatedAt(current.updatedAt || settings.updatedAt);
       },
       );
     }).catch((error) => setApiError(error.message));
   }, []);
   const changeBox = (boxId) => {
     setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setCaja(null); setConfig(null);
-    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`), ...boxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))]).then(([current, past, settings, ...allPast]) => { setCaja(current); setHistory(past); setBoxHistories(Object.fromEntries(boxes.map((box, index) => [box.id, allPast[index]]))); setConfig(settings); });
+    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setBoxHistories({ [boxId]: past }); setConfig(settings); rememberUpdatedAt(current.updatedAt || settings.updatedAt); });
   };
   useEffect(() => {
     if (!activeBoxId || saving) return undefined;
     let cancelled = false;
     const refresh = async () => {
-      const [current, past] = await Promise.all([
-        api(`/api/caja/actual?boxId=${activeBoxId}`),
-        api(`/api/caja/historial?boxId=${activeBoxId}`),
-      ]);
-      if (cancelled || current?.error || !Array.isArray(past)) return;
-      setHistory(past);
-      setCaja(selectedIndex === 0 ? current : past.find((item) => String(item.id) === String(caja?.id)) || current);
+      const current = await api(`/api/caja/actual?boxId=${activeBoxId}`);
+      if (cancelled || current?.error) return;
+      rememberUpdatedAt(current.updatedAt);
+      if (selectedIndex === 0) setCaja(current);
     };
-    const interval = window.setInterval(refresh, 3000);
+    const interval = window.setInterval(refresh, 60000);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [activeBoxId, saving, selectedIndex, caja?.id]);
+  }, [activeBoxId, saving, selectedIndex]);
+  useEffect(() => {
+    if (!statisticsOpen || !boxes?.length) return undefined;
+    let cancelled = false;
+    Promise.all(boxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))).then((histories) => {
+      if (cancelled) return;
+      setBoxHistories(Object.fromEntries(boxes.map((box, index) => [box.id, histories[index]])));
+    }).catch((error) => { if (!cancelled) notify(error.message); });
+    return () => { cancelled = true; };
+  }, [statisticsOpen, boxes]);
   const assignWallet = async (holder, wallet, boxId) => {
-    const result = await api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId }) });
-    if (result.error) return;
-    setCaja(result.currents[activeBoxId]);
+    try {
+      const result = await api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId, updatedAt: updatedAtRef.current }) });
+      if (result.error) return;
+      rememberUpdatedAt(result.updatedAt);
+      setCaja(result.currents[activeBoxId]);
+    } catch (error) {
+      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
+      else notify(error.message);
+    }
+  };
+  const syncAfterConflict = async () => {
+    pendingSaveRef.current = null;
+    clearTimeout(saveTimerRef.current);
+    try {
+      const current = await api(`/api/caja/actual?boxId=${activeBoxId}`);
+      rememberUpdatedAt(current.updatedAt);
+      if (selectedIndex === 0) setCaja(current);
+    } finally {
+      setSaving(false);
+    }
+    notify("Los datos se actualizaron desde otro dispositivo. Por favor revisa tus cambios.");
   };
   const flushSave = async () => {
     if (saveInFlightRef.current || !pendingSaveRef.current) return;
@@ -3131,14 +3169,17 @@ function App() {
     try {
       const savedCaja = await api(`${queuedSave.selectedIndex === 0 ? `/api/caja/actualizar?boxId=${queuedSave.boxId}` : `/api/caja/${queuedSave.cajaId}?boxId=${queuedSave.boxId}`}`, {
         method: "PUT",
-        body: JSON.stringify(queuedSave.patch),
+        body: JSON.stringify({ ...queuedSave.patch, updatedAt: queuedSave.updatedAt }),
       });
+      rememberUpdatedAt(savedCaja.updatedAt);
       if (!pendingSaveRef.current) setCaja(savedCaja);
     } catch (error) {
-      notify(error.message);
+      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
+      else notify(error.message);
     } finally {
       saveInFlightRef.current = false;
       if (pendingSaveRef.current) {
+        pendingSaveRef.current.updatedAt = updatedAtRef.current;
         setSaving(true);
         flushSave();
       } else {
@@ -3153,6 +3194,7 @@ function App() {
       boxId: activeBoxId,
       cajaId: caja?.id,
       selectedIndex,
+      updatedAt: updatedAtRef.current,
     };
     setSaving(true);
     clearTimeout(saveTimerRef.current);
@@ -3164,27 +3206,34 @@ function App() {
   };
   const updateLogisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
-    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) }));
+    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify({ ...nextConfig, updatedAt: updatedAtRef.current }) }));
+    rememberUpdatedAt(result.updatedAt);
     if (result.config) setConfig(result.config);
   };
   const updateStatisticsConfig = async (nextConfig) => {
     setConfig(nextConfig);
-    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) }));
+    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify({ ...nextConfig, updatedAt: updatedAtRef.current }) }));
+    rememberUpdatedAt(result.updatedAt);
     if (result.config) setConfig(result.config);
   };
   const updateConfigState = async (nextConfig) => {
     setConfig(nextConfig);
-    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify(nextConfig) }));
+    const result = await enqueueConfigSave(() => api(`/api/configuracion?boxId=${activeBoxId}`, { method: "PUT", body: JSON.stringify({ ...nextConfig, updatedAt: updatedAtRef.current }) }));
+    rememberUpdatedAt(result.updatedAt);
     if (result.config) setConfig(result.config);
   };
   const updateAccountsFromLogistics = (accounts) => update({ accounts }, true);
   const enqueueConfigSave = (operation) => {
-    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(operation);
+    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(operation).catch(async (error) => {
+      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
+      throw error;
+    });
     configSaveChainRef.current = queuedSave.catch(() => undefined);
     return queuedSave;
   };
   const saveConfig = (nextConfig, boxId) => enqueueConfigSave(async () => {
-    const result = await api(`/api/configuracion?boxId=${boxId}`, { method: "PUT", body: JSON.stringify(nextConfig) });
+    const result = await api(`/api/configuracion?boxId=${boxId}`, { method: "PUT", body: JSON.stringify({ ...nextConfig, updatedAt: updatedAtRef.current }) });
+    if (boxId === activeBoxId) rememberUpdatedAt(result.updatedAt);
     if (boxId === activeBoxId) {
       setConfig(result.config);
       setCaja(result.current);
@@ -3197,14 +3246,20 @@ function App() {
       if (nextConfig.users !== undefined) globalUpdate.users = nextConfig.users;
       for (const box of (boxes || []).filter((item) => item.id !== boxId)) {
         const boxConfig = await api(`/api/configuracion?boxId=${box.id}`);
-        await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate }) });
+        const replicated = await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate, updatedAt: boxConfig.updatedAt }) });
+        rememberUpdatedAt(replicated.updatedAt);
       }
     }
   });
   const manageBoxes = async ({ type, id, patch }) => {
-    if (type === "create") { const created = await api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue" }) }); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
-    if (type === "delete") { const next = await api(`/api/cajas/${id}`, { method: "DELETE" }); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
-    const updated = await api(`/api/cajas/${id}`, { method: "PUT", body: JSON.stringify(patch) }); setBoxes(boxes.map((box) => box.id === id ? updated : box));
+    try {
+      if (type === "create") { const created = await api("/api/cajas", { method: "POST", body: JSON.stringify({ title: "Nueva caja", color: "blue", updatedAt: updatedAtRef.current }) }); rememberUpdatedAt(created.updatedAt); const next = [...boxes, created]; setBoxes(next); changeBox(created.id); return; }
+      if (type === "delete") { const result = await api(`/api/cajas/${id}`, { method: "DELETE", body: JSON.stringify({ updatedAt: updatedAtRef.current }) }); const next = result.boxes; rememberUpdatedAt(result.updatedAt); setBoxes(next); if (id === activeBoxId) changeBox(next[0].id); return; }
+      const updated = await api(`/api/cajas/${id}`, { method: "PUT", body: JSON.stringify({ ...patch, updatedAt: updatedAtRef.current }) }); setBoxes(boxes.map((box) => box.id === id ? updated : box)); rememberUpdatedAt(updated.updatedAt);
+    } catch (error) {
+      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
+      else notify(error.message);
+    }
   };
   const navigate = (direction) => {
     if (direction > 0 && selectedIndex >= history.length - 1) {
@@ -3223,12 +3278,14 @@ function App() {
     setCreatingPrevious(true);
     setCreatePreviousError("");
     try {
-      const previous = await api(`/api/caja/crear-anterior?boxId=${activeBoxId}`, { method: "POST" });
+      const previous = await api(`/api/caja/crear-anterior?boxId=${activeBoxId}`, { method: "POST", body: JSON.stringify({ updatedAt: updatedAtRef.current }) });
+      rememberUpdatedAt(previous.updatedAt);
       setHistory((currentHistory) => [...currentHistory, previous]);
       setSelectedIndex(history.length);
       setCaja(previous);
       setCreatePreviousOpen(false);
     } catch (error) {
+      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
       setCreatePreviousError(error.message);
     } finally {
       setCreatingPrevious(false);
@@ -3292,13 +3349,17 @@ function App() {
   const close = () =>
     api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
-      body: JSON.stringify(caja),
+      body: JSON.stringify({ ...caja, updatedAt: updatedAtRef.current }),
     }).then((next) => {
+      rememberUpdatedAt(next.updatedAt);
       setCaja(next);
       setHistory([next, ...history]);
       setSelectedIndex(0);
       setConfirm(false);
       notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
+    }).catch(async (error) => {
+      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
+      else notify(error.message);
     });
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
@@ -3389,7 +3450,7 @@ function App() {
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} updatedAt={updatedAt} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}
@@ -3463,18 +3524,27 @@ function App() {
                 activeBoxId={activeBoxId}
                 transfers={caja.transfers || []}
                 onCreate={async (transfer) => {
-                  const result = await api("/api/traspasos", { method: "POST", body: JSON.stringify(transfer) });
+                  let result;
+                  try { result = await api("/api/traspasos", { method: "POST", body: JSON.stringify({ ...transfer, updatedAt: updatedAtRef.current }) }); }
+                  catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict(); throw error; }
                   if (result.error) throw new Error(result.error);
+                  rememberUpdatedAt(result.updatedAt);
                   setCaja(result[activeBoxId === transfer.fromBoxId ? "from" : "to"]);
                 }}
                 onUpdateTransfer={async (transfer) => {
-                  const result = await api(`/api/traspasos/${transfer.id}`, { method: "PUT", body: JSON.stringify(transfer) });
+                  let result;
+                  try { result = await api(`/api/traspasos/${transfer.id}`, { method: "PUT", body: JSON.stringify({ ...transfer, updatedAt: updatedAtRef.current }) }); }
+                  catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict(); throw error; }
                   if (result.error) throw new Error(result.error);
+                  rememberUpdatedAt(result.updatedAt);
                   setCaja(result.currents[activeBoxId]);
                 }}
                 onDeleteTransfer={async (transferId) => {
-                  const result = await api(`/api/traspasos/${transferId}`, { method: "DELETE" });
+                  let result;
+                  try { result = await api(`/api/traspasos/${transferId}`, { method: "DELETE", body: JSON.stringify({ updatedAt: updatedAtRef.current }) }); }
+                  catch (error) { if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict(); throw error; }
                   if (result.error) throw new Error(result.error);
+                  rememberUpdatedAt(result.updatedAt);
                   setCaja(result.currents[activeBoxId]);
                 }}
               />

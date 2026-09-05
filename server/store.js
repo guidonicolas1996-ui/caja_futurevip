@@ -127,12 +127,12 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => {
     chipLoads: [],
   };
 };
-async function writeSpaces(spaces, { allowSpaceDeletion = false } = {}) {
+async function writeSpaces(spaces, clientUpdatedAt = null, { allowSpaceDeletion = false } = {}) {
   const database = requireSupabase();
   if (!Array.isArray(spaces) || spaces.length === 0 || spaces.some((space) => !space?.id || !space?.config || !Array.isArray(space.cajas) || space.cajas.length === 0)) {
     throw new Error('No se guardó el cambio: la BDD debe conservar al menos una caja, su configuración y un registro diario.');
   }
-  if (!spaces.updatedAt) throw new Error('No se pudo guardar: falta la versión de la BDD');
+  if (!spaces.updatedAt && !clientUpdatedAt) throw new Error('No se pudo guardar: falta la versión de la BDD');
   const { data: currentState, error: readError } = await database.from('app_state').select('spaces, updated_at').eq('id', 'main').maybeSingle();
   if (readError) throw new Error(`No se pudo verificar la BDD antes de guardar: ${readError.message}`);
   if (!currentState?.spaces) throw new Error('No se guardó el cambio: la BDD no contiene un estado válido.');
@@ -150,13 +150,23 @@ async function writeSpaces(spaces, { allowSpaceDeletion = false } = {}) {
       }
     });
   }
-  if (currentState.updated_at !== spaces.updatedAt) throw new Error('No se guardó el cambio porque la BDD cambió desde la última lectura. Recargá la página e intentá nuevamente.');
+  const expectedUpdatedAt = clientUpdatedAt ?? spaces.updatedAt;
+  if (expectedUpdatedAt && currentState.updated_at !== expectedUpdatedAt) {
+    const error = new Error('ERR_CONCURRENCY_CONFLICT');
+    error.code = 'ERR_CONCURRENCY_CONFLICT';
+    throw error;
+  }
   const updatedAt = new Date().toISOString();
-  const { data, error } = await database.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', spaces.updatedAt).select('id').maybeSingle();
+  const { data, error } = await database.from('app_state').update({ spaces, updated_at: updatedAt }).eq('id', 'main').eq('updated_at', expectedUpdatedAt).select('id').maybeSingle();
   if (error) throw new Error(`No se pudo guardar en Supabase: ${error.message}`);
-  if (!data) throw new Error('No se guardó el cambio porque la BDD cambió desde la última lectura. Recargá la página e intentá nuevamente.');
+  if (!data) {
+    const conflictError = new Error('ERR_CONCURRENCY_CONFLICT');
+    conflictError.code = 'ERR_CONCURRENCY_CONFLICT';
+    throw conflictError;
+  }
   spaces.updatedAt = updatedAt;
   spacesReadPromise = null;
+  return updatedAt;
 }
 async function readSpacesFromDatabase() {
   const database = requireSupabase();
@@ -255,19 +265,19 @@ function globalMonthlyGoalFor(spaces) {
   return source || { final: 0, achieved: 0, platformDeposits: {} };
 }
 export async function getBoxes() { return (await readSpaces()).map(({ id, title, color }) => ({ id, title, color })); }
-export async function createBox({ title = 'Nueva caja', color = 'blue' } = {}) { const spaces = await readSpaces(); const config = normalizeConfig({ ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); await writeSpaces(spaces); return { id, title, color: space.color }; }
-export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; await writeSpaces(spaces); return { id: space.id, title: space.title, color: space.color }; }
-export async function deleteBox(id) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); await writeSpaces(next, { allowSpaceDeletion: true }); return next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })); }
-export async function createPreviousCaja(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; space.config = normalizeConfig(space.config); const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = previousShiftFor[oldest.shift] || 'Tarde'; const previousDate = shiftDateFor(oldest.date, oldest.shift, -1); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder || item.holderId === account.holderId); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); await writeSpaces(spaces); return caja; }
-export async function getCurrent(boxId) { return (await getSpace(boxId)).cajas.at(-1); }
+export async function createBox({ title = 'Nueva caja', color = 'blue', updatedAt: clientUpdatedAt } = {}) { const spaces = await readSpaces(); const config = normalizeConfig({ ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { id, title, color: space.color, updatedAt }; }
+export async function updateBox(id, patch) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === id); if (!space) throw new Error('Caja no encontrada'); if (patch.title !== undefined) space.title = String(patch.title).trim() || space.title; if (patch.color !== undefined && colors.includes(patch.color)) space.color = patch.color; const updatedAt = await writeSpaces(spaces, patch.updatedAt ?? spaces.updatedAt); return { id: space.id, title: space.title, color: space.color, updatedAt }; }
+export async function deleteBox(id, clientUpdatedAt = null) { const spaces = await readSpaces(); if (spaces.length <= 1) throw new Error('Debe existir al menos una caja'); const next = spaces.filter((space) => space.id !== id); if (next.length === spaces.length) throw new Error('Caja no encontrada'); const updatedAt = await writeSpaces(next, clientUpdatedAt ?? spaces.updatedAt, { allowSpaceDeletion: true }); return { boxes: next.map(({ id: spaceId, title, color }) => ({ id: spaceId, title, color })), updatedAt }; }
+export async function createPreviousCaja(boxId, clientUpdatedAt = null) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; space.config = normalizeConfig(space.config); const oldest = space.cajas[0]; if (!oldest) throw new Error('No existe un turno base para crear el anterior'); const previousShift = previousShiftFor[oldest.shift] || 'Tarde'; const previousDate = shiftDateFor(oldest.date, oldest.shift, -1); const previousId = typeof oldest.id === 'number' ? oldest.id - 1 : `${oldest.id}-anterior`; const caja = blankCaja(previousId, null, space.config); caja.shift = previousShift; caja.date = previousDate; caja.accounts = caja.accounts.map((account) => { const source = oldest.accounts.find((item) => item.holder === account.holder || item.holderId === account.holderId); return { ...account, walletBoxes: { ...(source?.walletBoxes || {}) } }; }); space.cajas.unshift(caja); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { ...caja, updatedAt }; }
+export async function getCurrent(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...space.cajas.at(-1), updatedAt: spaces.updatedAt }; }
 export async function getHistory(boxId) { return (await getSpace(boxId)).cajas.slice().reverse(); }
-export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces) }; }
+export async function getConfig(boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; return { ...normalizeConfig(space.config), monthlyGoal: globalMonthlyGoalFor(spaces), updatedAt: spaces.updatedAt }; }
 async function createBonusUnsafe(payload = {}, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config);
   const bonus = { id: `bonus-${crypto.randomUUID()}`, name: String(payload.name || '').trim(), typeId: String(payload.typeId || ''), conditions: Array.isArray(payload.conditions) ? payload.conditions : [], imagePath: '', imageName: '', imageType: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   if (!bonus.name || !config.bonusTypes.some((type) => type.id === bonus.typeId)) throw new Error('Completá el nombre y el tipo de bono');
   bonus.conditions = bonus.conditions.map((item) => { const condition = config.bonusConditions.find((candidate) => candidate.id === String(item?.conditionId || '')); const platform = String(item?.platform || ''); return { conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0, platform: condition?.allowPlatform && config.platforms.includes(platform) ? platform : '' }; }).filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId));
-  space.config = { ...config, bonuses: [...config.bonuses, bonus] }; await writeSpaces(spaces); return { bonus };
+  space.config = { ...config, bonuses: [...config.bonuses, bonus] }; const updatedAt = await writeSpaces(spaces, payload.updatedAt ?? spaces.updatedAt); return { bonus, updatedAt };
 }
 export const createBonus = (payload, boxId) => withBonusOperationLock(() => createBonusUnsafe(payload, boxId));
 async function updateBonusUnsafe(id, payload = {}, boxId) {
@@ -275,16 +285,16 @@ async function updateBonusUnsafe(id, payload = {}, boxId) {
   if (index < 0) throw new Error('Bono no encontrado');
   const current = config.bonuses[index]; const next = { ...current, name: String(payload.name ?? current.name).trim(), typeId: String(payload.typeId ?? current.typeId), conditions: Array.isArray(payload.conditions) ? payload.conditions.map((item) => { const condition = config.bonusConditions.find((candidate) => candidate.id === String(item?.conditionId || '')); const platform = String(item?.platform || ''); return { conditionId: String(item?.conditionId || ''), percentage: Number(item?.percentage) || 0, platform: condition?.allowPlatform && config.platforms.includes(platform) ? platform : '' }; }) : current.conditions, updatedAt: new Date().toISOString() };
   if (!next.name || !config.bonusTypes.some((type) => type.id === next.typeId)) throw new Error('Completá el nombre y el tipo de bono');
-  next.conditions = next.conditions.filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId)); config.bonuses[index] = next; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: next };
+  next.conditions = next.conditions.filter((item) => !item.conditionId || config.bonusConditions.some((condition) => condition.id === item.conditionId)); config.bonuses[index] = next; space.config = { ...config, bonuses: config.bonuses }; const updatedAt = await writeSpaces(spaces, payload.updatedAt ?? spaces.updatedAt); return { bonus: next, updatedAt };
 }
 export const updateBonus = (id, payload, boxId) => withBonusOperationLock(() => updateBonusUnsafe(id, payload, boxId));
-async function deleteBonusUnsafe(id, boxId) {
+async function deleteBonusUnsafe(id, boxId, clientUpdatedAt = null) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const bonus = config.bonuses.find((item) => item.id === id);
   if (!bonus) throw new Error('Bono no encontrado');
   if (bonus.imagePath) { const { error } = await requireSupabase().storage.from('bonos').remove([bonus.imagePath]); if (error) throw new Error(`No se pudo eliminar la imagen: ${error.message}`); }
-  space.config = { ...config, bonuses: config.bonuses.filter((item) => item.id !== id) }; await writeSpaces(spaces); return { ok: true };
+  space.config = { ...config, bonuses: config.bonuses.filter((item) => item.id !== id) }; const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { ok: true, updatedAt };
 }
-export const deleteBonus = (id, boxId) => withBonusOperationLock(() => deleteBonusUnsafe(id, boxId));
+export const deleteBonus = (id, boxId, clientUpdatedAt = null) => withBonusOperationLock(() => deleteBonusUnsafe(id, boxId, clientUpdatedAt));
 async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
   const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const index = config.bonuses.findIndex((bonus) => bonus.id === id);
   if (index < 0) throw new Error('Bono no encontrado'); if (!buffer?.length) throw new Error('No se recibió ninguna imagen');
@@ -296,7 +306,7 @@ async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
   } catch (thumbnailError) {
     console.error(`No se pudo generar la miniatura de ${id}: ${thumbnailError.message}`);
   }
-  const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; await writeSpaces(spaces); return { bonus: config.bonuses[index] };
+  const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; const updatedAt = await writeSpaces(spaces, metadata?.updatedAt ?? spaces.updatedAt); return { bonus: config.bonuses[index], updatedAt };
 }
 export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
 const thumbnailPathFor = (spaceId, imagePath) => {
@@ -342,12 +352,13 @@ export async function downloadBonusImage(id, boxId, mini = false) {
   const safeBonusName = bonus.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, '').replace(/[. ]+$/g, '').trim() || id;
   return { data, name: `${safeBonusName}.${extension || 'bin'}`, type: bonus.imageType || 'application/octet-stream' };
 }
-export async function updateCurrent(patch, boxId) {
+export async function updateCurrent(patch, boxId, clientUpdatedAt = null) {
+  const { updatedAt: _ignoredUpdatedAt, ...currentPatch } = patch || {};
   const spaces = await readSpaces();
   const space = spaces.find((item) => item.id === boxId) || spaces[0];
-  const current = { ...space.cajas.at(-1), ...patch };
-  if (Array.isArray(patch.accounts)) {
-    patch.accounts.forEach((account) => {
+  const current = { ...space.cajas.at(-1), ...currentPatch };
+  if (Array.isArray(currentPatch.accounts)) {
+    currentPatch.accounts.forEach((account) => {
       Object.entries(account.values || {}).forEach(([wallet, value]) => {
         const setting = space.config?.accounts?.walletSettings?.[account.holder]?.[wallet];
         if (!['Depósitos', 'Compartidas'].includes(setting?.category)) return;
@@ -363,26 +374,27 @@ export async function updateCurrent(patch, boxId) {
       });
     });
   }
-  if (patch.advertising) {
+  if (currentPatch.advertising) {
     spaces.forEach((targetSpace) => {
       targetSpace.cajas.at(-1).advertising = structuredClone(patch.advertising);
     });
   }
   space.cajas[space.cajas.length - 1] = current;
-  await writeSpaces(spaces);
-  return current;
+  const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
+  return { ...current, updatedAt };
 }
-export async function updateCaja(id, patch, boxId) {
+export async function updateCaja(id, patch, boxId, clientUpdatedAt = null) {
+  const { updatedAt: _ignoredUpdatedAt, ...historicalPatch } = patch || {};
   const spaces = await readSpaces();
   const space = spaces.find((item) => item.id === boxId) || spaces[0];
   const index = space.cajas.findIndex((caja) => String(caja.id) === String(id));
   if (index === -1) throw new Error('Caja no encontrada');
-  space.cajas[index] = { ...space.cajas[index], ...patch, id: space.cajas[index].id };
-  await writeSpaces(spaces);
-  return space.cajas[index];
+  space.cajas[index] = { ...space.cajas[index], ...historicalPatch, id: space.cajas[index].id };
+  const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
+  return { ...space.cajas[index], updatedAt };
 }
-export async function setWalletAssignment({ holder, wallet, boxId }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); const updatedAt = new Date().toISOString(); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) { account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: updatedAt }; } }); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) }; }
-export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) {
+export async function setWalletAssignment({ holder, wallet, boxId, updatedAt: clientUpdatedAt }) { const spaces = await readSpaces(); if (boxId && !spaces.some((space) => space.id === boxId)) throw new Error('Caja no encontrada'); const assignmentUpdatedAt = new Date().toISOString(); spaces.forEach((space) => { const account = space.cajas.at(-1).accounts.find((item) => item.holder === holder); if (account) { account.walletBoxes = { ...(account.walletBoxes || {}), [wallet]: boxId || '' }; account.walletBoxUpdatedAt = { ...(account.walletBoxUpdatedAt || {}), [wallet]: assignmentUpdatedAt }; } }); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])), updatedAt }; }
+export async function createTransfer({ fromBoxId, toBoxId, amount, note = '', updatedAt: clientUpdatedAt }) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
   const value = Number(amount) || 0;
   if (value <= 0) throw new Error('El monto debe ser mayor a cero');
@@ -391,26 +403,27 @@ export async function createTransfer({ fromBoxId, toBoxId, amount, note = '' }) 
   const transfer = { id: crypto.randomUUID(), fromBoxId, toBoxId, amount: value, note: String(note || ''), createdAt: new Date().toISOString() };
   from.cajas.at(-1).transfers = [...(from.cajas.at(-1).transfers || []), transfer];
   to.cajas.at(-1).transfers = [...(to.cajas.at(-1).transfers || []), transfer];
-  await writeSpaces(spaces);
-  return { transfer, from: from.cajas.at(-1), to: to.cajas.at(-1) };
+  const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
+  return { transfer, from: { ...from.cajas.at(-1), updatedAt }, to: { ...to.cajas.at(-1), updatedAt }, updatedAt };
 }
 export async function updateTransfer(id, patch) {
+  const { updatedAt: clientUpdatedAt, ...transferPatch } = patch || {};
   const spaces = await readSpaces(); const allCurrent = spaces.map((space) => ({ space, current: space.cajas.at(-1) })); const original = allCurrent.find(({ current }) => current.transfers?.some((transfer) => transfer.id === id))?.current?.transfers?.find((transfer) => transfer.id === id);
   if (!original) throw new Error('Traspaso no encontrado');
-  const fromBoxId = patch.fromBoxId || original.fromBoxId; const toBoxId = patch.toBoxId || original.toBoxId; const amount = Number(patch.amount ?? original.amount) || 0;
+  const fromBoxId = transferPatch.fromBoxId || original.fromBoxId; const toBoxId = transferPatch.toBoxId || original.toBoxId; const amount = Number(transferPatch.amount ?? original.amount) || 0;
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) throw new Error('Seleccioná dos cajas diferentes');
   if (amount <= 0) throw new Error('El monto debe ser mayor a cero');
   if (!spaces.some((space) => space.id === fromBoxId) || !spaces.some((space) => space.id === toBoxId)) throw new Error('Caja de origen o destino no encontrada');
-  const updated = { ...original, fromBoxId, toBoxId, amount, note: patch.note ?? original.note, updatedAt: new Date().toISOString() };
+  const updated = { ...original, fromBoxId, toBoxId, amount, note: transferPatch.note ?? original.note, updatedAt: new Date().toISOString() };
   allCurrent.forEach(({ current }) => { current.transfers = (current.transfers || []).filter((transfer) => transfer.id !== id); });
   spaces.find((space) => space.id === fromBoxId).cajas.at(-1).transfers.push(updated);
   spaces.find((space) => space.id === toBoxId).cajas.at(-1).transfers.push(updated);
-  await writeSpaces(spaces); return { transfer: updated, currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) };
+  const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { transfer: updated, currents: Object.fromEntries(spaces.map((space) => [space.id, { ...space.cajas.at(-1), updatedAt }])), updatedAt };
 }
-export async function deleteTransfer(id) {
+export async function deleteTransfer(id, clientUpdatedAt = null) {
   const spaces = await readSpaces(); let found = false;
   spaces.forEach((space) => { const current = space.cajas.at(-1); const transfers = current.transfers || []; if (transfers.some((transfer) => transfer.id === id)) found = true; current.transfers = transfers.filter((transfer) => transfer.id !== id); });
-  if (!found) throw new Error('Traspaso no encontrado'); await writeSpaces(spaces); return { currents: Object.fromEntries(spaces.map((space) => [space.id, space.cajas.at(-1)])) };
+  if (!found) throw new Error('Traspaso no encontrado'); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { currents: Object.fromEntries(spaces.map((space) => [space.id, { ...space.cajas.at(-1), updatedAt }])), updatedAt };
 }
 function renameKeys(source, renames) {
   if (!source || typeof source !== 'object' || Array.isArray(source)) return source;
@@ -492,13 +505,14 @@ function migrateHistoricalReferences(spaces, holderRenames, walletRenames, platf
     (caja.chipLoads || []).forEach((load) => { load.platform = resolvedPlatformRenames[load.platform] || load.platform; load.platformId = config.platformEntities.find((entity) => entity.name === load.platform)?.id || load.platformId; });
   }));
 }
-export async function updateConfig(config, boxId) {
-  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const previousConfig = normalizeConfig(space.config); const nextAccounts = config?.accounts || {}; const nextPlatforms = Array.isArray(config?.platforms) ? config.platforms : previousConfig.platforms;
+export async function updateConfig(config, boxId, clientUpdatedAt = null) {
+  const { updatedAt: _ignoredUpdatedAt, ...configPatch } = config || {};
+  const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const previousConfig = normalizeConfig(space.config); const nextAccounts = configPatch?.accounts || {}; const nextPlatforms = Array.isArray(configPatch?.platforms) ? configPatch.platforms : previousConfig.platforms;
   assertUniqueNames(nextAccounts.holders || previousConfig.accounts.holders, 'titulares'); assertUniqueNames(nextAccounts.wallets || previousConfig.accounts.wallets, 'billeteras'); assertUniqueNames(nextPlatforms, 'plataformas');
-  assertUniqueEntityIds(nextAccounts.holderEntities || previousConfig.accounts.holderEntities, 'titulares'); assertUniqueEntityIds(nextAccounts.walletEntities || previousConfig.accounts.walletEntities, 'billeteras'); assertUniqueEntityIds(config?.platformEntities || previousConfig.platformEntities, 'plataformas');
-  const holderRenames = namesByEntity(previousConfig.accounts.holderEntities, nextAccounts.holderEntities, previousConfig.accounts.holders, nextAccounts.holders); const walletRenames = namesByEntity(previousConfig.accounts.walletEntities, nextAccounts.walletEntities, previousConfig.accounts.wallets, nextAccounts.wallets); const platformRenames = namesByEntity(previousConfig.platformEntities, config?.platformEntities, previousConfig.platforms, nextPlatforms);
+  assertUniqueEntityIds(nextAccounts.holderEntities || previousConfig.accounts.holderEntities, 'titulares'); assertUniqueEntityIds(nextAccounts.walletEntities || previousConfig.accounts.walletEntities, 'billeteras'); assertUniqueEntityIds(configPatch?.platformEntities || previousConfig.platformEntities, 'plataformas');
+  const holderRenames = namesByEntity(previousConfig.accounts.holderEntities, nextAccounts.holderEntities, previousConfig.accounts.holders, nextAccounts.holders); const walletRenames = namesByEntity(previousConfig.accounts.walletEntities, nextAccounts.walletEntities, previousConfig.accounts.wallets, nextAccounts.wallets); const platformRenames = namesByEntity(previousConfig.platformEntities, configPatch?.platformEntities, previousConfig.platforms, nextPlatforms);
   assertRenameSafety(holderRenames, previousConfig.accounts.holders, 'titulares'); assertRenameSafety(walletRenames, previousConfig.accounts.wallets, 'billeteras'); assertRenameSafety(platformRenames, previousConfig.platforms, 'plataformas');
-  const normalized = normalizeConfig(migrateConfigMaps(config, holderRenames, walletRenames, platformRenames));
+  const normalized = normalizeConfig(migrateConfigMaps(configPatch, holderRenames, walletRenames, platformRenames));
   migrateHistoricalReferences([space], holderRenames, walletRenames, platformRenames, normalized);
   spaces.forEach((targetSpace) => { targetSpace.config = { ...normalizeConfig(targetSpace.config), monthlyGoal: normalized.monthlyGoal }; }); space.config = normalized;
   const current = space.cajas.at(-1); const existing = new Map(current.accounts.map((account) => [account.holder, account]));
@@ -507,11 +521,11 @@ export async function updateConfig(config, boxId) {
   current.accounts = [...normalized.accounts.holders.map((holder) => { const account = existing.get(holder); return { holder, holderId: normalized.accounts.holderEntities.find((entity) => entity.name === holder)?.id, values: { ...(account?.values || {}), ...Object.fromEntries(normalized.accounts.wallets.map((wallet) => [wallet, account?.values?.[wallet] ?? 0])) }, walletIds: { ...(account?.walletIds || {}), ...Object.fromEntries(normalized.accounts.walletEntities.map((entity) => [entity.name, entity.id])) }, walletBoxes: account?.walletBoxes || {}, walletBoxUpdatedAt: account?.walletBoxUpdatedAt || {}, walletRestartAt: account?.walletRestartAt || {}, verified: account?.verified || {}, notes: account?.notes || {} }; }), ...current.accounts.filter((account) => !configuredHolderIds.has(account.holderId) && !normalized.accounts.holders.includes(account.holder))];
   current.chips = [...normalized.platforms.map((platform) => { const chip = current.chips.find((item) => item.platform === platform); return { platform, platformId: normalized.platformEntities.find((entity) => entity.name === platform)?.id, initial: chip?.initial ?? 0, final: chip?.final ?? 0 }; }), ...current.chips.filter((chip) => !configuredPlatformIds.has(chip.platformId) && !normalized.platforms.includes(chip.platform))];
   current.expenses = current.expenses.map((expense) => ({ ...expense, category: normalized.expenses.some((item) => item.name === expense.category) ? expense.category : normalized.expenses[0]?.name || 'Gasto' }));
-  space.cajas[space.cajas.length - 1] = current; await writeSpaces(spaces); return { config: normalized, current };
+  space.cajas[space.cajas.length - 1] = current; const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { config: normalized, current: { ...current, updatedAt }, updatedAt };
 }
 function walletBelongsToBox(row, wallet, config, boxId) {
   const setting = config.accounts.walletSettings?.[row.holder]?.[wallet];
   return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
-export async function closeCurrent(patch = {}, boxId) { const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = patch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...patch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; const nextCaja = blankCaja(current.id + 1, current, space.config); space.cajas.push(nextCaja); await writeSpaces(spaces); return nextCaja; }
+export async function closeCurrent(patch = {}, boxId, clientUpdatedAt = null) { const { updatedAt: _ignoredUpdatedAt, ...closePatch } = patch || {}; const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = closePatch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...closePatch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; const nextCaja = blankCaja(current.id + 1, current, space.config); space.cajas.push(nextCaja); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { ...nextCaja, updatedAt }; }
 export { billeteras, titulares, plataformas };
