@@ -3018,7 +3018,7 @@ function App() {
   const readOnly = caja?.status !== "ABIERTA";
   const isSubpage = configurationOpen || logisticsOpen || statisticsOpen || usersOpen || bonusesOpen;
   const currentPage = configurationOpen ? "Configuración" : logisticsOpen ? "Logística" : statisticsOpen ? "Estadísticas" : usersOpen ? "Usuarios" : bonusesOpen ? "Bonos" : `Caja ${activeBox?.title || ""}`;
-  const isReadOnlyAction = (element) => Boolean(element.closest?.(".modal-close, .ghost-button, button[title^='Ver'], button[title^='Cerrar']"));
+  const isReadOnlyAction = (element) => Boolean(element.closest?.(".modal-close, .ghost-button, button[title='Copiar conteo de publicidad'], button[title^='Ver'], button[title^='Cerrar']"));
   useEffect(() => {
     const preventInputDrag = (event) => {
       const target = event.target;
