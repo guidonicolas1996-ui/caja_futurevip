@@ -796,11 +796,11 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   });
   const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
   const dayBonusNet = sameDateItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
-  const shiftBonusNet = (shift) => sameDateItems.reduce((sum, item) => sum + (item.bonuses || []).reduce((itemSum, bonus) => {
+  const shiftBonusNet = (shift) => (caja.bonuses || []).reduce((sum, bonus) => {
     const hour = new Date(bonus.createdAt).getHours();
     const bonusShift = hour >= 0 && hour < 8 ? "Noche" : hour < 16 ? "Mañana" : "Tarde";
-    return itemSum + (bonusShift === shift ? number(bonus.granted) - number(bonus.recovered) : 0);
-  }, 0), 0);
+    return sum + (bonusShift === shift ? number(bonus.granted) - number(bonus.recovered) : 0);
+  }, 0);
   const totalTarget = Math.max(0, number(goal.total));
   const currentMonth = new Date(caja.date);
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
