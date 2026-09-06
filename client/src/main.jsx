@@ -3026,6 +3026,7 @@ function App() {
   const pendingSaveRef = React.useRef(null);
   const saveTimerRef = React.useRef(null);
   const saveInFlightRef = React.useRef(false);
+  const closingRef = React.useRef(false);
   const configSaveChainRef = React.useRef(Promise.resolve());
   const writeQueueRef = React.useRef(Promise.resolve());
   const [notesEnabled, setNotesEnabled] = useState(true);
@@ -3376,21 +3377,31 @@ function App() {
       </div>
     );
   if (!config) return <div className="loading"><RefreshCw className="spin" /> Cargando configuración...</div>;
-  const close = () =>
+  const close = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    clearTimeout(saveTimerRef.current);
+    pendingSaveRef.current = null;
+    const closingCaja = caja;
+    setSaving(true);
     enqueueWrite((version) => api(`/api/caja/cerrar?boxId=${activeBoxId}`, {
       method: "POST",
-      body: JSON.stringify({ ...caja, updatedAt: version }),
+      body: JSON.stringify({ ...closingCaja, updatedAt: version }),
     })).then((next) => {
       rememberUpdatedAt(next.updatedAt);
       setCaja(next);
-      setHistory([next, ...history]);
+      setHistory((currentHistory) => [next, ...currentHistory.filter((item) => String(item.id) !== String(next.id))]);
       setSelectedIndex(0);
       setConfirm(false);
-      notify(`Cerrada Caja del turno ${caja.shift} / ${new Date(caja.date).toLocaleDateString("es-AR")}`);
+      notify(`Cerrada Caja del turno ${closingCaja.shift} / ${new Date(closingCaja.date).toLocaleDateString("es-AR")}`);
     }).catch(async (error) => {
       if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
       else notify(error.message);
+    }).finally(() => {
+      closingRef.current = false;
+      setSaving(false);
     });
+  };
   const confirmClose = () => {
     if (calculations.shortage !== 0) {
       setConfirm(false);
