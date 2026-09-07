@@ -75,9 +75,6 @@ const money = (value) =>
     minimumFractionDigits: 2,
   }).format(Number(value) || 0);
 const number = (value) => Number(value) || 0;
-const bonusType = (bonus) => number(bonus.advertising) > 0 ? "advertising" : number(bonus.recovered) > 0 ? "recovered" : "granted";
-const bonusAmount = (bonus) => number(bonus.advertising) || number(bonus.recovered) || number(bonus.granted);
-const bonusNet = (bonus) => number(bonus.granted) + number(bonus.advertising) - number(bonus.recovered);
 const parseNumberInput = (value) => {
   const text = String(value ?? "").trim().replace(/\s/g, "");
   if (!text) return 0;
@@ -110,7 +107,7 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
   const accounts = caja.accounts
     .flatMap((row) => Object.entries(row.values).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
     .reduce((sum, value) => sum + number(value), 0);
-  const bonuses = caja.bonuses.reduce((sum, bonus) => sum + bonusNet(bonus), 0);
+  const bonuses = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
   const ta = caja.ta.reduce((sum, row) => sum + number(row.amount), 0);
   const expenses = caja.expenses.reduce((sum, row) => {
     const category = config.expenses.find((item) => item.name === row.category);
@@ -158,7 +155,7 @@ const statisticsFor = (caja, config, activeBoxId) => {
     .flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
     .reduce((sum, value) => sum + number(value), 0);
   const tips = (caja.tips || []).reduce((sum, row) => sum + number(row.amount), 0);
-  const granted = (caja.bonuses || []).reduce((sum, row) => sum + number(row.granted) + number(row.advertising), 0);
+  const granted = (caja.bonuses || []).reduce((sum, row) => sum + number(row.granted), 0);
   const recovered = (caja.bonuses || []).reduce((sum, row) => sum + number(row.recovered), 0);
   const ta = (caja.ta || []).reduce((sum, row) => sum + number(row.amount), 0);
   const found = (caja.foundMoney || []).reduce((sum, row) => sum + number(row.amount), 0);
@@ -797,12 +794,12 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
     const itemDate = new Date(item.date);
     return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth();
   });
-  const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + bonusNet(bonus), 0);
+  const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
   const dayBonusNet = sameDateItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
   const shiftBonusNet = (shift) => (caja.bonuses || []).reduce((sum, bonus) => {
     const hour = new Date(bonus.createdAt).getHours();
     const bonusShift = hour >= 0 && hour < 8 ? "Noche" : hour < 16 ? "Mañana" : "Tarde";
-    return sum + (bonusShift === shift ? bonusNet(bonus) : 0);
+    return sum + (bonusShift === shift ? number(bonus.granted) - number(bonus.recovered) : 0);
   }, 0);
   const totalTarget = Math.max(0, number(goal.total));
   const currentMonth = new Date(caja.date);
@@ -1164,22 +1161,16 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
   const recovered = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0);
   const recentBonuses = caja.bonuses.slice(-5).reverse();
   const editRecentBonus = (bonusId, value) => {
-    const bonuses = caja.bonuses.map((bonus) => {
-      if (bonus.id !== bonusId) return bonus;
-      const type = bonusType(bonus);
-      return type === "advertising"
-        ? { ...bonus, granted: 0, recovered: 0, advertising: value }
-        : { ...bonus, granted: type === "recovered" ? 0 : value, recovered: type === "recovered" ? value : 0 };
-    });
+    const bonuses = caja.bonuses.map((bonus) => bonus.id === bonusId ? { ...bonus, granted: bonus.recovered > 0 ? 0 : value, recovered: bonus.recovered > 0 ? value : 0, publicity: bonus.recovered > 0 ? false : bonus.publicity } : bonus);
     update({ bonuses: value ? bonuses : bonuses.filter((bonus) => bonus.id !== bonusId) });
   };
   const addBonus = (event) => {
     if (!["Enter", "+", "-"].includes(event.key) || !parseNumberInput(quick)) return;
     event.preventDefault();
     const amount = parseNumberInput(quick);
-    const advertising = event.key === "-";
-    const recovered = !advertising && (event.key === "+" || recoveredMode);
-    update({ bonuses: [...caja.bonuses, { id: crypto.randomUUID(), label: "", granted: advertising || recovered ? 0 : amount, recovered: recovered ? amount : 0, advertising: advertising ? amount : 0, verified: false, createdAt: new Date().toISOString() }] });
+    const recovered = event.key === "+" || (event.key !== "-" && recoveredMode);
+    const publicity = event.key === "-";
+    update({ bonuses: [...caja.bonuses, { id: crypto.randomUUID(), label: "", granted: recovered ? 0 : amount, recovered: recovered ? amount : 0, publicity, verified: false, createdAt: new Date().toISOString() }] });
     setQuick("");
     setRecoveredMode(false);
   };
@@ -1195,7 +1186,7 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
         <button className="icon-button shrink-0" title="Ver y editar bonos" onClick={onViewBonuses}><Eye size={14} /></button>
       </div>
     </div>
-    <div className="quick-recent-bonuses"><span className="quick-recent-title">Últimos 5 bonos</span>{recentBonuses.map((bonus) => { const type = bonusType(bonus); const isRecovered = type === "recovered"; return <div className={`quick-recent-bonus ${type}`} key={bonus.id}><span>{type === "advertising" ? "Publicidad" : isRecovered ? "Recuperado" : "Otorgado"}</span><div className="recent-bonus-value"><span className="recent-bonus-time">{formatMovementTime(bonus.createdAt)} -</span><input defaultValue={money(bonusAmount(bonus))} aria-label="Editar bono reciente" onFocus={(event) => { event.currentTarget.value = formatNumberInput(bonusAmount(bonus)); event.currentTarget.select(); }} onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); event.currentTarget.value = value ? money(value) : "-"; editRecentBonus(bonus.id, value); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div></div>; })}</div>
+    <div className="quick-recent-bonuses"><span className="quick-recent-title">Últimos 5 bonos</span>{recentBonuses.map((bonus) => { const isRecovered = number(bonus.recovered) > 0; const isPublicity = !isRecovered && bonus.publicity; return <div className={`quick-recent-bonus ${isRecovered ? "recovered" : isPublicity ? "publicity" : "granted"}`} key={bonus.id}><span>{isRecovered ? "Recuperado" : isPublicity ? "Publicidad" : "Otorgado"}</span><div className="recent-bonus-value"><span className="recent-bonus-time">{formatMovementTime(bonus.createdAt)} -</span><input defaultValue={money(isRecovered ? bonus.recovered : bonus.granted)} aria-label="Editar bono reciente" onFocus={(event) => { event.currentTarget.value = formatNumberInput(isRecovered ? bonus.recovered : bonus.granted); event.currentTarget.select(); }} onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); event.currentTarget.value = value ? money(value) : "-"; editRecentBonus(bonus.id, value); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /></div></div>; })}</div>
   </div>;
 }
 
@@ -1445,7 +1436,6 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const [deleteIndex, setDeleteIndex] = useState(null);
   const grantedCount = caja.bonuses.filter((bonus) => number(bonus.granted) > 0).length;
   const recoveredCount = caja.bonuses.filter((bonus) => number(bonus.recovered) > 0).length;
-  const advertisingCount = caja.bonuses.filter((bonus) => number(bonus.advertising) > 0).length;
   useEffect(() => {
     if (viewRequest) setOpen(true);
   }, [viewRequest]);
@@ -1467,8 +1457,8 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const addBonus = (event) => {
     if (!["Enter", "+", "-"].includes(event.key) || !parseNumberInput(quick)) return;
     event.preventDefault();
-    const advertising = event.key === "-";
-    const recovered = !advertising && (event.key === "+" || recoveredMode);
+    const recovered = event.key === "+" || (event.key !== "-" && recoveredMode);
+    const publicity = event.key === "-";
     update({
       bonuses: [
         ...caja.bonuses,
@@ -1476,9 +1466,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           label: "",
-          granted: advertising || recovered ? 0 : parseNumberInput(quick),
+          granted: recovered ? 0 : parseNumberInput(quick),
           recovered: recovered ? parseNumberInput(quick) : 0,
-          advertising: advertising ? parseNumberInput(quick) : 0,
+          publicity,
           verified: false,
         },
       ],
@@ -1532,7 +1522,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
       <SectionHead
         icon={<Gift size={18} />}
         title="Bonos"
-        meta={`${grantedCount} Otorgados | ${recoveredCount} Recuperados | ${advertisingCount} Publicidad`}
+        meta={`${grantedCount} Bonos Otorgados | ${recoveredCount} Bonos Recuperados`}
         action={
           <div className="bonus-actions">
             <button className="icon-button" title="Agregar bono" onClick={openBonusEditor}>
@@ -1636,19 +1626,19 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
               <h3>{slot.label}</h3>
               <div className="bonus-time-bonuses">
                 {slot.items.length === 0 && <span className="bonus-slot-empty">Sin bonos</span>}
-                {slot.items.map(({ bonus, index }) => { const type = bonusType(bonus); return <div className={`bonus-row ${type}`} key={bonus.id}>
+                {slot.items.map(({ bonus, index }) => <div className={`bonus-row ${bonus.recovered > 0 ? "recovered" : bonus.publicity ? "publicity" : "granted"}`} key={bonus.id}>
               <time className="movement-time">{formatMovementTime(bonus.createdAt)}</time>
               <AmountInput
-                value={bonusAmount(bonus)}
-                onChange={(value) => editBonus(index, type === "advertising" ? { advertising: value, granted: 0, recovered: 0 } : type === "recovered" ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 })}
+                value={bonus.recovered || bonus.granted}
+                onChange={(value) => editBonus(index, bonus.recovered > 0 ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 })}
               />
-              {type !== "advertising" && <button
+              <button
                 className={`bonus-toggle ${bonus.recovered > 0 ? "checked" : ""}`}
                 title="Cambiar entre otorgado y recuperado"
-                onClick={() => editBonus(index, bonus.recovered > 0 ? { recovered: 0, granted: bonus.recovered } : { granted: 0, recovered: bonus.granted })}
+                onClick={() => editBonus(index, bonus.recovered > 0 ? { recovered: 0, granted: bonus.recovered } : { granted: 0, recovered: bonus.granted, publicity: false })}
               >
                 <ArrowUpDown size={13} />
-              </button>}
+              </button>
               <button className={`note-button ${bonus.note ? "has-note" : ""}`} title="Agregar nota" onClick={() => setNoteId(noteId === bonus.id ? null : bonus.id)}>
                 <FileText size={14} />
               </button>
@@ -1663,7 +1653,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                   onChange={(e) => editBonus(index, { note: e.target.value })}
                 />
               )}
-                </div>; })}
+                </div>)}
               </div>
             </section>
           ))}
@@ -1675,20 +1665,19 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
       <div className="recent-bonuses">
         <span className="recent-bonuses-title">Últimos bonos</span>
         {caja.bonuses.slice().reverse().map((bonus, reverseIndex) => {
-          const type = bonusType(bonus);
-          const isRecovered = type === "recovered";
+          const isRecovered = number(bonus.recovered) > 0;
           const bonusIndex = caja.bonuses.length - 1 - reverseIndex;
-          const amount = bonusAmount(bonus);
+          const amount = isRecovered ? bonus.recovered : bonus.granted;
           return (
-            <div className={`recent-bonus ${type}`} key={bonus.id}>
-              <span>{type === "advertising" ? "Publicidad" : isRecovered ? "Recuperado" : "Otorgado"}</span>
+            <div className={`recent-bonus ${isRecovered ? "recovered" : bonus.publicity ? "publicity" : "granted"}`} key={bonus.id}>
+              <span>{isRecovered ? "Recuperado" : bonus.publicity ? "Publicidad" : "Otorgado"}</span>
               <div className="recent-bonus-value"><span className="recent-bonus-time">{formatMovementTime(bonus.createdAt)} -</span><input
                   className="recent-bonus-amount"
                   defaultValue={money(amount)}
-                  aria-label={`Valor del bono ${type === "advertising" ? "de publicidad" : isRecovered ? "recuperado" : "otorgado"}`}
+                  aria-label={`Valor del bono ${isRecovered ? "recuperado" : "otorgado"}`}
                   inputMode="decimal"
                   onFocus={(event) => { event.currentTarget.value = formatNumberInput(amount); event.currentTarget.select(); }}
-                  onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); if (!value) { removeBonus(bonusIndex); return; } event.currentTarget.value = money(value); editBonus(bonusIndex, type === "advertising" ? { advertising: value, granted: 0, recovered: 0 } : isRecovered ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 }); }}
+                  onBlur={(event) => { const value = parseNumberInput(event.currentTarget.value); if (!value) { removeBonus(bonusIndex); return; } event.currentTarget.value = money(value); editBonus(bonusIndex, isRecovered ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 }); }}
                   onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
                 /></div>
             </div>
@@ -1703,11 +1692,8 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
         <span>
           Recuperados <b>{money(recovered)}</b>
         </span>
-        <span>
-          Publicidad <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.advertising), 0))}</b>
-        </span>
         <strong>
-          Neto <b>{money(granted - recovered + caja.bonuses.reduce((sum, bonus) => sum + number(bonus.advertising), 0))}</b>
+          Neto <b>{money(granted - recovered)}</b>
         </strong>
       </div>
       {deleteIndex !== null && <ConfirmDialog message="¿Seguro que querés eliminar este bono?" onCancel={() => setDeleteIndex(null)} onConfirm={() => removeBonus(deleteIndex)} />}
@@ -2389,7 +2375,7 @@ function LegacyReportCard({ caja, calculations, snapshotRef, config, boxes, acti
           {movements.map(([title, rows, kind]) => <section className="report-block report-operation" key={title}><div className="report-block-head"><h2>{kind === "expenses" ? <ReceiptText size={16} /> : kind === "tips" ? <Coins size={16} /> : <ArrowDownToLine size={16} />} {title}</h2><span>{rows.length} registros</span></div><div className="report-list">{rows.length === 0 ? <p className="report-empty">Sin registros</p> : rows.map((row) => <div className="report-list-row" key={row.id}><span><small>[{timeFor(row.createdAt)}]</small> {detailFor(row, kind).filter(Boolean).join(" · ") || "Sin detalle"}</span><b>{money(row.amount)}</b></div>)}</div><strong className="report-total">Total <b>{money(totalRows(rows, kind))}</b></strong></section>)}
           <section className="report-block report-operation"><div className="report-block-head"><h2><Banknote size={16} /> Dinero encontrado</h2><span>{foundRecords.length} registros</span></div>{foundRecords.length === 0 ? <p className="report-empty">Sin registros</p> : <div className="report-list">{foundRecords.map((record) => <div className="report-list-row" key={record.id}><span><small>[{timeFor(record.createdAt)}]</small> {[record.holder, record.wallet, record.note].filter(Boolean).join(" · ") || "Sin detalle"}</span><b>{money(record.amount)}</b></div>)}</div>}</section>
           <section className="report-block report-operation"><div className="report-block-head"><h2><ArrowLeftRight size={16} /> Traspasos</h2><span>{(caja.transfers || []).length} registros</span></div>{(caja.transfers || []).length === 0 ? <p className="report-empty">Sin registros</p> : <div className="report-list">{caja.transfers.map((transfer) => <div className="report-list-row" key={transfer.id}><span><small>[{timeFor(transfer.createdAt)}]</small> {boxes.find((box) => box.id === transfer.fromBoxId)?.title || "Caja"} → {boxes.find((box) => box.id === transfer.toBoxId)?.title || "Caja"}{transfer.note ? ` · ${transfer.note}` : ""}</span><b>{money(transfer.amount)}</b></div>)}</div>}</section>
-          <section className="report-block report-operation report-bonus-block"><div className="report-block-head"><h2><Gift size={16} /> Bonos</h2><span>{caja.bonuses.length} movimientos</span></div><div className="report-bonus-summary"><span>Otorgados <b>{money(grantedTotal)}</b></span><span>Recuperados <b>{money(recoveredTotal)}</b></span><strong>Neto <b>{money(calculations.bonuses)}</b></strong></div><div className="report-bonus-timeline">{bonusSlots.map((slot) => <div className="report-bonus-slot" key={slot.label}><h3>{slot.label}</h3><div>{slot.items.length === 0 ? <p className="report-empty">Sin movimientos</p> : slot.items.map((bonus) => <span className={number(bonus.recovered) > 0 ? "recovered" : "granted"} key={bonus.id}><small>{timeFor(bonus.createdAt).slice(0, 5)}</small>{number(bonus.recovered) > 0 ? "REC" : "OTO"} {money(number(bonus.recovered) || number(bonus.granted))}</span>)}</div><strong>{money(slot.items.reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0))}</strong></div>)}</div></section>
+          <section className="report-block report-operation report-bonus-block"><div className="report-block-head"><h2><Gift size={16} /> Bonos</h2><span>{caja.bonuses.length} movimientos</span></div><div className="report-bonus-summary"><span>Otorgados <b>{money(grantedTotal)}</b></span><span>Recuperados <b>{money(recoveredTotal)}</b></span><strong>Neto <b>{money(calculations.bonuses)}</b></strong></div><div className="report-bonus-timeline">{bonusSlots.map((slot) => <div className="report-bonus-slot" key={slot.label}><h3>{slot.label}</h3><div>{slot.items.length === 0 ? <p className="report-empty">Sin movimientos</p> : slot.items.map((bonus) => <span className={number(bonus.recovered) > 0 ? "recovered" : bonus.publicity ? "publicity" : "granted"} key={bonus.id}><small>{timeFor(bonus.createdAt).slice(0, 5)}</small>{number(bonus.recovered) > 0 ? "REC" : bonus.publicity ? "PUB" : "OTO"} {money(number(bonus.recovered) || number(bonus.granted))}</span>)}</div><strong>{money(slot.items.reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0))}</strong></div>)}</div></section>
         </aside>
       </main>
       {(caja.notes?.trim() || caja.nextNotes?.trim()) && <footer className="report-footer"><div><h2><FileText size={16} /> Notas del turno</h2>{caja.notes?.trim() && <p><strong>Turno actual</strong>{caja.notes}</p>}{caja.nextNotes?.trim() && <p><strong>Turno siguiente</strong>{caja.nextNotes}</p>}</div><small>Generado el {generatedAt} hs</small></footer>}
@@ -2972,7 +2958,7 @@ function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, ac
       </section>
       <div className="snapshot-grid">
         {movementRows.map(([title, icon, rows, kind]) => <section className="snapshot-panel" key={title}><h2>{icon === "ReceiptText" ? <ReceiptText size={16} /> : icon === "Coins" ? <Coins size={16} /> : <ArrowDownToLine size={16} />} {title} <small>{rows.length} registros</small></h2><div className="snapshot-list">{rows.map((row) => <div className="snapshot-line" key={row.id}><span>{(kind === "expenses" ? [row.category, row.notes] : [row.user, row.notes]).filter(Boolean).join(" · ")}</span><b>{money(row.amount)}</b></div>)}</div><div className="snapshot-total"><span>Total</span><b>{money(totalRows(rows, kind))}</b></div></section>)}
-        <section className="snapshot-panel snapshot-bonuses"><h2><Gift size={16} /> Bonos <small>{caja.bonuses.length} movimientos</small></h2><div className="snapshot-subtitle">Últimos bonos</div><div className="snapshot-list">{caja.bonuses.map((bonus) => <div className={`snapshot-line ${bonus.recovered > 0 ? "recovered" : "granted"}`} key={bonus.id}><span>{bonus.recovered > 0 ? "Recuperado" : "Otorgado"}</span><b>{money(bonus.recovered || bonus.granted)}</b></div>)}</div><div className="snapshot-bonus-total"><span>Otorgados <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0))}</b></span><span>Recuperados <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0))}</b></span><strong>Neto <b>{money(calculations.bonuses)}</b></strong></div></section>
+        <section className="snapshot-panel snapshot-bonuses"><h2><Gift size={16} /> Bonos <small>{caja.bonuses.length} movimientos</small></h2><div className="snapshot-subtitle">Últimos bonos</div><div className="snapshot-list">{caja.bonuses.map((bonus) => <div className={`snapshot-line ${bonus.recovered > 0 ? "recovered" : bonus.publicity ? "publicity" : "granted"}`} key={bonus.id}><span>{bonus.recovered > 0 ? "Recuperado" : bonus.publicity ? "Publicidad" : "Otorgado"}</span><b>{money(bonus.recovered || bonus.granted)}</b></div>)}</div><div className="snapshot-bonus-total"><span>Otorgados <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0))}</b></span><span>Recuperados <b>{money(caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0))}</b></span><strong>Neto <b>{money(calculations.bonuses)}</b></strong></div></section>
         <section className="snapshot-panel"><h2><Ticket size={16} /> Control de fichas <small>Plataformas / casino</small></h2><div className="snapshot-chip-head"><span>Plataforma</span><span>Inicial</span><span>Final</span><span>Saldo</span></div><div className="snapshot-list">{caja.chips.map((chip) => <div className="snapshot-chip-row" key={chip.platform}><span>{chip.platform}</span><b>{money(chip.initial)}</b><b>{money(chip.final)}</b><b className={number(chip.initial) - number(chip.final) < 0 ? "negative" : "positive"}>{money(number(chip.initial) - number(chip.final))}</b></div>)}</div><div className="snapshot-total"><span>Total saldo</span><b className={calculations.balance < 0 ? "negative" : "positive"}>{money(calculations.balance)}</b></div></section>
       </div>
       <div className="snapshot-notes-transfer"><section className="snapshot-panel snapshot-notes"><h2>Notas del turno</h2><div className="snapshot-note-block"><strong>Turno actual</strong><p>{caja.notes || ""}</p></div><div className="snapshot-note-block"><strong>Turno siguiente</strong><p>{caja.nextNotes || ""}</p></div></section><section className="snapshot-panel snapshot-transfers"><h2><ArrowLeftRight size={16} /> Traspasos <small>{(caja.transfers || []).length} movimientos</small></h2><div className="snapshot-list">{(caja.transfers || []).map((transfer) => { const outgoing = transfer.fromBoxId === activeBox?.id; const otherBox = boxes.find((box) => box.id === (outgoing ? transfer.toBoxId : transfer.fromBoxId)); return <div className="snapshot-line" key={transfer.id}><span>{outgoing ? "Salida a" : "Entrada de"} {otherBox?.title || "otra caja"}{transfer.note ? ` · ${transfer.note}` : ""}</span><b>{money(transfer.amount)}</b></div>; })}{!(caja.transfers || []).length && <div className="snapshot-line"><span>Sin traspasos todavía</span></div>}</div></section></div>
@@ -3344,7 +3330,10 @@ function App() {
     const accounts = caja.accounts
       .flatMap((r) => Object.entries(r.values).filter(([wallet]) => walletBelongsToBox(r, wallet, config, activeBoxId)).map(([, value]) => value))
       .reduce((s, x) => s + number(x), 0);
-    const bonuses = caja.bonuses.reduce((s, x) => s + bonusNet(x), 0);
+    const bonuses = caja.bonuses.reduce(
+      (s, x) => s + number(x.granted) - number(x.recovered),
+      0,
+    );
     const ta = caja.ta.reduce((s, x) => s + number(x.amount), 0);
     const tips = caja.tips.reduce((s, x) => s + number(x.amount), 0);
     const expenses = caja.expenses.reduce((s, x) => {
