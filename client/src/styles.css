@@ -4283,6 +4283,26 @@ select:focus {
   font: 12px "DM Mono" !important;
   font-weight: 700 !important;
 }
+.report-v5-period {
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  max-width: 65%;
+  white-space: nowrap;
+}
+.report-v5-period b,
+.report-v5-period strong,
+.report-v5-period small {
+  font: 11px "DM Mono";
+}
+.report-v5-period b::after {
+  content: " / ";
+  color: #818b9d;
+}
+.report-v5-period strong::after {
+  content: " - ";
+  color: #818b9d;
+}
 .report-v5-bonus-list > div.publicity {
   color: #7dd3fc;
 }
