@@ -1020,6 +1020,7 @@ main {
 .publicity-numbers label button, .publicity-numbers label input, .publicity-derived label button, .publicity-derived label input { pointer-events: auto; }
 .publicity-stepper { display: grid; grid-template-columns: 16px minmax(30px, 1fr) 16px; align-items: center; min-width: 0; }
 .publicity-stepper button { display: grid; place-items: center; width: 16px; height: 24px; padding: 0; border: 1px solid rgba(102, 114, 118, 0.32); border-radius: 3px; outline: 0; background: transparent; color: var(--muted); }
+.publicity-stepper button:focus { border-color: rgba(102, 114, 118, 0.32); background: transparent; color: var(--muted); }
 .publicity-stepper button:hover { border-color: var(--cyan); background: #203333; color: var(--cyan); }
 .publicity-stepper button:focus-visible { outline: 1px solid var(--cyan); outline-offset: 1px; }
 .publicity-stepper input { min-width: 30px; }
