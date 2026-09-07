@@ -1157,6 +1157,7 @@ function AmountInput({ value, onChange, placeholder = "0,00", className = "", se
 function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
   const [quick, setQuick] = useState("");
   const [recoveredMode, setRecoveredMode] = useState(false);
+  const [publicityMode, setPublicityMode] = useState(false);
   const granted = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted), 0);
   const recovered = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.recovered), 0);
   const recentBonuses = caja.bonuses.slice(-5).reverse();
@@ -1169,19 +1170,30 @@ function QuickBonusAccess({ caja, update, onViewBonuses, onAddManualBonus }) {
     event.preventDefault();
     const amount = parseNumberInput(quick);
     const recovered = event.key === "+" || (event.key !== "-" && recoveredMode);
-    const publicity = event.key === "-";
+    const publicity = !recovered && (event.key === "-" || publicityMode);
     update({ bonuses: [...caja.bonuses, { id: crypto.randomUUID(), label: "", granted: recovered ? 0 : amount, recovered: recovered ? amount : 0, publicity, verified: false, createdAt: new Date().toISOString() }] });
     setQuick("");
     setRecoveredMode(false);
+    setPublicityMode(false);
+  };
+  const cycleMode = () => {
+    if (recoveredMode) {
+      setRecoveredMode(false);
+      setPublicityMode(true);
+    } else if (publicityMode) {
+      setPublicityMode(false);
+    } else {
+      setRecoveredMode(true);
+    }
   };
   return <div className="quick-bonus-access">
     <div className="quick-bonus-header flex items-center justify-between w-full gap-2">
-      <div className={`quick-amount w-28 shrink-0 text-xs px-2 py-1 ${recoveredMode ? "recovered" : "granted"}`}>
+      <div className={`quick-amount w-28 shrink-0 text-xs px-2 py-1 ${recoveredMode ? "recovered" : publicityMode ? "publicity" : "granted"}`}>
         <span>$</span>
         <input value={quick} placeholder={`Bonos Netos: ${money(granted - recovered)}`} inputMode="decimal" aria-label="Insertar bono" onChange={(event) => setQuick(event.target.value)} onBlur={() => setQuick(formatNumberInput(quick))} onKeyDown={addBonus} />
       </div>
       <div className="quick-bonus-actions flex items-center gap-1.5 flex-shrink-0">
-        <button className={`bonus-toggle shrink-0 ${recoveredMode ? "checked recovered" : "granted"}`} title="Cambiar entre otorgado y recuperado" onClick={() => setRecoveredMode(!recoveredMode)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBonus(event); } }}><ArrowUpDown size={12} /></button>
+        <button className={`bonus-toggle shrink-0 ${recoveredMode ? "checked recovered" : publicityMode ? "checked publicity" : "granted"}`} title="Cambiar entre otorgado, recuperado y publicidad" onClick={cycleMode} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBonus(event); } }}><ArrowUpDown size={12} /></button>
         <button className="icon-button shrink-0" title="Agregar bono manual" onClick={onAddManualBonus}><Plus size={14} /></button>
         <button className="icon-button shrink-0" title="Ver y editar bonos" onClick={onViewBonuses}><Eye size={14} /></button>
       </div>
@@ -1427,6 +1439,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
 function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const [quick, setQuick] = useState("");
   const [recoveredMode, setRecoveredMode] = useState(false);
+  const [publicityMode, setPublicityMode] = useState(false);
   const [open, setOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorAmount, setEditorAmount] = useState("");
@@ -1458,7 +1471,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     if (!["Enter", "+", "-"].includes(event.key) || !parseNumberInput(quick)) return;
     event.preventDefault();
     const recovered = event.key === "+" || (event.key !== "-" && recoveredMode);
-    const publicity = event.key === "-";
+    const publicity = !recovered && (event.key === "-" || publicityMode);
     update({
       bonuses: [
         ...caja.bonuses,
@@ -1475,6 +1488,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     });
     setQuick("");
     setRecoveredMode(false);
+    setPublicityMode(false);
   };
   const editBonus = (index, patch) => {
     const bonuses = structuredClone(caja.bonuses);
@@ -1491,7 +1505,18 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
     setEditorWithdrawal("");
     setEditorPercent("");
     setRecoveredMode(false);
+    setPublicityMode(false);
     setEditorOpen(true);
+  };
+  const cycleMode = () => {
+    if (recoveredMode) {
+      setRecoveredMode(false);
+      setPublicityMode(true);
+    } else if (publicityMode) {
+      setPublicityMode(false);
+    } else {
+      setRecoveredMode(true);
+    }
   };
   const calculatedBonusAmount = Math.ceil(number(editorAmount) * (number(editorPercent) > 0 ? number(editorPercent) / 100 : 1));
   const addEditedBonus = () => {
@@ -1511,6 +1536,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
           label: "",
           granted: recoveredMode ? 0 : amount,
           recovered: recoveredMode ? amount : 0,
+          publicity: !recoveredMode && publicityMode,
           verified: false,
         },
       ],
@@ -1535,11 +1561,11 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
         }
       />
       <div className="bonus-quick">
-        <div className={`quick-amount ${recoveredMode ? "recovered" : "granted"}`}>
+        <div className={`quick-amount ${recoveredMode ? "recovered" : publicityMode ? "publicity" : "granted"}`}>
           <span>$</span>
           <input
             value={quick}
-            placeholder={`Insertar Bono ${recoveredMode ? "Recuperado" : "Otorgado"}`}
+            placeholder={`Insertar Bono ${recoveredMode ? "Recuperado" : publicityMode ? "Publicidad" : "Otorgado"}`}
             inputMode="decimal"
             onChange={(e) => setQuick(e.target.value)}
             onBlur={() => setQuick(formatNumberInput(quick))}
@@ -1547,9 +1573,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
           />
         </div>
         <button
-          className={`bonus-toggle ${recoveredMode ? "checked" : ""}`}
-          title="Cambiar entre otorgado y recuperado"
-          onClick={() => setRecoveredMode(!recoveredMode)}
+          className={`bonus-toggle ${recoveredMode ? "checked recovered" : publicityMode ? "checked publicity" : "granted"}`}
+          title="Cambiar entre otorgado, recuperado y publicidad"
+          onClick={cycleMode}
           onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addBonus(event); } }}
         >
           <ArrowUpDown size={13} />
@@ -1559,7 +1585,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
         <div className="modal-backdrop" onClick={() => setEditorOpen(false)}>
           <div className="modal bonus-editor-modal" onClick={(event) => event.stopPropagation()}>
             <button className="modal-close" onClick={() => setEditorOpen(false)} title="Cancelar"><X size={18} /></button>
-            <div className={`modal-icon ${recoveredMode ? "green" : "orange"}`}><Gift size={22} /></div>
+            <div className={`modal-icon ${recoveredMode ? "green" : publicityMode ? "publicity" : "orange"}`}><Gift size={22} /></div>
             <h2>Agregar bono</h2>
             <p>Ingresá un valor, aplicá un porcentaje (opcional)
 
@@ -1582,9 +1608,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                 </div>
               </label>
             </div>
-            <div className={`bonus-editor-type ${recoveredMode ? "recovered" : "granted"}`}>
-              <span>{recoveredMode ? "Bono recuperado" : "Bono otorgado"}</span>
-              <button className={`bonus-toggle ${recoveredMode ? "checked" : ""}`} title="Cambiar tipo" onClick={() => setRecoveredMode(!recoveredMode)}>
+            <div className={`bonus-editor-type ${recoveredMode ? "recovered" : publicityMode ? "publicity" : "granted"}`}>
+              <span>{recoveredMode ? "Bono recuperado" : publicityMode ? "Bono publicidad" : "Bono otorgado"}</span>
+              <button className={`bonus-toggle ${recoveredMode ? "checked recovered" : publicityMode ? "checked publicity" : "granted"}`} title="Cambiar tipo" onClick={cycleMode}>
                 <ArrowUpDown size={13} />
               </button>
             </div>
@@ -1633,9 +1659,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                 onChange={(value) => editBonus(index, bonus.recovered > 0 ? { recovered: value, granted: 0 } : { granted: value, recovered: 0 })}
               />
               <button
-                className={`bonus-toggle ${bonus.recovered > 0 ? "checked" : ""}`}
+                className={`bonus-toggle ${bonus.recovered > 0 ? "checked recovered" : bonus.publicity ? "checked publicity" : "granted"}`}
                 title="Cambiar entre otorgado y recuperado"
-                onClick={() => editBonus(index, bonus.recovered > 0 ? { recovered: 0, granted: bonus.recovered } : { granted: 0, recovered: bonus.granted, publicity: false })}
+                onClick={() => editBonus(index, bonus.recovered > 0 ? { recovered: 0, granted: bonus.recovered, publicity: true } : bonus.publicity ? { granted: bonus.granted, recovered: 0, publicity: false } : { granted: 0, recovered: bonus.granted, publicity: false })}
               >
                 <ArrowUpDown size={13} />
               </button>

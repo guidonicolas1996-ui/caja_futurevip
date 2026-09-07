@@ -1110,6 +1110,11 @@ main {
   background: var(--green);
   color: #102322;
 }
+.quick-bonus-access .bonus-toggle.publicity.checked {
+  background: #7dd3fc;
+  border-color: #7dd3fc;
+  color: #102322;
+}
 .quick-bonus-access .icon-button {
   width: 27px;
   height: 27px;
@@ -2135,6 +2140,9 @@ select:focus {
 }
 .bonus-editor-type.recovered {
   color: var(--green);
+}
+.bonus-editor-type.publicity {
+  color: #7dd3fc;
 }
 .bonus-editor-label {
   display: block;
@@ -3680,6 +3688,15 @@ select:focus {
 .bonus-toggle.checked {
   background: var(--green);
   border-color: var(--green);
+  color: #102322;
+}
+.bonus-toggle.publicity {
+  border-color: #7dd3fc;
+  color: #7dd3fc;
+}
+.bonus-toggle.checked.publicity {
+  background: #7dd3fc;
+  border-color: #7dd3fc;
   color: #102322;
 }
 .bonus-row {
