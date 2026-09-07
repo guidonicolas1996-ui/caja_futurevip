@@ -1092,9 +1092,9 @@ function NumericInput({ value, onChange, placeholder = "", zeroPlaceholder = "",
         if (selectAll) {
           selectAllPending.current = false;
           selectAllHandled.current = true;
-          const formattedValue = hasExplicitValue ? formatNumberInput(normalizedValue) : "";
-          selectionRef.current = { start: 0, end: formattedValue.length };
-          setInputValue(formattedValue);
+          const numericText = hasExplicitValue ? String(normalizedValue) : "";
+          selectionRef.current = { start: 0, end: numericText.length };
+          setInputValue(numericText);
           return;
         }
         if (numericOnly) {
