@@ -4283,6 +4283,9 @@ select:focus {
   font: 12px "DM Mono" !important;
   font-weight: 700 !important;
 }
+.report-v5-bonus-list > div.publicity {
+  color: #7dd3fc;
+}
 .report-v5-chip-log .report-v5-line > span {
   display: flex;
   align-items: center;
