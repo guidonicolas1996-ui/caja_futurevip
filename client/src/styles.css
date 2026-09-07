@@ -4300,8 +4300,25 @@ select:focus {
   color: #818b9d;
 }
 .report-v5-period strong::after {
-  content: " - ";
+  content: "\00a0-\00a0";
   color: #818b9d;
+}
+.report-v5-period b::after {
+  content: "\00a0/\00a0";
+}
+.report-v5-brand > div {
+  white-space: nowrap;
+}
+.report-v5-brand strong {
+  display: inline;
+}
+.report-v5-brand strong::after {
+  content: "\00a0/\00a0";
+  color: #818b9d;
+}
+.report-v5-brand small {
+  display: inline;
+  font: 11px "DM Mono";
 }
 .report-v5-bonus-list > div.publicity {
   color: #7dd3fc;
