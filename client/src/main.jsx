@@ -3296,10 +3296,16 @@ function App() {
   };
   const updateAccountsFromLogistics = (accounts) => update({ accounts }, true);
   const enqueueConfigSave = (operation) => {
-    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(() => enqueueWrite(() => operation())).catch(async (error) => {
-      if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
-      throw error;
-    });
+    const saveWithRetry = async () => {
+      try {
+        return await enqueueWrite(() => operation());
+      } catch (error) {
+        if (error.status !== 409 && error.code !== "OUTDATED_STATE") throw error;
+        await syncAfterConflict();
+        return enqueueWrite(() => operation());
+      }
+    };
+    const queuedSave = configSaveChainRef.current.catch(() => undefined).then(saveWithRetry);
     configSaveChainRef.current = queuedSave.catch(() => undefined);
     return queuedSave;
   };
