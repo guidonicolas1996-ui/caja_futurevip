@@ -72,6 +72,7 @@ const defaultConfig = () => ({
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
+  platformEnabled: Object.fromEntries(plataformas.map((platform) => [platform, true])),
   platformSubPlatforms: Object.fromEntries(plataformas.map((platform) => [platform, []])),
   users: [],
   userClarifications: [],
@@ -114,7 +115,7 @@ const blankCaja = (id, previous = null, config = defaultConfig()) => {
     found: 0,
     foundMoney: [],
     advertising: previous?.shift === 'Tarde' ? blankAdvertising() : structuredClone(previous?.advertising || blankAdvertising()),
-    chips: config.platforms.map((platform) => {
+    chips: config.platforms.filter((platform) => config.platformEnabled?.[platform] !== false).map((platform) => {
       const previousChip = previous?.chips?.find((item) => item.platform === platform);
       const value = previousChip?.final ?? 0;
       return {
@@ -219,6 +220,8 @@ function normalizeConfig(config) {
   };
   const platforms = Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms;
   const platformColors = Object.fromEntries(platforms.map((platform, index) => [platform, colors.includes(config?.platformColors?.[platform]) ? config.platformColors[platform] : defaults.platformColors[platform] || colors[index % colors.length]]));
+  const sourcePlatformEnabled = config?.platformEnabled || {};
+  const platformEnabled = Object.fromEntries(platforms.map((platform) => [platform, sourcePlatformEnabled[platform] !== false]));
   const sourceSubPlatforms = config?.platformSubPlatforms || {};
   const platformSubPlatforms = Object.fromEntries(platforms.map((platform) => [platform, (Array.isArray(sourceSubPlatforms[platform]) ? sourceSubPlatforms[platform] : []).map((item) => {
     if (typeof item === 'string') return { name: String(item || '').trim(), color: 'teal' };
@@ -258,7 +261,7 @@ function normalizeConfig(config) {
     linkedUsers: Array.isArray(user?.linkedUsers) ? user.linkedUsers.filter(Boolean).map(String) : [],
   })) : [];
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformEnabled, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || (goal.platformDeposits && Object.keys(goal.platformDeposits).length > 0));
@@ -478,6 +481,7 @@ function migrateConfigMaps(config, holderRenames, walletRenames, platformRenames
   accounts.walletSettings = Object.fromEntries(Object.entries(accounts.walletSettings || {}).map(([holder, values]) => [holderRenames[holder] || holder, renameKeys(values, walletRenames)]));
   accounts.walletModes = renameKeys(accounts.walletModes, walletRenames);
   next.platformColors = renameKeys(next.platformColors, platformRenames);
+  next.platformEnabled = renameKeys(next.platformEnabled, platformRenames);
   next.accounts = accounts;
   if (next.logistics) {
     const keyRename = (key) => {

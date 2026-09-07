@@ -218,6 +218,9 @@
 .wallet-mode-deposit { color: var(--red) !important; }
 .platform-config-list { max-width: 760px; }
 .platform-config-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) 130px 28px; gap: 9px; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(43,56,59,.55); }
+.platform-config-list .platform-config-row { grid-template-columns: 10px minmax(0, 1fr) 130px 92px 28px; }
+.platform-enabled-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--muted); font-size: 9px; white-space: nowrap; }
+.platform-enabled-toggle input { accent-color: var(--cyan); }
 .platform-config-row input, .platform-config-row select { min-width: 0; width: 100%; }
 .config-list-row input, .expense-config-row input { min-width: 0; flex: 1; }
 .delete-button { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: #293638; color: var(--red); }
