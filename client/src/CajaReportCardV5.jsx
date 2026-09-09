@@ -40,6 +40,12 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
       if (!finalValue || !platform) return;
       finalValue.style.color = colors[config.platformColors?.[platform]] || colors.teal;
     });
+    const summaryRows = snapshotRef.current?.querySelectorAll(".report-v5-chip-summary div") || [];
+    summaryRows.forEach((row) => {
+      const platform = row.querySelector("span")?.textContent?.trim();
+      const value = row.querySelector("b");
+      if (value && platform) value.style.color = colors[config.platformColors?.[platform]] || colors.teal;
+    });
   }, [config.platformColors, chips]);
   const metric = (label, value, hero = false) => <div className={`report-v5-metric ${hero ? "hero" : ""}`}><span>{label}</span><b className={value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
   return <div ref={snapshotRef} className="snapshot-export report-card report-v5">
