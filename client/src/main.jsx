@@ -3431,6 +3431,7 @@ function App() {
     const cashDifference = cashFinal - cashInitial;
     const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
     const realDifference = difference - bonuses + transferAdjustment;
+    const realProfit = realDifference * 0.77;
     const foundTotal = Array.isArray(caja.foundMoney) ? caja.foundMoney.reduce((sum, record) => sum + number(record.amount), 0) : number(caja.found);
     const shortage = difference - balance - tips - foundTotal + number(caja.found) + transferAdjustment;
     return {
@@ -3447,6 +3448,7 @@ function App() {
       balance,
       cashDifference,
       realDifference,
+      realProfit,
       transferAdjustment,
       shortage,
     };
