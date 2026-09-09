@@ -4358,6 +4358,9 @@ select:focus {
 .report-v5-chip-log .report-v5-line > .report-v5-chip-final::after {
   content: ",00";
 }
+.report-v5-bonus-summary > strong { font-size: 14.7px; white-space: nowrap; }
+.report-v5-bonus-summary > strong::before { content: "Bonos Netos: "; }
+.report-v5-bonus-summary > span { display: none; }
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}
 .modal .modal-icon { display: grid; position: absolute; top: 25px; left: 24px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 0; background: transparent !important; color: var(--box-accent, var(--cyan)); }
 .modal { padding: 24px; }
