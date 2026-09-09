@@ -50,7 +50,7 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
       if (chip && value) {
         const detail = document.createElement("small");
         detail.className = "report-v5-chip-detail";
-        detail.textContent = `Inicial: ${money(chip.initial)} Saldo: ${money(chipBalance(chip))}`;
+        detail.innerHTML = `Inicial: ${money(chip.initial)} Saldo: <span class="report-v5-chip-balance ${chipBalance(chip) < 0 ? "negative" : "positive"}">${money(chipBalance(chip))}</span>`;
         row.insertBefore(detail, value);
       }
     });

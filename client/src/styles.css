@@ -4358,7 +4358,8 @@ select:focus {
 .report-v5-chip-log .report-v5-line > .report-v5-chip-final::after {
   content: ",00";
 }
-.report-v5-bonus-summary > strong { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14.7px; white-space: nowrap; }
+.report-v5-bonus-summary > strong { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14.7px; font-weight: 700; white-space: nowrap; }
+.report-v5-bonus-summary > strong b { font-weight: 700; }
 .report-v5-bonus-summary > strong::before { content: "Bonos Netos: "; }
 .report-v5-bonus-summary > span { display: none; }
 .report-v5-bonus-summary > div span:nth-child(1) { color: #f5ad69; }
@@ -4373,6 +4374,8 @@ select:focus {
 .report-v5-chip-summary div { position: relative; min-width: 0; min-height: 32px; align-items: flex-start; }
 .report-v5-chip-summary div span { flex: 0 0 auto; }
 .report-v5-chip-detail { position: absolute; right: 145px; bottom: 1px; left: 0; margin: 0; overflow: visible; color: #8c96a8; font: 6.5px/1 "DM Mono"; white-space: nowrap; }
+.report-v5-chip-balance.positive { color: #6fa58a; }
+.report-v5-chip-balance.negative { color: #b4777c; }
 .report-v5-chip-summary div b { align-self: center; }
 .report-v5-chip-summary b::after,
 .report-v5-bonus-totals { display: none !important; }
