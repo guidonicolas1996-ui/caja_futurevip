@@ -842,6 +842,34 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
 function BonusConfig({ draft, setDraft }) {
   const types = draft.bonusTypes || [];
   const conditions = draft.bonusConditions || [];
+  const dragIndexRef = React.useRef(null);
+  useEffect(() => {
+    const rows = [...document.querySelectorAll(".config-two-columns > .config-card:first-child .config-list-row")];
+    rows.forEach((row, index) => {
+      row.draggable = true;
+      row.classList.add("sortable");
+      row.ondragstart = () => { dragIndexRef.current = index; };
+      row.ondragover = (event) => event.preventDefault();
+      row.ondrop = () => {
+        const sourceIndex = dragIndexRef.current;
+        if (sourceIndex === null || sourceIndex === index) return;
+        setDraft((current) => {
+          const next = [...(current.bonusTypes || [])];
+          const [moved] = next.splice(sourceIndex, 1);
+          next.splice(index, 0, moved);
+          return { ...current, bonusTypes: next };
+        });
+        dragIndexRef.current = null;
+      };
+      row.ondragend = () => { dragIndexRef.current = null; };
+    });
+    return () => rows.forEach((row) => {
+      row.ondragstart = null;
+      row.ondragover = null;
+      row.ondrop = null;
+      row.ondragend = null;
+    });
+  }, [types.length, setDraft]);
   return <div className="config-two-columns"><section className="config-card"><div className="config-list-head"><h3>Tipos de bonos</h3><span>{types.length} elementos</span></div>{types.map((type, index) => <div className="config-list-row" key={type.id}><input value={type.name} placeholder="Nombre del tipo" onChange={(event) => setDraft((current) => ({ ...current, bonusTypes: (current.bonusTypes || []).map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} /><input className="bonus-type-count" type="number" min="1" max="20" value={type.percentageCount || 1} title="Cantidad de porcentajes" onChange={(event) => setDraft((current) => ({ ...current, bonusTypes: (current.bonusTypes || []).map((item, itemIndex) => itemIndex === index ? { ...item, percentageCount: Math.max(1, Math.min(20, Number(event.target.value) || 1)) } : item) }))} /><button className="delete-button" type="button" title="Eliminar tipo" onClick={() => setDraft((current) => ({ ...current, bonusTypes: (current.bonusTypes || []).filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, bonusTypes: [...(current.bonusTypes || []), { id: `bonus-type-${crypto.randomUUID()}`, name: "", percentageCount: 1 }] }))}><Plus size={15} /> Agregar tipo</button></section><section className="config-card"><div className="config-list-head"><h3>Condiciones de bono</h3><span>{conditions.length} elementos</span></div>{conditions.map((condition, index) => <div className="config-list-row bonus-condition-config-row" key={condition.id}><input value={condition.label} placeholder="Etiqueta de condición" onChange={(event) => setDraft((current) => ({ ...current, bonusConditions: (current.bonusConditions || []).map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} /><label className="bonus-platform-toggle" title="Permitir asignar una plataforma a los porcentajes"><input type="checkbox" checked={condition.allowPlatform === true} onChange={(event) => setDraft((current) => ({ ...current, bonusConditions: (current.bonusConditions || []).map((item, itemIndex) => itemIndex === index ? { ...item, allowPlatform: event.target.checked } : item) }))} /><span /> Plataforma</label><button className="delete-button" type="button" title="Eliminar condición" onClick={() => setDraft((current) => ({ ...current, bonusConditions: (current.bonusConditions || []).filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, bonusConditions: [...(current.bonusConditions || []), { id: `bonus-condition-${crypto.randomUUID()}`, label: "", allowPlatform: false }] }))}><Plus size={15} /> Agregar condición</button></section></div>;
 }
 
@@ -2059,6 +2087,7 @@ function MiniBonusesPanel({ config, activeBoxId, api }) {
   const typeNameFor = (bonus) => types.find((type) => type.id === bonus.typeId)?.name || "Sin tipo";
   const percentageFor = (bonus) => number(bonus.conditions?.at(-1)?.percentage);
   const platformFor = (bonus) => bonus.conditions?.at(-1)?.platform || "Todas";
+  const typeOrder = new Map(types.map((type, index) => [type.name, index]));
   const filtered = bonuses.filter((bonus) => (!typeFilter || bonus.typeId === typeFilter) && `${bonus.name} ${typeNameFor(bonus)} ${(bonus.conditions || []).map((item) => `${item.percentage} ${conditions.find((condition) => condition.id === item.conditionId)?.label || ""} ${item.platform || ""}`).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const sorted = filtered.slice().sort((left, right) => {
     const values = sortBy === "name" ? [left.name, right.name] : sortBy === "type" ? [typeNameFor(left), typeNameFor(right)] : sortBy === "percentage" ? [percentageFor(left), percentageFor(right)] : [left.createdAt || "", right.createdAt || ""];
@@ -2073,7 +2102,8 @@ function MiniBonusesPanel({ config, activeBoxId, api }) {
     return result;
   }, []);
   if (groupBy === "percentage") groups.sort((left, right) => left.value - right.value);
-  else if (groupBy === "type" || groupBy === "platform") groups.sort((left, right) => left.label.localeCompare(right.label, "es", { sensitivity: "base" }));
+  else if (groupBy === "type") groups.sort((left, right) => (typeOrder.get(left.label) ?? Number.MAX_SAFE_INTEGER) - (typeOrder.get(right.label) ?? Number.MAX_SAFE_INTEGER));
+  else if (groupBy === "platform") groups.sort((left, right) => left.label.localeCompare(right.label, "es", { sensitivity: "base" }));
   return <section className="panel mini-bonuses-panel">
     <div className="section-head mini-bonuses-head"><div className="section-title"><Gift size={18} /><div><h2>Estados</h2></div></div></div>
     <div className="mini-bonuses-search"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar bono" aria-label="Buscar bono" /><button className={`filter-toggle mini-bonuses-filter-toggle ${filtersOpen ? "active" : ""}`} type="button" title="Mostrar filtros" aria-label="Mostrar filtros" aria-expanded={filtersOpen} onClick={() => setFiltersOpen((open) => !open)}><SlidersHorizontal size={14} />{(typeFilter || sortBy !== "percentage" || sortDirection !== "asc" || groupBy !== "type") && <i />}</button>{filtersOpen && <div className="bonus-filters mini-bonus-filters"><label><span>Tipo</span><select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}><option value="">Todos los tipos</option>{types.map((type) => <option value={type.id} key={type.id}>{type.name}</option>)}</select></label><label><span>Ordenar por</span><div className="mini-sort-control"><select value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="percentage">Porcentaje</option><option value="name">Nombre</option><option value="type">Tipo de bono</option><option value="date">Fecha de alta</option></select><button className="sort-direction" type="button" title={sortDirection === "asc" ? "Orden ascendente" : "Orden descendente"} aria-label={sortDirection === "asc" ? "Cambiar a orden descendente" : "Cambiar a orden ascendente"} onClick={() => setSortDirection((direction) => direction === "asc" ? "desc" : "asc")}>{sortDirection === "asc" ? "↑" : "↓"}</button></div></label><label><span>Agrupar por</span><select value={groupBy} onChange={(event) => setGroupBy(event.target.value)}><option value="type">Tipo de bono</option><option value="percentage">Porcentaje</option><option value="platform">Plataforma del porcentaje</option><option value="none">Sin agrupación</option></select></label></div>}</div>
@@ -2905,6 +2935,7 @@ function BonusesPage({ config, activeBoxId, api, onNotify, onWrite, onVersionCha
   const filtered = bonuses.filter((bonus) => (!typeFilter || bonus.typeId === typeFilter) && `${bonus.name} ${types.find((type) => type.id === bonus.typeId)?.name || ""} ${(bonus.conditions || []).map((item) => `${item.percentage}% ${conditions.find((condition) => condition.id === item.conditionId)?.label || ""}`).join(" ")}`.toLowerCase().includes(search.toLowerCase()));
   const percentageFor = (bonus) => number(bonus.conditions?.at(-1)?.percentage);
   const platformFor = (bonus) => bonus.conditions?.at(-1)?.platform || "Todas";
+  const typeOrder = new Map(types.map((type, index) => [type.name, index]));
   const typeNameFor = (bonus) => types.find((type) => type.id === bonus.typeId)?.name || "Sin tipo";
   const sorted = filtered.slice().sort((left, right) => {
     const values = sortBy === "name" ? [left.name, right.name] : sortBy === "type" ? [typeNameFor(left), typeNameFor(right)] : sortBy === "percentage" ? [percentageFor(left), percentageFor(right)] : [left.createdAt || "", right.createdAt || ""];
@@ -2919,7 +2950,8 @@ function BonusesPage({ config, activeBoxId, api, onNotify, onWrite, onVersionCha
     return result;
   }, []);
   if (groupBy === "percentage") groups.sort((left, right) => left.value - right.value);
-  else if (groupBy === "type" || groupBy === "platform") groups.sort((left, right) => left.label.localeCompare(right.label, "es", { sensitivity: "base" }));
+  else if (groupBy === "type") groups.sort((left, right) => (typeOrder.get(left.label) ?? Number.MAX_SAFE_INTEGER) - (typeOrder.get(right.label) ?? Number.MAX_SAFE_INTEGER));
+  else if (groupBy === "platform") groups.sort((left, right) => left.label.localeCompare(right.label, "es", { sensitivity: "base" }));
   const changeType = (typeId) => setForm((current) => ({ ...current, typeId, conditions: conditionsForType(typeId, current.conditions) }));
   return (
     <main className="bonuses-page">
