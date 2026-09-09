@@ -122,8 +122,6 @@
 }
 .operations-grid > .panel:nth-child(3) {
   grid-column: 3;
-.report-v5-head h2 { line-height: 1; }
-.report-v5-head h2 svg { flex: 0 0 auto; }
   grid-row: 1 / span 2;
 }
 .operations-grid > .panel:nth-child(4) {
@@ -4384,6 +4382,8 @@ select:focus {
 .report-v5-chip-summary b::after,
 .report-v5-bonus-totals { display: none !important; }
 .report-v5-log-grid .report-v5-chip-log { display: none !important; }
+.report-v5-head h2 { line-height: 1; }
+.report-v5-head h2 svg { flex: 0 0 auto; }
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}
 .modal .modal-icon { display: grid; position: absolute; top: 25px; left: 24px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 0; background: transparent !important; color: var(--box-accent, var(--cyan)); }
 .modal { padding: 24px; }
