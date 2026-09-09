@@ -222,6 +222,8 @@
 .platform-enabled-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: var(--muted); font-size: 9px; white-space: nowrap; }
 .platform-enabled-toggle input { accent-color: var(--cyan); }
 .platform-config-row input, .platform-config-row select { min-width: 0; width: 100%; }
+.platform-subplatform-button { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: #293638; color: var(--cyan); cursor: pointer; }
+.platform-subplatform-button:hover { border-color: var(--cyan); background: #314344; }
 .config-list-row input, .expense-config-row input { min-width: 0; flex: 1; }
 .delete-button { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 5px; background: #293638; color: var(--red); }
 .config-add { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; padding: 7px 9px; border: 1px solid #365a59; border-radius: 5px; background: #203333; color: var(--cyan); font-size: 10px; }

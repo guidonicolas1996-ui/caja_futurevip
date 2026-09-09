@@ -309,7 +309,7 @@ async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
   } catch (thumbnailError) {
     console.error(`No se pudo generar la miniatura de ${id}: ${thumbnailError.message}`);
   }
-  const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; const updatedAt = await writeSpaces(spaces, metadata?.updatedAt ?? spaces.updatedAt); return { bonus: config.bonuses[index], updatedAt };
+  const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; const updatedAt = await writeSpaces(spaces, spaces.updatedAt); return { bonus: config.bonuses[index], updatedAt };
 }
 export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
 const thumbnailPathFor = (spaceId, imagePath) => {
