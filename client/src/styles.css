@@ -4303,8 +4303,9 @@ select:focus {
 .report-v5-period b,
 .report-v5-period strong,
 .report-v5-period small {
-  font: 11px "DM Mono";
+  font: 16px "DM Mono";
 }
+.report-v5-period { transform: translateY(-8px); transform-origin: right bottom; }
 .report-v5-period b::after {
   content: " / ";
   color: #818b9d;
