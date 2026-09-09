@@ -3,7 +3,7 @@ import { ArrowDownToLine, ArrowLeftRight, Banknote, Coins, FileText, Gift, Recei
 
 const n = (value) => Number(value) || 0;
 const money = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n(value));
-const moneyWhole = (value) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n(value));
+const moneyWhole = (value) => money(value);
 const time = (value) => value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "--:--";
 const bonusSlotFor = (createdAt, cajaDate, shiftStart) => {
   const bonusDate = new Date(createdAt);
@@ -47,7 +47,7 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
       if (value && platform) value.style.color = colors[config.platformColors?.[platform]] || colors.teal;
     });
   }, [config.platformColors, chips]);
-  const metric = (label, value, hero = false) => <div className={`report-v5-metric ${hero ? "hero" : ""}`}><span>{label}</span><b className={value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
+  const metric = (label, value, hero = false) => <div className={`report-v5-metric ${hero ? "hero" : ""}`}><span>{label === "Pre-diferencia" ? "Diferencia de Caja" : label}</span><b className={value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
   return <div ref={snapshotRef} className="snapshot-export report-card report-v5">
     <header className="report-v5-header"><div className="report-v5-brand"><span><Banknote size={24} /></span><div><strong>CAJA<span>flow</span></strong><small>Ficha de cierre operativo</small></div></div><div className="report-v5-period"><b>Turno {caja.shift}</b><strong>{period}</strong><small>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</small></div></header>
     <section className="report-v5-kpis">{metric("Caja final", calculations.cashFinal, true)}{metric("Sobrante / Faltante", calculations.shortage, true)}{metric("Diferencia real", calculations.realDifference, true)}{metric("Ganancia Real", calculations.realProfit, true)}<div className="report-v5-secondary">{metric("Caja inicial", calculations.cashInitial)}{metric("Pre-diferencia", calculations.preDifference)}{metric("Redondeo", caja.found)}</div></section>
