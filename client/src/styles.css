@@ -4364,6 +4364,9 @@ select:focus {
 .report-v5-bonus-summary > div span:nth-child(1) { color: #f5ad69; }
 .report-v5-bonus-summary > div span:nth-child(2) { color: #83d5a2; }
 .report-v5-bonus-summary > div span:nth-child(3) { color: #7dd3fc; }
+.report-v5-bonus-summary > div span:nth-child(3) { font-size: 0; }
+.report-v5-bonus-summary > div span:nth-child(3)::before { content: "Otorgados Publicidad"; font-size: 9px; }
+.report-v5-bonus-summary > div span:nth-child(3) b { font-size: 9px; }
 .report-v5-bonus-summary > div span b { color: inherit; }
 .report-v5-chip-summary div { font-size: 12.5px; }
 .report-v5-chip-summary b::after,

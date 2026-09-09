@@ -29,9 +29,9 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
   const chipBalance = (chip) => n(chip.initial) - n(chip.final);
   const totalFor = (title, list) => title === "Gastos" ? list.reduce((sum, row) => { const category = config.expenses.find((item) => item.name === row.category); return sum + n(row.amount) * (category?.inverted ? -1 : 1); }, 0) : list.reduce((sum, row) => sum + n(row.amount), 0);
   const bonusSlots = Array.from({ length: 4 }, (_, index) => { const from = (start + index * 2) % 24; const to = (from + 2) % 24; const items = (caja.bonuses || []).filter((bonus) => bonusSlotFor(bonus.createdAt, caja.date, start) === index); return { label: `${String(from).padStart(2, "0")}:00 - ${String(to).padStart(2, "0")}:00`, items }; });
-  const granted = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.granted), 0);
-  const recovered = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.recovered), 0);
   const publicity = (caja.bonuses || []).filter((bonus) => bonus.publicity).reduce((sum, bonus) => sum + n(bonus.granted), 0);
+  const granted = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.granted), 0) - publicity;
+  const recovered = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.recovered), 0);
   useEffect(() => {
     const platformRows = snapshotRef.current?.querySelectorAll(".report-v5-chip-log .report-v5-line") || [];
     platformRows.forEach((row) => {
