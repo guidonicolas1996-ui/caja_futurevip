@@ -177,7 +177,8 @@ const statisticsFor = (caja, config, activeBoxId) => {
   const cashDifference = cashFinal - cashInitial;
   const transfers = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
   const realDifference = difference - (granted - recovered) + transfers;
-  return { tips, found, rounding, granted, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, transfers, bonusesNet: granted - recovered };
+  const realProfit = realDifference * 0.77;
+  return { tips, found, rounding, granted, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, realProfit, transfers, bonusesNet: granted - recovered };
 };
 const api = (url, options) =>
   fetch(`${import.meta.env.VITE_API_URL || ""}${url}`, {
@@ -2322,6 +2323,7 @@ function SummaryCard({ caja, calculations, update }) {
         {metric("Caja final", calculations.cashFinal)}
         {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
         {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
+        {metric("Ganancia Real", calculations.realProfit, "", calculations.realProfit >= 0 ? "positive" : "negative")}
       </div>
       <div className="found-money">
         <label>Redondeo</label>
@@ -2351,6 +2353,7 @@ function SummaryCard({ caja, calculations, update }) {
               {metric("Redondeo", caja.found)}
               {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
               {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
+              {metric("Ganancia Real", calculations.realProfit, "", calculations.realProfit >= 0 ? "positive" : "negative")}
             </div>
           </div>
         </div>
