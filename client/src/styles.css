@@ -4369,6 +4369,8 @@ select:focus {
 .report-v5-bonus-summary > div span:nth-child(3) b { font-size: 9px; }
 .report-v5-bonus-summary > div span b { color: inherit; }
 .report-v5-chip-summary div { font-size: 12.5px; }
+.report-v5-chip-summary b { font-size: 15px; }
+.report-v5-chip-detail { color: #8c96a8; font: 8px "DM Mono"; white-space: nowrap; }
 .report-v5-chip-summary b::after,
 .report-v5-bonus-totals { display: none !important; }
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}

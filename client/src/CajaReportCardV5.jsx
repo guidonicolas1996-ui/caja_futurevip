@@ -45,7 +45,17 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
       const platform = row.querySelector("span")?.textContent?.trim();
       const value = row.querySelector("b");
       if (value && platform) value.style.color = colors[config.platformColors?.[platform]] || colors.teal;
+      row.querySelector(".report-v5-chip-detail")?.remove();
+      const chip = chips.find((item) => item.platform === platform);
+      if (chip && value) {
+        const detail = document.createElement("small");
+        detail.className = "report-v5-chip-detail";
+        detail.textContent = `Inicial: ${money(chip.initial)} Saldo: ${money(chipBalance(chip))}`;
+        row.insertBefore(detail, value);
+      }
     });
+    const chipTitle = snapshotRef.current?.querySelector(".report-v5-right-summary .report-v5-summary-card:first-child h2");
+    if (chipTitle?.lastChild?.nodeType === Node.TEXT_NODE) chipTitle.lastChild.textContent = " Control de Fichas";
   }, [config.platformColors, chips]);
   const metric = (label, value, hero = false) => <div className={`report-v5-metric ${hero ? "hero" : ""}`}><span>{label === "Pre-diferencia" ? "Diferencia de Caja" : label}</span><b className={value < 0 ? "negative" : value > 0 ? "positive" : "neutral"}>{label === "Sobrante / Faltante" && value >= 0 ? "+" : ""}{money(value)}</b></div>;
   return <div ref={snapshotRef} className="snapshot-export report-card report-v5">
