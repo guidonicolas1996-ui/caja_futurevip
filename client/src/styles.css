@@ -4368,7 +4368,7 @@ select:focus {
 .report-v5-bonus-summary > div span:nth-child(2) { color: #83d5a2; }
 .report-v5-bonus-summary > div span:nth-child(3) { color: #7dd3fc; }
 .report-v5-bonus-summary > div span:nth-child(3) { font-size: 0; }
-.report-v5-bonus-summary > div span:nth-child(3)::before { content: "Otorgados Publicidad"; font-size: 9px; }
+.report-v5-bonus-summary > div span:nth-child(3)::before { content: "Otorgados (Publicidad)"; font-size: 9px; }
 .report-v5-bonus-summary > div span:nth-child(3) b { font-size: 9px; }
 .report-v5-bonus-summary > div span b { color: inherit; }
 .report-v5-chip-summary div { font-size: 12.5px; }
@@ -4382,8 +4382,8 @@ select:focus {
 .report-v5-chip-summary b::after,
 .report-v5-bonus-totals { display: none !important; }
 .report-v5-log-grid .report-v5-chip-log { display: none !important; }
-.report-v5-head h2 { line-height: 1; }
-.report-v5-head h2 svg { flex: 0 0 auto; }
+.report-v5-head h2 { height: 18px; line-height: 18px; align-items: center; }
+.report-v5-head h2 svg { width: 18px; height: 18px; flex: 0 0 18px; }
 @media(max-width:700px){.movement-edit-row{grid-template-columns:1fr 1fr}.movement-edit-row input:last-child{grid-column:1/-1}.movement-edit-row select{grid-column:1/-1}.recent-movement{font-size:9px}}
 .modal .modal-icon { display: grid; position: absolute; top: 25px; left: 24px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 0; background: transparent !important; color: var(--box-accent, var(--cyan)); }
 .modal { padding: 24px; }
