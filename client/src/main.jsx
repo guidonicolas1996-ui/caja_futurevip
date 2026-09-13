@@ -2238,8 +2238,8 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
                 {combinedView ? selectedHistories.map(({ box: sourceBox, rows }) => {
                   const sourceRows = group.shift === "Total" ? filterRows(rows) : filterRows(rows).filter((caja) => caja.shift === group.shift);
                   const sourceData = sourceRows.flatMap((caja) => caja.chipLoads || []).reduce((acc, load) => ({ ...acc, [load.platform]: (acc[load.platform] || 0) + number(load.amount) }), {});
-                  return <div className="statistics-metric-group" key={sourceBox.id}><h4>{sourceBox.title}</h4>{chipPlatforms.map((platform) => <div key={platform}><span>Carga de Fichas {platform}</span><b>{money(sourceData[platform] || 0)}</b></div>)}</div>;
-                }) : chipPlatforms.map((platform) => <div key={platform}><span>Carga de Fichas {platform}</span><b>{money(chipData[platform] || 0)}</b></div>)}
+                  return <div className="statistics-metric-group" key={sourceBox.id}><h4>{sourceBox.title}</h4>{chipPlatforms.map((platform) => <div key={platform}><span>{platform}</span><b>{money(sourceData[platform] || 0)}</b></div>)}</div>;
+                }) : chipPlatforms.map((platform) => <div key={platform}><span>{platform}</span><b>{money(chipData[platform] || 0)}</b></div>)}
               </div>
             ) : null;
           }
