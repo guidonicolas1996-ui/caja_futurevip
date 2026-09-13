@@ -2226,7 +2226,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         const accentColor = combinedView ? "#ffffff" : box.color ? boxColorStyle(box.color)["--box-accent"] : "#72d7ca";
         if (section.dynamic) {
           if (section.section === "Cargas de Fichas") {
-            const chipData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.chipLoads || []).reduce((acc, load) => {
+            const chipData = group.rows.flatMap((caja) => caja.chipLoads || []).reduce((acc, load) => {
               acc[load.platform] = (acc[load.platform] || 0) + number(load.amount);
               return acc;
             }, {});
