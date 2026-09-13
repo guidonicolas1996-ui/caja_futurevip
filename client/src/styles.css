@@ -436,6 +436,51 @@ button {
   letter-spacing: 0.1em;
   margin-top: 2px;
 }
+.brand-config-fields {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding-top: 12px;
+}
+.brand-config-fields label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.brand-config-fields input,
+.brand-config-fields select {
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #172324;
+  color: var(--text-primary, #e5efec);
+}
+.brand-config-preview {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 34px;
+  color: #edf6f4;
+  white-space: nowrap;
+}
+.brand-config-preview .brand-mark {
+  flex: 0 0 auto;
+}
+.brand-config-preview strong {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+.brand-config-preview strong span {
+  color: var(--cyan);
+}
+@media (max-width: 700px) {
+  .brand-config-fields {
+    grid-template-columns: 1fr;
+  }
+}
 .shift-nav {
   gap: 14px;
   position: absolute;

@@ -74,6 +74,8 @@ const money = (value) =>
     currency: "ARS",
     minimumFractionDigits: 2,
   }).format(Number(value) || 0);
+const brandIcons = { banknote: Banknote, wallet: WalletCards, coins: Coins, gift: Gift, ticket: Ticket, receipt: ReceiptText };
+const BrandIcon = ({ name = "banknote", size = 20 }) => { const Icon = brandIcons[name] || Banknote; return <Icon size={size} />; };
 const number = (value) => Number(value) || 0;
 const enabledPlatformsFor = (config) => (config?.platforms || []).filter((platform) => config?.platformEnabled?.[platform] !== false);
 const parseNumberInput = (value) => {
@@ -938,6 +940,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
           {!loadingConfig && draft && <>
           {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section></>}
+          {tab === "boxes" && <section className="config-card brand-config-card"><div className="config-list-head"><h3>Marca de la caja</h3><span>Se guarda en esta caja</span></div><div className="brand-config-fields"><label><span>Ícono</span><select value={draft.branding?.icon || "banknote"} onChange={(event) => setDraft((current) => ({ ...current, branding: { ...(current.branding || {}), icon: event.target.value } }))}><option value="banknote">Billete</option><option value="wallet">Billetera</option><option value="coins">Monedas</option><option value="gift">Regalo</option><option value="ticket">Ticket</option><option value="receipt">Recibo</option></select></label><label><span>Texto de marca</span><input maxLength={18} value={draft.branding?.suffix || "flow"} onChange={(event) => setDraft((current) => ({ ...current, branding: { ...(current.branding || {}), suffix: event.target.value } }))} placeholder="flow" /></label><div className="brand-config-preview"><div className="brand-mark"><BrandIcon name={draft.branding?.icon} size={20} /></div><strong>CAJA<span>{draft.branding?.suffix || "flow"}</span></strong></div></div></section>}
           {tab === "accounts" && <>
             <div className="config-intro"><span className="eyebrow">Matriz de cuentas</span><h2>Titulares y billeteras</h2><p>Creá las listas y definí qué billeteras puede usar cada titular.</p></div>
             <AccountsConfig draft={draft} boxes={boxes} updateAccounts={updateAccounts} />
@@ -956,6 +959,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
 
 function SummaryHeader({
   caja,
+  config,
   onClose,
   saving,
   onPrevious,
@@ -972,11 +976,11 @@ function SummaryHeader({
     <header className="topbar">
       <div className="brand">
         <div className="brand-mark">
-          <Banknote size={20} />
+          <BrandIcon name={config?.branding?.icon} size={20} />
         </div>
         <div>
           <strong>
-            CAJA<span>flow</span>
+            CAJA<span>{config?.branding?.suffix || "flow"}</span>
           </strong>
           <small>Control operativo</small>
         </div>
@@ -3402,9 +3406,10 @@ function App() {
       setConfig(result.config);
       setCaja(result.current);
     }
-    // Replicate global user config (clarifications and platformSubPlatforms) to all boxes
-    if (nextConfig.userClarifications !== undefined || nextConfig.platformSubPlatforms !== undefined || nextConfig.users !== undefined) {
+    // Replicate global config to all boxes
+    if (nextConfig.branding !== undefined || nextConfig.userClarifications !== undefined || nextConfig.platformSubPlatforms !== undefined || nextConfig.users !== undefined) {
       const globalUpdate = {};
+      if (nextConfig.branding !== undefined) globalUpdate.branding = nextConfig.branding;
       if (nextConfig.userClarifications !== undefined) globalUpdate.userClarifications = nextConfig.userClarifications;
       if (nextConfig.platformSubPlatforms !== undefined) globalUpdate.platformSubPlatforms = nextConfig.platformSubPlatforms;
       if (nextConfig.users !== undefined) globalUpdate.users = nextConfig.users;
@@ -3591,6 +3596,7 @@ function App() {
     <div ref={captureRef} className={`app-shell box-theme-${activeBox.color}`} style={boxColorStyle(activeBox.color)}>
       <SummaryHeader
         caja={caja}
+        config={config}
         saving={saving}
         readOnly={readOnly}
         onPrevious={() => navigate(1)}

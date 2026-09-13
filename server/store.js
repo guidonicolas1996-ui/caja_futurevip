@@ -64,6 +64,7 @@ function normalizeSpaces(spaces) {
   return changed;
 }
 const defaultConfig = () => ({
+  branding: { icon: 'banknote', suffix: 'flow' },
   accounts: { holders: titulares, wallets: billeteras, availability: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, true]))])), walletSettings: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, { category: 'Normal', boxId: null }]))])), walletModes: Object.fromEntries(billeteras.map((wallet) => [wallet, 'Cobros + Retiros'])) },
   logistics: { order: [], hidden: [], added: [] },
   statistics: { employees: 1, proportionalPercent: 100 },
@@ -194,6 +195,7 @@ async function readSpaces() {
 async function getSpace(boxId) { const spaces = await readSpaces(); return spaces.find((space) => space.id === boxId) || spaces[0]; }
 function normalizeConfig(config) {
   const defaults = defaultConfig(); const accounts = config?.accounts || {};
+  const branding = { icon: ['banknote', 'wallet', 'coins', 'gift', 'ticket', 'receipt'].includes(config?.branding?.icon) ? config.branding.icon : defaults.branding.icon, suffix: String(config?.branding?.suffix ?? defaults.branding.suffix).trim().slice(0, 18) || defaults.branding.suffix };
   const holders = Array.isArray(accounts.holders) && accounts.holders.length ? accounts.holders : defaults.accounts.holders;
   const wallets = Array.isArray(accounts.wallets) && accounts.wallets.length ? accounts.wallets : defaults.accounts.wallets;
   const sourceAvailability = accounts.availability || {};
@@ -261,7 +263,7 @@ function normalizeConfig(config) {
     linkedUsers: Array.isArray(user?.linkedUsers) ? user.linkedUsers.filter(Boolean).map(String) : [],
   })) : [];
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformEnabled, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, branding, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformEnabled, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || (goal.platformDeposits && Object.keys(goal.platformDeposits).length > 0));
