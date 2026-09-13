@@ -2915,6 +2915,13 @@ select:focus {
     flex: 0 1 auto;
     text-align: center;
   }
+  .page-title-lower .current-shift-heading h1 {
+    justify-content: center;
+    text-align: center;
+  }
+  .page-title-lower .current-shift-heading h2 {
+    text-align: center;
+  }
   .page-title-lower .history-actions {
     flex: 0 0 auto;
   }
