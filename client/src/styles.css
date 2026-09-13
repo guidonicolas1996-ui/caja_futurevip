@@ -2782,6 +2782,7 @@ select:focus {
   position: relative;
   align-items: flex-start;
 }
+.page-title-lower { display: contents; }
 .current-shift-heading h1 {
   font-size: 28px;
   line-height: 1.15;
@@ -2886,7 +2887,35 @@ select:focus {
     justify-content: center;
   }
   .page-title {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+  .page-title-lower {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 10px;
+    width: 100%;
+  }
+  .page-title .current-page-label {
+    position: static !important;
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    transform: none !important;
+  }
+  .page-title-lower .current-shift-heading {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .page-title-lower .history-actions {
+    flex: 0 0 auto;
   }
   .bonus-modal .bonus-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));

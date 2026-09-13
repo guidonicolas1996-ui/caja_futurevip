@@ -3618,6 +3618,7 @@ function App() {
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
           <span className="current-page-label">{currentPage}</span>
+          <div className="page-title-lower">
            <div className={`history-actions ${isSubpage ? "has-back" : ""}`}>
              {(statisticsOpen || logisticsOpen || usersOpen || bonusesOpen || configurationOpen) && <button className="history-trigger back-to-caja" title="Volver a Caja" aria-label="Volver a Caja" onClick={() => { setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setConfigurationOpen(false); }}><ArrowLeft size={17} /></button>}
              {!statisticsOpen && <button className="history-trigger statistics-trigger" title="Estadísticas" aria-label="Estadísticas" onClick={() => { setStatisticsOpen(true); setConfigurationOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={17} /></button>}
@@ -3627,6 +3628,7 @@ function App() {
              <button className="history-trigger" title="Cajas recientes" aria-label="Cajas recientes" onClick={() => setHistoryOpen(true)}><Clock3 size={17} /></button>
              {!configurationOpen && <button className="history-trigger" disabled={readOnly} title="Configurar" aria-label="Configurar" onClick={() => { setConfigurationOpen(true); setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); }}><Settings2 size={17} /></button>}
             {hasPendingNotes && <span className="pending-notes">Notas Pendientes</span>}
+          </div>
           </div>
         </div>
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
