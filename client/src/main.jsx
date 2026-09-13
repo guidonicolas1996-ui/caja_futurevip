@@ -1494,7 +1494,8 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   useEffect(() => {
     if (editorRequest) openBonusEditor();
   }, [editorRequest]);
-  const granted = caja.bonuses.reduce((s, x) => s + number(x.granted), 0);
+  const publicity = caja.bonuses.reduce((s, x) => s + (x.publicity ? number(x.granted) : 0), 0);
+  const granted = caja.bonuses.reduce((s, x) => s + (x.publicity ? 0 : number(x.granted)), 0);
   const recovered = caja.bonuses.reduce((s, x) => s + number(x.recovered), 0);
   const shiftStart = { Noche: 0, Mañana: 8, Tarde: 16 }[caja.shift] ?? 0;
   const bonusSlots = Array.from({ length: 4 }, (_, slot) => {
@@ -1756,6 +1757,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
         </span>
         <span>
           Recuperados <b>{money(recovered)}</b>
+        </span>
+        <span>
+          Publicidad <b>{money(publicity)}</b>
         </span>
         <strong>
           Neto <b>{money(granted - recovered)}</b>
