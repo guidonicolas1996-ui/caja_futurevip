@@ -2993,11 +2993,11 @@ select:focus {
 }
 .statistics-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(360px, auto) auto;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
   grid-template-areas:
     "title boxes combined"
     "title dates shortcuts";
-  gap: 18px;
+  gap: 10px 12px;
   align-items: center;
   padding: 15px 18px;
 }
