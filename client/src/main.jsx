@@ -2121,24 +2121,27 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  const [startDate, setStartDate] = useState(dateKey(monthStart));
-  const [endDate, setEndDate] = useState(dateKey(today));
+  const dateTimeKey = (date) => `${dateKey(date)}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+  const startOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const endOfDay = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59);
+  const [startDate, setStartDate] = useState(dateTimeKey(monthStart));
+  const [endDate, setEndDate] = useState(dateTimeKey(today));
   const [chartMetric, setChartMetric] = useState("tips");
   const [selectedBar, setSelectedBar] = useState(null);
   const [selectedBoxIds, setSelectedBoxIds] = useState(boxes.map(b => b.id));
   const [combinedView, setCombinedView] = useState(true);
-  const setRange = (start, end) => { setStartDate(dateKey(start)); setEndDate(dateKey(end)); setSelectedBar(null); };
+  const setRange = (start, end) => { setStartDate(dateTimeKey(start)); setEndDate(dateTimeKey(end)); setSelectedBar(null); };
   const shortcut = (name) => {
     const current = new Date();
-    if (name === "hoy") return setRange(current, current);
-    if (name === "ayer") { const day = new Date(current); day.setDate(day.getDate() - 1); return setRange(day, day); }
-    if (name === "semana") { const day = new Date(current); day.setDate(day.getDate() - ((day.getDay() + 6) % 7)); return setRange(day, current); }
+    if (name === "hoy") return setRange(startOfDay(current), current);
+    if (name === "ayer") { const day = new Date(current); day.setDate(day.getDate() - 1); return setRange(startOfDay(day), endOfDay(day)); }
+    if (name === "semana") { const day = new Date(current); day.setDate(day.getDate() - ((day.getDay() + 6) % 7)); return setRange(startOfDay(day), current); }
     if (name === "mes") return setRange(new Date(current.getFullYear(), current.getMonth(), 1), current);
-    setRange(new Date(current.getFullYear(), current.getMonth() - 1, 1), new Date(current.getFullYear(), current.getMonth(), 0));
+    setRange(new Date(current.getFullYear(), current.getMonth() - 1, 1), endOfDay(new Date(current.getFullYear(), current.getMonth(), 0)));
   };
   const availableHistories = boxes.map((box) => ({ box, rows: Array.isArray(boxHistories?.[box.id]) ? boxHistories[box.id] : box.id === activeBoxId ? history : [] }));
   const selectedHistories = availableHistories.filter(({ box }) => selectedBoxIds.includes(box.id));
-  const filterRows = (rows) => rows.filter((caja) => { const date = new Date(caja.date); return date >= new Date(`${startDate}T00:00:00`) && date <= new Date(`${endDate}T23:59:59`); });
+  const filterRows = (rows) => rows.filter((caja) => { const date = new Date(caja.date); return date >= new Date(startDate) && date <= new Date(endDate); });
   const combinedRows = selectedHistories.flatMap(({ rows }) => filterRows(rows));
   const filtered = combinedRows;
   const groupsFor = (rows) => ["Mañana", "Tarde", "Noche"].map((shift) => ({ shift, rows: rows.filter((caja) => caja.shift === shift) }));
@@ -2217,7 +2220,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
     }
   ];
   return <main className="statistics-page">
-    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id} style={{ color: boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined" style={{ color: "white" }}><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
+    <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id} style={{ color: boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined" style={{ color: "white" }}><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="datetime-local" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="datetime-local" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
     {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id} style={combinedView ? {} : boxColorStyle(box.color)}><h2 className="statistics-box-title" style={{ borderBottom: `3px solid ${combinedView ? "#ffffff" : boxColorStyle(box.color)["--box-accent"]}`, paddingBottom: "8px" }}>{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => {
       const renderMetricSection = (section) => {
         const accentColor = combinedView ? "#ffffff" : box.color ? boxColorStyle(box.color)["--box-accent"] : "#72d7ca";
