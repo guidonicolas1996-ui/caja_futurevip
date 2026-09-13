@@ -1,4 +1,4 @@
-# CAJAflow
+# CAJAEuropa
 
 MVP local para control de caja abierta y cierre de turnos.
 

@@ -2053,10 +2053,10 @@ select:focus {
   padding: 0 18px 18px;
 }
 .notes { display: flex; flex-direction: column; }
-.notes-grid { flex: 1 1 auto; min-height: 0; }
+.notes-grid { min-height: 0; }
 .notes-transfer-layout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
-.notes-transfer-layout > .notes { min-width: 0; height: 100%; margin: 0; align-self: stretch; }
-.notes-column { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; height: 100%; }
+.notes-transfer-layout > .notes { min-width: 0; margin: 0; align-self: start; }
+.notes-column { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .transfer-panel { min-width: 0; padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: #182123; }
 .transfer-form-head { display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px; color: var(--box-accent, var(--cyan)); }
 .transfer-form-title { display: flex; align-items: flex-start; gap: 6px; }
