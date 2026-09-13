@@ -2167,27 +2167,30 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
       section: "General",
       metrics: [
         { label: "Propinas", key: "tips" },
-        { label: "Caja inicial (Promedio)", key: "cashInitial", isAverage: true },
-        { label: "Caja final (Promedio)", key: "cashFinal", isAverage: true },
-        { label: "Redondeo (Promedio)", key: "rounding", isAverage: true },
       ],
       metricGroups: [
         {
           label: "Promedio",
           metrics: [
+            { label: "Caja inicial", key: "cashInitial", isAverage: true },
+            { label: "Caja final", key: "cashFinal", isAverage: true },
             { label: "Diferencia de caja", key: "cashDifference", isAverage: true },
             { label: "Diferencia real", key: "realDifference", isAverage: true },
             { label: "Ganancia Real", key: "realProfit", isAverage: true },
             { label: "Saldo", key: "balance", isAverage: true },
+            { label: "Redondeo", key: "rounding", isAverage: true },
           ],
         },
         {
           label: "Total",
           metrics: [
+            { label: "Caja inicial", key: "cashInitial" },
+            { label: "Caja final", key: "cashFinal" },
             { label: "Diferencia de caja", key: "cashDifference" },
             { label: "Diferencia real", key: "realDifference" },
             { label: "Ganancia Real", key: "realProfit" },
             { label: "Saldo", key: "balance" },
+            { label: "Redondeo", key: "rounding" },
           ],
         },
       ],
@@ -2296,7 +2299,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
                 if (metric.isAverage && group.rows.length > 0) {
                   displayValue = displayValue / group.rows.length;
                 }
-                const valueColor = metric.isAverage ? (displayValue >= 0 ? "#6dd5a8" : "#ef8888") : undefined;
+                const valueColor = displayValue >= 0 ? "#6dd5a8" : "#ef8888";
                 return <div key={metric.key}><span>{metric.label}</span><b style={{ color: valueColor }}>{money(displayValue)}</b></div>;
               })}
             </div>)}
