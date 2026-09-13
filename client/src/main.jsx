@@ -1486,8 +1486,9 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
   const [editorPercent, setEditorPercent] = useState("");
   const [noteId, setNoteId] = useState(null);
   const [deleteIndex, setDeleteIndex] = useState(null);
-  const grantedCount = caja.bonuses.filter((bonus) => number(bonus.granted) > 0).length;
+  const grantedCount = caja.bonuses.filter((bonus) => !bonus.publicity && number(bonus.granted) > 0).length;
   const recoveredCount = caja.bonuses.filter((bonus) => number(bonus.recovered) > 0).length;
+  const publicityCount = caja.bonuses.filter((bonus) => bonus.publicity && number(bonus.granted) > 0).length;
   useEffect(() => {
     if (viewRequest) setOpen(true);
   }, [viewRequest]);
@@ -1588,7 +1589,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
       <SectionHead
         icon={<Gift size={18} />}
         title="Bonos"
-        meta={`${grantedCount} Bonos Otorgados | ${recoveredCount} Bonos Recuperados`}
+        meta={`${grantedCount} Bonos Otorgados | ${recoveredCount} Bonos Recuperados | ${publicityCount} Bonos Publicidad`}
         action={
           <div className="bonus-actions">
             <button className="icon-button" title="Agregar bono" onClick={openBonusEditor}>
