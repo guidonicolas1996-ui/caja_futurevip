@@ -2375,6 +2375,7 @@ function SummaryCard({ caja, calculations, update }) {
           <span className="readonly-amount">{money(caja.cashInitial)}</span>
         </div>
         {metric("Caja final", calculations.cashFinal)}
+        {metric("Saldo", calculations.balance, "", calculations.balance >= 0 ? "positive" : "negative")}
         {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
         {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
         {metric("Ganancia Real", calculations.realProfit, "", calculations.realProfit >= 0 ? "positive" : "negative")}

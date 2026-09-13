@@ -3604,7 +3604,7 @@ select:focus {
 }
 .summary-card .metric-list {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0;
   padding: 8px 14px;
   align-items: center;
@@ -3621,6 +3621,11 @@ select:focus {
 .summary-card .metric-list b {
   display: block;
   margin-top: 5px;
+  text-align: center;
+}
+.summary-card .metric-list .editable-summary-metric .readonly-amount {
+  display: block;
+  margin: 5px auto 0;
   text-align: center;
 }
 .summary-card .found-money {
@@ -3709,7 +3714,7 @@ select:focus {
     grid-template-columns: repeat(2, 1fr);
     padding: 8px 10px;
   }
-  .summary-card .metric-list div:nth-child(2) {
+  .summary-card .metric-list div:nth-child(even) {
     border-right: 0;
   }
   .summary-card .found-money {
