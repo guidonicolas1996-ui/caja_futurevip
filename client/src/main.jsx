@@ -2187,8 +2187,6 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         {
           label: "Total",
           metrics: [
-            { label: "Caja inicial", key: "cashInitial" },
-            { label: "Caja final", key: "cashFinal" },
             { label: "Diferencia de caja", key: "cashDifference" },
             { label: "Diferencia real", key: "realDifference" },
             { label: "Ganancia Real", key: "realProfit" },
@@ -2259,7 +2257,13 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
             return transferRoutes.length > 0 ? (
               <div key={section.section} className="statistics-section">
                 <h3 style={{ color: accentColor }}>{section.section}</h3>
-                {transferRoutes.map((route) => <div key={route}><span>{route}</span><b>{money(transferData[route] || 0)}</b></div>)}
+                {transferRoutes.map((route) => {
+                  const [fromTitle, toTitle] = route.split(" → ");
+                  const fromBox = boxes.find((item) => item.title === fromTitle);
+                  const toBox = boxes.find((item) => item.title === toTitle);
+                  const transferNameStyle = (transferBox) => ({ color: boxColorStyle(transferBox?.color || "teal")["--box-accent"], flex: "none", fontWeight: 700 });
+                  return <div key={route}><span><span style={transferNameStyle(fromBox)}>{fromTitle}</span> → <span style={transferNameStyle(toBox)}>{toTitle}</span></span><b>{money(transferData[route] || 0)}</b></div>;
+                })}
               </div>
             ) : null;
           }
