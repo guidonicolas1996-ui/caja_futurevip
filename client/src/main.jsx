@@ -3613,11 +3613,11 @@ function App() {
         <div className="page-title">
           <div className="current-shift-heading">
             <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}
-               <span className="current-page-label">{currentPage}</span>
                {isShiftOutOfTime(caja.shift) && <span style={{ color: "rgb(255, 0, 0)", marginLeft: "0.5em", fontSize: "0.8em" }}>CAJA FUERA DE TURNO</span>}
             </h1>
             <h2>{new Date(caja.date).toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</h2>
           </div>
+          <span className="current-page-label">{currentPage}</span>
            <div className={`history-actions ${isSubpage ? "has-back" : ""}`}>
              {(statisticsOpen || logisticsOpen || usersOpen || bonusesOpen || configurationOpen) && <button className="history-trigger back-to-caja" title="Volver a Caja" aria-label="Volver a Caja" onClick={() => { setStatisticsOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setConfigurationOpen(false); }}><ArrowLeft size={17} /></button>}
              {!statisticsOpen && <button className="history-trigger statistics-trigger" title="Estadísticas" aria-label="Estadísticas" onClick={() => { setStatisticsOpen(true); setConfigurationOpen(false); setLogisticsOpen(false); setUsersOpen(false); setBonusesOpen(false); setBonusViewRequest(0); setBonusEditorRequest(0); }}><BarChart3 size={17} /></button>}

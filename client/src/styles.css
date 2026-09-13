@@ -15,7 +15,31 @@
     justify-content: center;
   }
   .page-title {
-    gap: 10px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    align-items: start;
+    gap: 14px 10px;
+  }
+  .page-title .current-page-label {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: stretch;
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+    transform: none;
+  }
+  .page-title .current-shift-heading {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .page-title .history-actions {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
   }
   .bonus-modal .bonus-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
