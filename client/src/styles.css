@@ -1907,6 +1907,7 @@ select:focus {
   top: 92px;
 }
 .summary-card .main-result, .summary-card .found-money { border-color: var(--box-line, #315552); }
+.summary-card .main-result { text-align: center; }
 .summary-head {
   padding: 19px 20px;
   display: flex;
@@ -1957,8 +1958,10 @@ select:focus {
   padding: 10px 0;
   color: #9db0af;
   font-size: 11px;
+  text-align: center;
 }
 .metric-list b {
+  text-align: center;
   font-family: "DM Mono";
   color: #d8e7e4;
   font-weight: 500;
@@ -1968,9 +1971,16 @@ select:focus {
 }
 .found-money label {
   display: block;
+  text-align: center;
   color: #9db0af;
   font-size: 10px;
   margin-bottom: 7px;
+}
+.found-money .amount-input {
+  margin-inline: auto;
+}
+.found-money .amount-input input {
+  text-align: center;
 }
 .found-money .amount-input.has-value {
   border-color: #f4f8f8;
@@ -3603,6 +3613,7 @@ select:focus {
   padding: 6px 10px;
   display: block;
   border-right: 1px solid #315552;
+  text-align: center;
 }
 .summary-card .metric-list div:last-child {
   border-right: 0;
@@ -3610,12 +3621,15 @@ select:focus {
 .summary-card .metric-list b {
   display: block;
   margin-top: 5px;
+  text-align: center;
 }
 .summary-card .found-money {
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
   border-left: 1px solid #315552;
 }
 .dashboard-grid {
