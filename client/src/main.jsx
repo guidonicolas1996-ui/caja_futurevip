@@ -2153,7 +2153,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
     return total;
   }, { expensesByCategory: {} });
   const groups = groupsFor(combinedRows);
-  const makeSummaries = (rows) => groupsFor(rows).map((group) => ({ ...group, values: summarize(group.rows) })).concat({ shift: "Total", rows, values: summarize(rows) });
+  const makeSummaries = (rows) => [{ shift: "Total", rows, values: summarize(rows) }, ...groupsFor(rows).map((group) => ({ ...group, values: summarize(group.rows) }))];
   const summarySets = (combinedView ? [{ box: { id: "combined", title: "Suma seleccionadas" }, rows: combinedRows }] : selectedHistories.map(({ box, rows }) => ({ box, rows: filterRows(rows) }))).map(({ box, rows }) => ({ box, summaries: makeSummaries(rows) }));
   const summaries = summarySets[0]?.summaries || makeSummaries([]);
   const total = summarize(totalGroup.rows) || { expensesByCategory: {} };
