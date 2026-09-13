@@ -156,7 +156,8 @@ const statisticsFor = (caja, config, activeBoxId) => {
     .flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
     .reduce((sum, value) => sum + number(value), 0);
   const tips = (caja.tips || []).reduce((sum, row) => sum + number(row.amount), 0);
-  const granted = (caja.bonuses || []).reduce((sum, row) => sum + number(row.granted), 0);
+  const publicity = (caja.bonuses || []).reduce((sum, row) => sum + (row.publicity ? number(row.granted) : 0), 0);
+  const granted = (caja.bonuses || []).reduce((sum, row) => sum + (row.publicity ? 0 : number(row.granted)), 0);
   const recovered = (caja.bonuses || []).reduce((sum, row) => sum + number(row.recovered), 0);
   const ta = (caja.ta || []).reduce((sum, row) => sum + number(row.amount), 0);
   const found = (caja.foundMoney || []).reduce((sum, row) => sum + number(row.amount), 0);
@@ -178,7 +179,7 @@ const statisticsFor = (caja, config, activeBoxId) => {
   const transfers = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
   const realDifference = difference - (granted - recovered) + transfers;
   const realProfit = realDifference * 0.77;
-  return { tips, found, rounding, granted, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, realProfit, transfers, bonusesNet: granted - recovered };
+  return { tips, found, rounding, granted, publicity, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, realProfit, transfers, bonusesNet: granted - recovered };
 };
 const api = (url, options) =>
   fetch(`${import.meta.env.VITE_API_URL || ""}${url}`, {
@@ -2200,6 +2201,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
       metrics: [
         { label: "Bonos otorgados", key: "granted" },
         { label: "Bonos recuperados", key: "recovered" },
+        { label: "Bonos publicidad", key: "publicity" },
         { label: "Bonos netos", key: "bonusesNet" },
       ]
     },
