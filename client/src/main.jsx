@@ -2154,7 +2154,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   }, { expensesByCategory: {} });
   const groups = groupsFor(combinedRows);
   const makeSummaries = (rows) => [{ shift: "Total", rows, values: summarize(rows) }, ...groupsFor(rows).map((group) => ({ ...group, values: summarize(group.rows) }))];
-  const summarySets = (combinedView ? [{ box: { id: "combined", title: "Suma seleccionadas" }, rows: combinedRows }] : selectedHistories.map(({ box, rows }) => ({ box, rows: filterRows(rows) }))).map(({ box, rows }) => ({ box, summaries: makeSummaries(rows) }));
+  const summarySets = (combinedView ? [{ box: { id: "combined", title: "Suma seleccionadas" }, rows: combinedRows }] : selectedHistories.map(({ box, rows }) => ({ box, rows: filterRows(rows) }))).map(({ box, rows }) => ({ box, rows, summaries: makeSummaries(rows) }));
   const summaries = summarySets[0]?.summaries || makeSummaries([]);
   const total = summarize(totalGroup.rows) || { expensesByCategory: {} };
   const statistics = config.statistics || { employees: 1, proportionalPercent: 100 };
@@ -2221,44 +2221,45 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   ];
   return <main className="statistics-page">
     <section className="panel statistics-toolbar"><div><h2><BarChart3 size={18} /> Estadísticas</h2><span>{filtered.length} turnos dentro del período</span></div><div className="statistics-boxes"><strong>Cajas</strong>{boxes.map((box) => <label key={box.id} style={{ color: boxColorStyle(box.color)["--box-accent"] }}><input type="checkbox" checked={selectedBoxIds.includes(box.id)} onChange={() => setSelectedBoxIds((current) => current.includes(box.id) ? current.filter((id) => id !== box.id) : [...current, box.id])} />{box.title}</label>)}</div><label className="statistics-combined" style={{ color: "white" }}><input type="checkbox" checked={combinedView} onChange={(event) => setCombinedView(event.target.checked)} /> Suma seleccionadas</label><div className="statistics-dates"><label>Desde<input type="datetime-local" value={startDate} onChange={(event) => setStartDate(event.target.value)} /></label><label>Hasta<input type="datetime-local" value={endDate} onChange={(event) => setEndDate(event.target.value)} /></label></div><div className="statistics-shortcuts">{[["hoy", "Hoy"], ["ayer", "Ayer"], ["semana", "Semana actual"], ["mes", "Mes actual"], ["anterior", "Mes anterior"]].map(([key, label]) => <button type="button" key={key} onClick={() => shortcut(key)}>{label}</button>)}</div></section>
-    {summarySets.map(({ box, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id} style={combinedView ? {} : boxColorStyle(box.color)}><h2 className="statistics-box-title" style={{ borderBottom: `3px solid ${combinedView ? "#ffffff" : boxColorStyle(box.color)["--box-accent"]}`, paddingBottom: "8px" }}>{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => {
+    {summarySets.map(({ box, rows: boxRows, summaries: boxSummaries }) => <section className="statistics-box-section" key={box.id} style={combinedView ? {} : boxColorStyle(box.color)}><h2 className="statistics-box-title" style={{ borderBottom: `3px solid ${combinedView ? "#ffffff" : boxColorStyle(box.color)["--box-accent"]}`, paddingBottom: "8px" }}>{box.title}</h2><section className="statistics-grid">{boxSummaries.map((group) => {
       const renderMetricSection = (section) => {
         const accentColor = combinedView ? "#ffffff" : box.color ? boxColorStyle(box.color)["--box-accent"] : "#72d7ca";
+        const rowsForGroup = group.shift === "Total" ? boxRows : group.rows;
         if (section.dynamic) {
           if (section.section === "Cargas de Fichas") {
-            const chipData = group.rows.flatMap((caja) => caja.chipLoads || []).reduce((acc, load) => {
+            const chipPlatforms = [...new Set(boxRows.flatMap((caja) => (caja.chipLoads || []).map((load) => load.platform)))];
+            const chipData = rowsForGroup.flatMap((caja) => caja.chipLoads || []).reduce((acc, load) => {
               acc[load.platform] = (acc[load.platform] || 0) + number(load.amount);
               return acc;
             }, {});
-            return Object.keys(chipData).length > 0 ? (
+            return chipPlatforms.length > 0 ? (
               <div key={section.section} className="statistics-section">
                 <h3 style={{ color: accentColor }}>{section.section}</h3>
-                {Object.entries(chipData).map(([platform, value]) => (
-                  <div key={platform}>
-                    <span>Carga de Fichas {platform}</span>
-                    <b>{money(value)}</b>
-                  </div>
-                ))}
+                {combinedView ? selectedHistories.map(({ box: sourceBox, rows }) => {
+                  const sourceRows = group.shift === "Total" ? filterRows(rows) : filterRows(rows).filter((caja) => caja.shift === group.shift);
+                  const sourceData = sourceRows.flatMap((caja) => caja.chipLoads || []).reduce((acc, load) => ({ ...acc, [load.platform]: (acc[load.platform] || 0) + number(load.amount) }), {});
+                  return <div className="statistics-metric-group" key={sourceBox.id}><h4>{sourceBox.title}</h4>{chipPlatforms.map((platform) => <div key={platform}><span>Carga de Fichas {platform}</span><b>{money(sourceData[platform] || 0)}</b></div>)}</div>;
+                }) : chipPlatforms.map((platform) => <div key={platform}><span>Carga de Fichas {platform}</span><b>{money(chipData[platform] || 0)}</b></div>)}
               </div>
             ) : null;
           }
           if (section.section === "Traspasos") {
-            const transferData = (combinedView ? combinedRows : group.rows).flatMap((caja) => caja.transfers || []).reduce((acc, transfer) => {
+            const transferRoutes = [...new Set(boxRows.flatMap((caja) => (caja.transfers || []).map((transfer) => {
+              const fromBox = boxes.find((b) => b.id === transfer.fromBoxId)?.title || "Caja";
+              const toBox = boxes.find((b) => b.id === transfer.toBoxId)?.title || "Caja";
+              return `${fromBox} → ${toBox}`;
+            })))];
+            const transferData = rowsForGroup.flatMap((caja) => caja.transfers || []).reduce((acc, transfer) => {
               const fromBox = boxes.find((b) => b.id === transfer.fromBoxId)?.title || "Caja";
               const toBox = boxes.find((b) => b.id === transfer.toBoxId)?.title || "Caja";
               const key = `${fromBox} → ${toBox}`;
               acc[key] = (acc[key] || 0) + number(transfer.amount);
               return acc;
             }, {});
-            return Object.keys(transferData).length > 0 ? (
+            return transferRoutes.length > 0 ? (
               <div key={section.section} className="statistics-section">
                 <h3 style={{ color: accentColor }}>{section.section}</h3>
-                {Object.entries(transferData).map(([route, value]) => (
-                  <div key={route}>
-                    <span>{route}</span>
-                    <b>{money(value)}</b>
-                  </div>
-                ))}
+                {transferRoutes.map((route) => <div key={route}><span>{route}</span><b>{money(transferData[route] || 0)}</b></div>)}
               </div>
             ) : null;
           }
