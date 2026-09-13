@@ -2895,7 +2895,7 @@ select:focus {
   .page-title-lower {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: center;
     gap: 10px;
     width: 100%;
   }
@@ -2912,10 +2912,14 @@ select:focus {
   }
   .page-title-lower .current-shift-heading {
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    text-align: center;
   }
   .page-title-lower .history-actions {
     flex: 0 0 auto;
+  }
+  .page-title-lower .history-actions {
+    justify-content: center;
   }
   .bonus-modal .bonus-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
