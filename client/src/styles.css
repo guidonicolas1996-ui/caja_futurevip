@@ -2993,19 +2993,16 @@ select:focus {
 }
 .statistics-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
-  grid-template-areas:
-    "title boxes combined"
-    "title dates shortcuts";
-  gap: 10px 12px;
+  grid-template-columns: minmax(220px, 0.35fr) minmax(0, 1fr);
+  gap: 24px;
   align-items: center;
   padding: 15px 18px;
 }
-.statistics-toolbar > div:first-child { grid-area: title; }
-.statistics-toolbar > .statistics-boxes { grid-area: boxes; }
-.statistics-toolbar > .statistics-combined { grid-area: combined; }
-.statistics-toolbar > .statistics-dates { grid-area: dates; }
-.statistics-toolbar > .statistics-shortcuts { grid-area: shortcuts; }
+.statistics-toolbar-heading { min-width: 0; }
+.statistics-toolbar-controls { display: grid; gap: 12px; min-width: 0; }
+.statistics-toolbar-selection,
+.statistics-toolbar-filters { display: flex; align-items: center; justify-content: flex-end; gap: 14px; min-width: 0; }
+.statistics-toolbar-filters { align-items: flex-end; }
 .statistics-toolbar h2,
 .statistics-shift-head h2,
 .statistics-chart-head h2 {
@@ -3407,16 +3404,10 @@ select:focus {
 }
 @media (max-width: 1050px) {
   .statistics-toolbar {
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "title combined"
-      "boxes boxes"
-      "dates shortcuts";
+    grid-template-columns: 1fr;
   }
-  .statistics-combined {
-    justify-self: start;
-  }
-  .statistics-shortcuts { justify-content: flex-end; }
+  .statistics-toolbar-selection,
+  .statistics-toolbar-filters { justify-content: flex-start; }
   .statistics-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -3430,12 +3421,18 @@ select:focus {
     flex-direction: column;
     align-items: stretch;
   }
+  .statistics-toolbar-selection,
+  .statistics-toolbar-filters {
+    align-items: stretch;
+    flex-direction: column;
+  }
   .statistics-boxes {
     align-items: flex-start;
     flex-direction: column;
   }
   .statistics-dates,
   .statistics-shortcuts {
+    justify-content: flex-start;
     flex-wrap: wrap;
   }
   .statistics-dates label {
