@@ -3212,7 +3212,21 @@ select:focus {
   padding-bottom: 6px;
   border-bottom: 2px solid currentColor;
 }
-.statistics-section > div {
+.statistics-metric-group + .statistics-metric-group {
+  margin-top: 8px;
+}
+.statistics-metric-group h4 {
+  margin: 8px 0 2px;
+  padding-bottom: 3px;
+  color: #809591;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(82, 101, 103, 0.22);
+}
+.statistics-section > div:not(.statistics-metric-group),
+.statistics-metric-group > div {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -3221,6 +3235,11 @@ select:focus {
   font-size: 0.85em;
   border-bottom: 1px solid rgba(82, 101, 103, 0.15);
   gap: 12px;
+}
+.statistics-section > div.statistics-metric-group {
+  display: block;
+  padding: 0;
+  border-bottom: 0;
 }
 .statistics-section > div span {
   flex: 1;

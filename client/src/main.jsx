@@ -1589,7 +1589,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
       <SectionHead
         icon={<Gift size={18} />}
         title="Bonos"
-        meta={`${grantedCount} Bonos Otorgados | ${recoveredCount} Bonos Recuperados | ${publicityCount} Bonos Publicidad`}
+        meta={`Bonos: ${grantedCount} Otorgados | ${recoveredCount} Recuperados | ${publicityCount} Publicidad`}
         action={
           <div className="bonus-actions">
             <button className="icon-button" title="Agregar bono" onClick={openBonusEditor}>
@@ -2169,11 +2169,28 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         { label: "Propinas", key: "tips" },
         { label: "Caja inicial (Promedio)", key: "cashInitial", isAverage: true },
         { label: "Caja final (Promedio)", key: "cashFinal", isAverage: true },
-        { label: "Diferencia caja (Promedio)", key: "cashDifference", isAverage: true },
-        { label: "Diferencia real (Promedio)", key: "realDifference", isAverage: true },
-        { label: "Saldo (Promedio)", key: "balance", isAverage: true },
         { label: "Redondeo (Promedio)", key: "rounding", isAverage: true },
-      ]
+      ],
+      metricGroups: [
+        {
+          label: "Promedio",
+          metrics: [
+            { label: "Diferencia de caja", key: "cashDifference", isAverage: true },
+            { label: "Diferencia real", key: "realDifference", isAverage: true },
+            { label: "Ganancia Real", key: "realProfit", isAverage: true },
+            { label: "Saldo", key: "balance", isAverage: true },
+          ],
+        },
+        {
+          label: "Total",
+          metrics: [
+            { label: "Diferencia de caja", key: "cashDifference" },
+            { label: "Diferencia real", key: "realDifference" },
+            { label: "Ganancia Real", key: "realProfit" },
+            { label: "Saldo", key: "balance" },
+          ],
+        },
+      ],
     },
     {
       section: "Bonos",
@@ -2258,7 +2275,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
         return (
           <div key={section.section} className="statistics-section">
             <h3 style={{ color: accentColor }}>{section.section}</h3>
-            {section.metrics.map((metric) => {
+            {section.metrics?.map((metric) => {
               let displayValue = group.values[metric.key];
               if (metric.isAverage && group.rows.length > 0) {
                 displayValue = displayValue / group.rows.length;
@@ -2272,6 +2289,17 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
                 </div>
               );
             })}
+            {section.metricGroups?.map((metricGroup) => <div className="statistics-metric-group" key={metricGroup.label}>
+              <h4>{metricGroup.label}</h4>
+              {metricGroup.metrics.map((metric) => {
+                let displayValue = group.values[metric.key];
+                if (metric.isAverage && group.rows.length > 0) {
+                  displayValue = displayValue / group.rows.length;
+                }
+                const valueColor = metric.isAverage ? (displayValue >= 0 ? "#6dd5a8" : "#ef8888") : undefined;
+                return <div key={metric.key}><span>{metric.label}</span><b style={{ color: valueColor }}>{money(displayValue)}</b></div>;
+              })}
+            </div>)}
           </div>
         );
       };
