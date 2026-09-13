@@ -2277,29 +2277,54 @@ select:focus {
 }
 @media (max-width: 700px) {
   .topbar {
-    padding: 0 15px;
+    height: auto;
+    min-height: 112px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    padding: 12px 15px 13px;
+  }
+  .topbar .brand {
+    grid-column: 1 / -1;
+    justify-self: center;
   }
   .shift-nav {
     position: static;
     transform: none;
-    margin-left: auto;
-    margin-right: 12px;
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    margin: 0;
+    gap: 8px;
   }
   .shift-title b {
     display: none;
   }
   .top-actions {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
     gap: 0;
+  }
+  .top-actions .box-selector {
+    width: 150px;
+    min-width: 0;
   }
   .top-actions .close-button {
     padding: 0 9px;
     font-size: 0;
+    margin-left: 8px;
   }
   .top-actions .close-button svg {
     margin: 0;
   }
-  .topbar .icon-button {
+  .top-actions .snapshot-button,
+  .top-actions .save-state {
     display: none;
+  }
+  .shift-nav .icon-button {
+    display: grid;
   }
   main {
     padding: 25px 15px 20px;
