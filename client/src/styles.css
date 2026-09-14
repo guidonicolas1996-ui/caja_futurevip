@@ -4531,7 +4531,7 @@ select:focus {
   color: inherit;
   font: inherit;
   line-height: 1;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   white-space: nowrap;
 }
 .report-v5-period {
