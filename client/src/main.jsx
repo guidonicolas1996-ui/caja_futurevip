@@ -3464,7 +3464,7 @@ function App() {
       if (nextConfig.users !== undefined) globalUpdate.users = nextConfig.users;
       for (const box of (boxes || []).filter((item) => item.id !== boxId)) {
         const boxConfig = await api(`/api/configuracion?boxId=${box.id}`);
-        const replicated = await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate, updatedAt: boxConfig.updatedAt }) });
+        const replicated = await api(`/api/configuracion?boxId=${box.id}`, { method: "PUT", body: JSON.stringify({ ...boxConfig, ...globalUpdate, branding: nextConfig.branding !== undefined ? { ...(boxConfig.branding || {}), ...globalUpdate.branding } : boxConfig.branding, updatedAt: boxConfig.updatedAt }) });
         rememberUpdatedAt(replicated.updatedAt);
       }
     }
