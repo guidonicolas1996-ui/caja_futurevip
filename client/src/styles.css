@@ -4483,6 +4483,39 @@ select:focus {
   font: 12px "DM Mono" !important;
   font-weight: 700 !important;
 }
+
+.report-v5-accounts,
+.report-v5-log,
+.report-v5-bonuses,
+.report-v5-summary-card {
+  border-color: color-mix(in srgb, var(--box-line) 55%, transparent);
+  box-shadow: 0 0 25px -5px color-mix(in srgb, var(--box-line) 38%, transparent);
+}
+.report-v5-head,
+.report-v5-kpis {
+  border-bottom-color: color-mix(in srgb, var(--box-line) 48%, transparent);
+}
+.report-v5-kpis > .report-v5-metric {
+  border-color: color-mix(in srgb, var(--box-line) 48%, transparent);
+  box-shadow: 0 0 25px -5px color-mix(in srgb, var(--box-line) 38%, transparent);
+}
+.report-v5-secondary .report-v5-metric {
+  border-bottom-color: color-mix(in srgb, var(--box-line) 34%, transparent);
+  box-shadow: none;
+}
+.report-v5-slot {
+  border-left-color: color-mix(in srgb, var(--box-line) 62%, transparent);
+}
+.report-v5-slot h3 {
+  border-bottom-color: color-mix(in srgb, var(--box-line) 70%, transparent);
+}
+.report-v5-bonus-list > div {
+  border-color: color-mix(in srgb, var(--box-line) 48%, transparent);
+  border-left-color: currentColor;
+}
+.report-v5-chip-log .report-v5-line {
+  border-bottom-color: color-mix(in srgb, var(--box-line) 38%, transparent);
+}
 .report-v5-period {
   flex-direction: row;
   align-items: center;
