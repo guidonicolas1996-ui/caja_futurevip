@@ -4526,6 +4526,13 @@ select:focus {
   display: block;
   flex: 0 0 auto;
 }
+.report-v5-head h2 > span,
+.report-v5-log-group h3 > span {
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+  white-space: nowrap;
+}
 .report-v5-period {
   flex-direction: row;
   align-items: center;
