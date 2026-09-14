@@ -195,7 +195,7 @@ async function readSpaces() {
 async function getSpace(boxId) { const spaces = await readSpaces(); return spaces.find((space) => space.id === boxId) || spaces[0]; }
 function normalizeConfig(config) {
   const defaults = defaultConfig(); const accounts = config?.accounts || {};
-  const branding = { icon: ['banknote', 'wallet', 'coins', 'gift', 'ticket', 'receipt'].includes(config?.branding?.icon) ? config.branding.icon : defaults.branding.icon, suffix: String(config?.branding?.suffix ?? defaults.branding.suffix).trim().slice(0, 18) || defaults.branding.suffix };
+  const branding = { icon: ['banknote', 'wallet', 'coins', 'gift', 'ticket', 'receipt'].includes(config?.branding?.icon) ? config.branding.icon : defaults.branding.icon, suffix: String(config?.branding?.suffix ?? defaults.branding.suffix).trim().slice(0, 18) || defaults.branding.suffix, backgroundImagePath: String(config?.branding?.backgroundImagePath || '') };
   const holders = Array.isArray(accounts.holders) && accounts.holders.length ? accounts.holders : defaults.accounts.holders;
   const wallets = Array.isArray(accounts.wallets) && accounts.wallets.length ? accounts.wallets : defaults.accounts.wallets;
   const sourceAvailability = accounts.availability || {};
@@ -314,6 +314,42 @@ async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
   const imageName = String(metadata?.name || `${id}.${extension}`); config.bonuses[index] = { ...config.bonuses[index], imagePath: path, imageName: (() => { try { return decodeURIComponent(imageName); } catch { return imageName; } })(), imageType: String(metadata?.type || ''), updatedAt: new Date().toISOString() }; space.config = { ...config, bonuses: config.bonuses }; const updatedAt = await writeSpaces(spaces, spaces.updatedAt); return { bonus: config.bonuses[index], updatedAt };
 }
 export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
+async function uploadBoxBackgroundUnsafe(buffer, metadata, boxId) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  if (!buffer?.length) throw new Error('No se recibió ninguna imagen');
+  if (metadata?.type !== 'image/png') throw new Error('La imagen de fondo debe ser un archivo PNG');
+  const storage = requireSupabase().storage.from('bonos');
+  const path = `backgrounds/${space.id}.png`;
+  const { error } = await storage.upload(path, buffer, { contentType: 'image/png', upsert: true });
+  if (error) throw new Error(`No se pudo subir la imagen de fondo: ${error.message}`);
+  const config = normalizeConfig(space.config);
+  space.config = { ...config, branding: { ...config.branding, backgroundImagePath: path } };
+  const updatedAt = await writeSpaces(spaces, metadata?.updatedAt ?? spaces.updatedAt);
+  return { path, updatedAt };
+}
+export const uploadBoxBackground = (buffer, metadata, boxId) => withBonusOperationLock(() => uploadBoxBackgroundUnsafe(buffer, metadata, boxId));
+export async function downloadBoxBackground(boxId) {
+  const space = await getSpace(boxId);
+  const path = normalizeConfig(space.config).branding.backgroundImagePath;
+  if (!path) throw new Error('La caja no tiene imagen de fondo');
+  const { data, error } = await requireSupabase().storage.from('bonos').download(path);
+  if (error) throw new Error(`No se pudo descargar la imagen de fondo: ${error.message}`);
+  return { data, name: `${space.id}-fondo.png`, type: 'image/png' };
+}
+async function deleteBoxBackgroundUnsafe(boxId, clientUpdatedAt = null) {
+  const spaces = await readSpaces();
+  const space = spaces.find((item) => item.id === boxId) || spaces[0];
+  const config = normalizeConfig(space.config);
+  if (config.branding.backgroundImagePath) {
+    const { error } = await requireSupabase().storage.from('bonos').remove([config.branding.backgroundImagePath]);
+    if (error) throw new Error(`No se pudo eliminar la imagen de fondo: ${error.message}`);
+  }
+  space.config = { ...config, branding: { ...config.branding, backgroundImagePath: '' } };
+  const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt);
+  return { updatedAt };
+}
+export const deleteBoxBackground = (boxId, clientUpdatedAt = null) => withBonusOperationLock(() => deleteBoxBackgroundUnsafe(boxId, clientUpdatedAt));
 const thumbnailPathFor = (spaceId, imagePath) => {
   const fileName = String(imagePath || '').split('/').pop();
   return fileName ? `mini-${spaceId}/${fileName}` : '';

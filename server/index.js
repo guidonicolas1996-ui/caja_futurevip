@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, createBonus, updateBonus, deleteBonus, uploadBonusImage, downloadBonusImage, createBonusThumbnails, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
+import { getBoxes, createBox, updateBox, deleteBox, createPreviousCaja, getCurrent, getHistory, getConfig, updateConfig, createBonus, updateBonus, deleteBonus, uploadBonusImage, downloadBonusImage, uploadBoxBackground, downloadBoxBackground, deleteBoxBackground, createBonusThumbnails, updateCurrent, updateCaja, setWalletAssignment, createTransfer, updateTransfer, deleteTransfer, closeCurrent } from './store.js';
 
 const app = express();
 app.use(cors());
@@ -44,6 +44,18 @@ app.post('/api/bonos/:id/imagen', express.raw({ type: '*/*', limit: '20mb' }), a
 app.post('/api/bonos/miniaturas', handle(() => createBonusThumbnails()));
 app.get('/api/bonos/:id/imagen', async (req, res) => {
   try { const image = await downloadBonusImage(req.params.id, req.query.boxId, req.query.mini === '1'); res.set('Content-Type', image.type); res.set('Content-Disposition', `${req.query.download === '1' ? 'attachment' : 'inline'}; filename="${encodeURIComponent(image.name)}"`); res.send(Buffer.from(await image.data.arrayBuffer())); }
+  catch (error) { res.status(404).json({ error: error.message }); }
+});
+app.post('/api/cajas/:id/imagen-fondo', express.raw({ type: '*/*', limit: '20mb' }), async (req, res) => {
+  try { res.json(await uploadBoxBackground(req.body, { type: req.headers['content-type'], updatedAt: req.headers['x-updated-at'] }, req.params.id)); }
+  catch (error) {
+    if (error.code === 'ERR_CONCURRENCY_CONFLICT') return res.status(409).json({ error: 'OUTDATED_STATE', message: 'Los datos han cambiado en el servidor. Por favor sincroniza antes de guardar.' });
+    res.status(400).json({ error: error.message });
+  }
+});
+app.delete('/api/cajas/:id/imagen-fondo', handle((req) => deleteBoxBackground(req.params.id, requireUpdatedAt(req))));
+app.get('/api/cajas/:id/imagen-fondo', async (req, res) => {
+  try { const image = await downloadBoxBackground(req.params.id); res.set('Content-Type', image.type); res.set('Content-Disposition', `inline; filename="${image.name}"`); res.send(Buffer.from(await image.data.arrayBuffer())); }
   catch (error) { res.status(404).json({ error: error.message }); }
 });
 app.put('/api/caja/actualizar', handle((req) => updateCurrent(req.body, req.query.boxId, requireUpdatedAt(req))));

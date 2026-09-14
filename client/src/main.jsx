@@ -886,6 +886,43 @@ function BonusConfig({ draft, setDraft }) {
   return <div className="config-two-columns"><section className="config-card"><div className="config-list-head"><h3>Tipos de bonos</h3><span>{types.length} elementos</span></div>{types.map((type, index) => <div className="config-list-row" key={type.id}><input value={type.name} placeholder="Nombre del tipo" onChange={(event) => setDraft((current) => ({ ...current, bonusTypes: (current.bonusTypes || []).map((item, itemIndex) => itemIndex === index ? { ...item, name: event.target.value } : item) }))} /><input className="bonus-type-count" type="number" min="1" max="20" value={type.percentageCount || 1} title="Cantidad de porcentajes" onChange={(event) => setDraft((current) => ({ ...current, bonusTypes: (current.bonusTypes || []).map((item, itemIndex) => itemIndex === index ? { ...item, percentageCount: Math.max(1, Math.min(20, Number(event.target.value) || 1)) } : item) }))} /><button className="delete-button" type="button" title="Eliminar tipo" onClick={() => setDraft((current) => ({ ...current, bonusTypes: (current.bonusTypes || []).filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, bonusTypes: [...(current.bonusTypes || []), { id: `bonus-type-${crypto.randomUUID()}`, name: "", percentageCount: 1 }] }))}><Plus size={15} /> Agregar tipo</button></section><section className="config-card"><div className="config-list-head"><h3>Condiciones de bono</h3><span>{conditions.length} elementos</span></div>{conditions.map((condition, index) => <div className="config-list-row bonus-condition-config-row" key={condition.id}><input value={condition.label} placeholder="Etiqueta de condición" onChange={(event) => setDraft((current) => ({ ...current, bonusConditions: (current.bonusConditions || []).map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item) }))} /><label className="bonus-platform-toggle" title="Permitir asignar una plataforma a los porcentajes"><input type="checkbox" checked={condition.allowPlatform === true} onChange={(event) => setDraft((current) => ({ ...current, bonusConditions: (current.bonusConditions || []).map((item, itemIndex) => itemIndex === index ? { ...item, allowPlatform: event.target.checked } : item) }))} /><span /> Plataforma</label><button className="delete-button" type="button" title="Eliminar condición" onClick={() => setDraft((current) => ({ ...current, bonusConditions: (current.bonusConditions || []).filter((_, itemIndex) => itemIndex !== index) }))}><Trash2 size={15} /></button></div>)}<button className="config-add" type="button" onClick={() => setDraft((current) => ({ ...current, bonusConditions: [...(current.bonusConditions || []), { id: `bonus-condition-${crypto.randomUUID()}`, label: "", allowPlatform: false }] }))}><Plus size={15} /> Agregar condición</button></section></div>;
 }
 
+function BoxBackgroundConfig({ draft, setDraft, configBoxId, api, onNotify }) {
+  const [saving, setSaving] = useState(false);
+  const imagePath = draft.branding?.backgroundImagePath || "";
+  const imageUrl = imagePath ? `${import.meta.env.VITE_API_URL || ""}/api/cajas/${configBoxId}/imagen-fondo?path=${encodeURIComponent(imagePath)}` : "";
+  const upload = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (file.type !== "image/png") { onNotify?.("La imagen de fondo debe ser un archivo PNG."); return; }
+    setSaving(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/cajas/${configBoxId}/imagen-fondo`, { method: "POST", headers: { "Content-Type": "image/png", "X-Updated-At": draft.updatedAt || "" }, body: file });
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.message || result.error || "No se pudo subir la imagen de fondo");
+      setDraft((current) => ({ ...current, updatedAt: result.updatedAt, branding: { ...(current.branding || {}), backgroundImagePath: result.path } }));
+      onNotify?.("Imagen de fondo guardada.");
+    } catch (error) {
+      onNotify?.(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  const remove = async () => {
+    setSaving(true);
+    try {
+      const result = await api(`/api/cajas/${configBoxId}/imagen-fondo`, { method: "DELETE", body: JSON.stringify({ updatedAt: draft.updatedAt }) });
+      setDraft((current) => ({ ...current, updatedAt: result.updatedAt, branding: { ...(current.branding || {}), backgroundImagePath: "" } }));
+      onNotify?.("Imagen de fondo eliminada.");
+    } catch (error) {
+      onNotify?.(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  return <section className="config-card box-background-config"><div className="config-list-head"><h3>Fondo de la captura</h3><span>PNG transparente · opacidad 15%</span></div><div className="box-background-content">{imageUrl ? <img src={imageUrl} alt="Vista previa del fondo de la captura" /> : <div className="box-background-empty">Sin imagen configurada</div>}<div className="box-background-actions"><label className="config-add"><Upload size={15} /> {imagePath ? "Reemplazar imagen" : "Subir imagen PNG"}<input type="file" accept="image/png" onChange={upload} disabled={saving} /></label>{imagePath && <button type="button" className="danger-button" onClick={remove} disabled={saving}><Trash2 size={15} /> Quitar fondo</button>}</div></div></section>;
+}
+
 function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxesChanged, onNotify, api, embedded = false }) {
   const [tab, setTab] = useState("accounts");
   const [configBoxId, setConfigBoxId] = useState(activeBoxId);
@@ -949,6 +986,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, onSave, onBack, onBoxes
           {tab === "bonuses" && !loadingConfig && draft && <BonusConfig draft={draft} setDraft={setDraft} />}
           {loadingConfig && <div className="config-loading">Cargando configuración de {configTarget?.title}...</div>}
           {!loadingConfig && draft && <>
+          {tab === "boxes" && <BoxBackgroundConfig draft={draft} setDraft={setDraft} configBoxId={configBoxId} api={api} onNotify={onNotify} />}
           {tab === "boxes" && <><div className="config-intro"><span className="eyebrow">Espacios de trabajo</span><h2>Edición de cajas</h2><p>Administrá el nombre, color y existencia de cada caja independiente.</p></div><section className="config-card box-management-list"><div className="config-list-head"><h3>Mis cajas</h3><span>{boxes.length} espacios</span></div>{boxes.map((box) => <div className="box-management-row" key={box.id}><i className={`box-swatch ${box.color}`} /><input value={box.title} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { title: event.target.value } })} /><select value={box.color} onChange={(event) => onBoxesChanged({ type: "update", id: box.id, patch: { color: event.target.value } })}><option value="teal">Turquesa</option><option value="blue">Azul</option><option value="green">Verde</option><option value="orange">Naranja</option><option value="pink">Rosa</option><option value="red">Rojo</option><option value="yellow">Amarillo</option><option value="violet">Violeta</option><option value="slate">Pizarra</option></select><button className="delete-button" disabled={boxes.length === 1} title="Eliminar caja" onClick={() => onBoxesChanged({ type: "delete", id: box.id })}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => onBoxesChanged({ type: "create" })}><Plus size={15} /> Nueva caja</button></section></>}
           {tab === "boxes" && <section className="config-card brand-config-card"><div className="config-list-head"><h3>Marca de la caja</h3><span>Se guarda en esta caja</span></div><div className="brand-config-fields"><label><span>Ícono</span><select value={draft.branding?.icon || "banknote"} onChange={(event) => setDraft((current) => ({ ...current, branding: { ...(current.branding || {}), icon: event.target.value } }))}><option value="banknote">Billete</option><option value="wallet">Billetera</option><option value="coins">Monedas</option><option value="gift">Regalo</option><option value="ticket">Ticket</option><option value="receipt">Recibo</option></select></label><label><span>Texto de marca</span><input maxLength={18} value={draft.branding?.suffix || "flow"} onChange={(event) => setDraft((current) => ({ ...current, branding: { ...(current.branding || {}), suffix: event.target.value } }))} placeholder="flow" /></label><div className="brand-config-preview"><div className="brand-mark"><BrandIcon name={draft.branding?.icon} size={20} /></div><strong>CAJA<span>{draft.branding?.suffix || "flow"}</span></strong></div></div></section>}
           {tab === "accounts" && <>
