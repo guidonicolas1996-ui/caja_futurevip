@@ -315,18 +315,25 @@ async function uploadBonusImageUnsafe(id, buffer, metadata, boxId) {
 }
 export const uploadBonusImage = (id, buffer, metadata, boxId) => withBonusOperationLock(() => uploadBonusImageUnsafe(id, buffer, metadata, boxId));
 async function uploadBoxBackgroundUnsafe(buffer, metadata, boxId) {
-  const spaces = await readSpaces();
-  const space = spaces.find((item) => item.id === boxId) || spaces[0];
   if (!buffer?.length) throw new Error('No se recibió ninguna imagen');
   if (metadata?.type !== 'image/png') throw new Error('La imagen de fondo debe ser un archivo PNG');
   const storage = requireSupabase().storage.from('bonos');
-  const path = `backgrounds/${space.id}.png`;
+  const path = `backgrounds/${boxId}.png`;
   const { error } = await storage.upload(path, buffer, { contentType: 'image/png', upsert: true });
   if (error) throw new Error(`No se pudo subir la imagen de fondo: ${error.message}`);
-  const config = normalizeConfig(space.config);
-  space.config = { ...config, branding: { ...config.branding, backgroundImagePath: path } };
-  const updatedAt = await writeSpaces(spaces, metadata?.updatedAt ?? spaces.updatedAt);
-  return { path, updatedAt };
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const spaces = await readSpaces();
+    const space = spaces.find((item) => item.id === boxId) || spaces[0];
+    const config = normalizeConfig(space.config);
+    space.config = { ...config, branding: { ...config.branding, backgroundImagePath: path } };
+    try {
+      const updatedAt = await writeSpaces(spaces, spaces.updatedAt);
+      return { path, updatedAt };
+    } catch (error) {
+      if (error.code !== 'ERR_CONCURRENCY_CONFLICT' || attempt === 2) throw error;
+    }
+  }
+  throw new Error('No se pudo guardar la imagen de fondo');
 }
 export const uploadBoxBackground = (buffer, metadata, boxId) => withBonusOperationLock(() => uploadBoxBackgroundUnsafe(buffer, metadata, boxId));
 export async function downloadBoxBackground(boxId) {

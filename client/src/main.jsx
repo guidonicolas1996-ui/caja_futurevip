@@ -3458,7 +3458,7 @@ function App() {
     // Replicate global config to all boxes
     if (nextConfig.branding !== undefined || nextConfig.userClarifications !== undefined || nextConfig.platformSubPlatforms !== undefined || nextConfig.users !== undefined) {
       const globalUpdate = {};
-      if (nextConfig.branding !== undefined) globalUpdate.branding = nextConfig.branding;
+      if (nextConfig.branding !== undefined) globalUpdate.branding = { icon: nextConfig.branding.icon, suffix: nextConfig.branding.suffix };
       if (nextConfig.userClarifications !== undefined) globalUpdate.userClarifications = nextConfig.userClarifications;
       if (nextConfig.platformSubPlatforms !== undefined) globalUpdate.platformSubPlatforms = nextConfig.platformSubPlatforms;
       if (nextConfig.users !== undefined) globalUpdate.users = nextConfig.users;
