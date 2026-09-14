@@ -4516,34 +4516,15 @@ select:focus {
 .report-v5-chip-log .report-v5-line {
   border-bottom-color: var(--box-report-line-soft);
 }
-.report-v5-brand {
-  align-items: center;
-}
-.report-v5-brand > span,
 .report-v5-head h2,
 .report-v5-log-group h3 {
-  display: inline-flex;
   align-items: center;
+  line-height: 1;
 }
-.report-v5-brand > span svg,
 .report-v5-head h2 svg,
 .report-v5-log-group h3 svg {
   display: block;
   flex: 0 0 auto;
-}
-.report-v5-brand > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  line-height: 1;
-}
-.report-v5-brand strong,
-.report-v5-head h2,
-.report-v5-log-group h3 {
-  line-height: 1;
-}
-.report-v5-head h2 {
-  height: auto;
 }
 .report-v5-period {
   flex-direction: row;
