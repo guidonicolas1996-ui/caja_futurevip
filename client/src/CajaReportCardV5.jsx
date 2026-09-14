@@ -35,6 +35,16 @@ export default function CajaReportCardV5({ data, snapshotRef }) {
   const granted = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.granted), 0) - publicity;
   const recovered = (caja.bonuses || []).reduce((sum, bonus) => sum + n(bonus.recovered), 0);
   useEffect(() => {
+    const headings = snapshotRef.current?.querySelectorAll(".report-v5-head h2, .report-v5-log-group h3") || [];
+    headings.forEach((heading) => {
+      [...heading.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim())
+        .forEach((node) => {
+          const text = document.createElement("span");
+          text.textContent = node.textContent.trim();
+          node.replaceWith(text);
+        });
+    });
     const platformRows = snapshotRef.current?.querySelectorAll(".report-v5-chip-log .report-v5-line") || [];
     platformRows.forEach((row) => {
       const platform = row.querySelector("span")?.textContent?.split("·")[0].trim();
