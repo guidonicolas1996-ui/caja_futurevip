@@ -225,7 +225,17 @@ const boxColorStyle = (color) => {
     violet: { accent: "#c2a0ed", glow: "#3c2d50", soft: "#302640", line: "#604b7c" },
     slate: { accent: "#aebdca", glow: "#303c45", soft: "#29343b", line: "#536976" },
   }[color] || { accent: "#72d7ca", glow: "#244344", soft: "#1d302f", line: "#315552" };
-  return { "--box-accent": palette.accent, "--box-glow": palette.glow, "--box-soft": palette.soft, "--box-line": palette.line };
+  const lineRgb = palette.line.match(/[\da-f]{2}/gi).map((part) => Number.parseInt(part, 16)).join(", ");
+  return {
+    "--box-accent": palette.accent,
+    "--box-glow": palette.glow,
+    "--box-soft": palette.soft,
+    "--box-line": palette.line,
+    "--box-report-line": `rgba(${lineRgb}, .55)`,
+    "--box-report-line-soft": `rgba(${lineRgb}, .38)`,
+    "--box-report-line-faint": `rgba(${lineRgb}, .34)`,
+    "--box-report-line-strong": `rgba(${lineRgb}, .7)`,
+  };
 };
 
 function BoxSelector({ boxes, activeBoxId, onChange, label = "CAJA" }) {
