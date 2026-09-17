@@ -1703,7 +1703,8 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                 <span>Monto a retirar</span>
                 <AmountInput value={editorWithdrawal} onChange={setEditorWithdrawal} />
               </label>
-              <label>
+              <div className="bonus-editor-fields-divider" />
+              <label className="bonus-editor-value-field">
                 <span>Valor</span>
                 <AmountInput value={editorAmount} onChange={setEditorAmount} />
               </label>
@@ -1728,7 +1729,7 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
                 <button key={value} onClick={() => setEditorAmount((current) => current + value)}>{formatNumberInput(value)}</button>
               ))}
             </div>
-            <div className="bonus-editor-preview">
+            <div className={`bonus-editor-preview ${!recoveredMode && (number(editorPercent) === 0 || number(editorPercent) === 100) ? "single-row" : ""}`}>
               <div className={`bonus-editor-complete ${!recoveredMode && (number(editorPercent) === 0 || number(editorPercent) === 100) ? "placeholder" : ""}`}>
                 <span>{recoveredMode ? "Retiro completo" : "Carga completa"}</span>
                 <b>{recoveredMode ? money(number(editorWithdrawal) - calculatedBonusAmount) : money(number(editorAmount) + calculatedBonusAmount)}</b>

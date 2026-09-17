@@ -2233,6 +2233,12 @@ select:focus {
   visibility: hidden;
   pointer-events: none;
 }
+.bonus-editor-fields-divider {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 2px 0 1px;
+  background: var(--line);
+}
 .bonus-editor-fields .amount-input,
 .percent-input {
   height: 32px;
@@ -2301,6 +2307,11 @@ select:focus {
   color: var(--cyan);
 }
 .bonus-editor-preview {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 62px;
   margin-top: 16px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
@@ -2319,6 +2330,9 @@ select:focus {
 }
 .bonus-editor-complete.placeholder {
   visibility: hidden;
+}
+.bonus-editor-preview.single-row .bonus-editor-complete.placeholder {
+  display: none;
 }
 .bonus-editor-complete b {
   color: var(--cyan);
