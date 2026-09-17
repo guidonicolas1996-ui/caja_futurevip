@@ -1206,12 +1206,8 @@ main {
   color: var(--green);
 }
 .quick-bonus-access .quick-amount.publicity {
-  border-color: #7dd3fc !important;
-  color: #7dd3fc !important;
-}
-.quick-bonus-access .quick-amount.publicity input {
-  color: #7dd3fc !important;
-  caret-color: #7dd3fc;
+  border-color: #7dd3fc;
+  color: #7dd3fc;
 }
 .quick-bonus-access .bonus-toggle {
   width: 27px;
@@ -2643,6 +2639,14 @@ select:focus {
 .bonus-quick .quick-amount.recovered {
   border-color: var(--green);
   color: var(--green);
+}
+.bonus-quick .quick-amount.publicity {
+  border-color: #7dd3fc !important;
+  color: #7dd3fc !important;
+}
+.bonus-quick .quick-amount.publicity input {
+  color: #7dd3fc !important;
+  caret-color: #7dd3fc;
 }
 .dashboard-grid {
   display: block;
