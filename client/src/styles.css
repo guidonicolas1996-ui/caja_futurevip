@@ -3731,6 +3731,20 @@ select:focus {
 .bonus-hour-row small { font-family: "DM Mono"; text-align: right; white-space: nowrap; }
 .bonus-hour-row strong { color: #d8e9e4; font-size: 9px; }
 .bonus-hour-row small { color: #8fbbb2; font-size: 8px; }
+.bonus-hour-shift-total {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 3px;
+  padding: 8px 0 5px;
+  border-top: 1px solid var(--cyan);
+  color: #cfe5df;
+  font-size: 9px;
+}
+.bonus-hour-shift-total span { font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.bonus-hour-shift-total strong { color: var(--cyan); font: 700 10px "DM Mono"; white-space: nowrap; }
+.bonus-hour-shift-total small { color: #8fbbb2; font: 8px "DM Mono"; white-space: nowrap; }
 @media (max-width: 1050px) {
   .statistics-toolbar {
     grid-template-columns: 1fr;

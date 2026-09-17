@@ -2238,28 +2238,38 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   const [bonusFromHour, setBonusFromHour] = useState(0);
   const [bonusToHour, setBonusToHour] = useState(23);
   const [bonusResultMode, setBonusResultMode] = useState("all");
+  const [bonusMetric, setBonusMetric] = useState("value");
   const toggleBonusFilter = (values, setValues, value) => setValues((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   const bonusRecords = selectedHistories.flatMap(({ rows }) => filterRows(rows).flatMap((caja) => (caja.bonuses || []).map((bonus) => {
     const date = new Date(bonus.createdAt);
     return { date, dateKey: dateKey(date), weekday: date.getDay(), hour: date.getHours(), shift: caja.shift, net: number(bonus.granted) - number(bonus.recovered) };
   }))).filter((record) => !Number.isNaN(record.date.getTime()) && record.date >= new Date(startDate) && record.date <= new Date(endDate) && bonusWeekdays.includes(record.weekday) && bonusShifts.includes(record.shift) && record.hour >= bonusFromHour && record.hour <= bonusToHour && (bonusResultMode === "all" || bonusResultMode === "positive" && record.net > 0 || bonusResultMode === "negative" && record.net < 0));
-  const bonusNetTotal = bonusRecords.reduce((sum, record) => sum + record.net, 0);
+  const bonusMetricValue = (records) => bonusMetric === "count" ? records.length : records.reduce((sum, record) => sum + record.net, 0);
+  const bonusNetTotal = bonusMetricValue(bonusRecords);
   const bonusPercentageFor = (value) => bonusNetTotal ? (value / bonusNetTotal) * 100 : 0;
+  const formatBonusMetric = (value) => bonusMetric === "count" ? `${value} ${value === 1 ? "bono" : "bonos"}` : money(value);
+  const bonusMetricLabel = bonusMetric === "count" ? "Recuento de bonos" : "Valor neto";
   const dailyBonusRows = [...bonusRecords.reduce((result, record) => {
-    const current = result.get(record.dateKey) || { dateKey: record.dateKey, date: record.date, weekday: record.weekday, Noche: 0, Mañana: 0, Tarde: 0, total: 0 };
-    current[record.shift] += record.net;
-    current.total += record.net;
+    const current = result.get(record.dateKey) || { dateKey: record.dateKey, date: record.date, weekday: record.weekday, Noche: [], Mañana: [], Tarde: [], total: [] };
+    current[record.shift].push(record);
+    current.total.push(record);
     result.set(record.dateKey, current);
     return result;
   }, new Map()).values()].sort((first, second) => first.date - second.date);
   const shiftBonusRows = shiftOptions.map((shift) => {
-    const value = bonusRecords.filter((record) => record.shift === shift).reduce((sum, record) => sum + record.net, 0);
+    const value = bonusMetricValue(bonusRecords.filter((record) => record.shift === shift));
     return { shift, value, percentage: bonusPercentageFor(value) };
   });
   const hourlyBonusRows = Array.from({ length: 24 }, (_, hour) => {
-    const value = bonusRecords.filter((record) => record.hour === hour).reduce((sum, record) => sum + record.net, 0);
+    const value = bonusMetricValue(bonusRecords.filter((record) => record.hour === hour));
     return { hour, value, percentage: bonusPercentageFor(value) };
   });
+  const shiftRanges = [{ shift: "Noche", start: 0, end: 7 }, { shift: "Mañana", start: 8, end: 15 }, { shift: "Tarde", start: 16, end: 23 }];
+  const shiftTotalsForHours = (start, end) => bonusMetricValue(bonusRecords.filter((record) => record.hour >= start && record.hour <= end));
+  const hourlyDisplayRows = shiftRanges.flatMap(({ shift, start, end }) => [
+    ...hourlyBonusRows.filter((row) => row.hour >= start && row.hour <= end).map((row) => ({ type: "hour", ...row })),
+    { type: "shift", shift, value: shiftTotalsForHours(start, end), percentage: bonusPercentageFor(shiftTotalsForHours(start, end)) },
+  ]);
   const maxHourlyBonus = Math.max(...hourlyBonusRows.map((row) => Math.abs(row.value)), 1);
   const formatBonusDate = (value) => new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(value);
   const formatPercentage = (value) => bonusNetTotal ? `${value >= 0 ? "+" : ""}${value.toFixed(1)}%` : "-";
@@ -2437,14 +2447,15 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
       <div className="bonus-analysis-filters">
         <div className="bonus-analysis-filter-group"><span>Días de la semana</span><div>{weekdayOptions.map((weekday, index) => <label key={weekday}><input type="checkbox" checked={bonusWeekdays.includes(index)} onChange={() => toggleBonusFilter(bonusWeekdays, setBonusWeekdays, index)} />{weekday.slice(0, 3)}</label>)}</div></div>
         <div className="bonus-analysis-filter-group"><span>Turnos</span><div>{shiftOptions.map((shift) => <label key={shift}><input type="checkbox" checked={bonusShifts.includes(shift)} onChange={() => toggleBonusFilter(bonusShifts, setBonusShifts, shift)} />{shift}</label>)}</div></div>
+        <label className="bonus-analysis-select"><span>Agrupar por</span><select value={bonusMetric} onChange={(event) => setBonusMetric(event.target.value)}><option value="value">Valor neto</option><option value="count">Recuento de bonos</option></select></label>
         <label className="bonus-analysis-select"><span>Desde hora</span><select value={bonusFromHour} onChange={(event) => setBonusFromHour(Number(event.target.value))}>{Array.from({ length: 24 }, (_, hour) => <option value={hour} key={hour}>{String(hour).padStart(2, "0")}:00</option>)}</select></label>
         <label className="bonus-analysis-select"><span>Hasta hora</span><select value={bonusToHour} onChange={(event) => setBonusToHour(Number(event.target.value))}>{Array.from({ length: 24 }, (_, hour) => <option value={hour} key={hour}>{String(hour).padStart(2, "0")}:59</option>)}</select></label>
         <label className="bonus-analysis-select"><span>Resultado</span><select value={bonusResultMode} onChange={(event) => setBonusResultMode(event.target.value)}><option value="all">Todos los netos</option><option value="positive">Solo netos positivos</option><option value="negative">Solo netos negativos</option></select></label>
       </div>
-      <div className="bonus-analysis-summary"><div><span>Neto seleccionado</span><strong>{money(bonusNetTotal)}</strong></div>{shiftBonusRows.map((row) => <div key={row.shift}><span>{row.shift}</span><strong>{money(row.value)} <small>{formatPercentage(row.percentage)}</small></strong></div>)}</div>
+      <div className="bonus-analysis-summary"><div><span>{bonusMetricLabel} seleccionado</span><strong>{formatBonusMetric(bonusNetTotal)}</strong></div>{shiftBonusRows.map((row) => <div key={row.shift}><span>{row.shift}</span><strong>{formatBonusMetric(row.value)} <small>{formatPercentage(row.percentage)}</small></strong></div>)}</div>
       <div className="bonus-analysis-grid">
-        <section className="bonus-analysis-table-wrap"><div className="bonus-analysis-section-head"><h3>Resultado por día</h3><span>Porcentaje sobre el neto filtrado</span></div><div className="bonus-analysis-table-scroll"><table className="bonus-analysis-table"><thead><tr><th>Día</th>{shiftOptions.map((shift) => <th key={shift}>{shift}</th>)}<th>Neto</th><th>%</th></tr></thead><tbody>{dailyBonusRows.map((row) => <tr key={row.dateKey}><th>{formatBonusDate(row.date)} <small>{weekdayOptions[row.weekday]}</small></th>{shiftOptions.map((shift) => <td key={shift}>{money(row[shift])}</td>)}<td><b>{money(row.total)}</b></td><td><b>{formatPercentage(bonusPercentageFor(row.total))}</b></td></tr>)}{dailyBonusRows.length === 0 && <tr><td colSpan="6" className="bonus-analysis-empty">No hay bonos para los filtros seleccionados.</td></tr>}</tbody></table></div></section>
-        <section className="bonus-analysis-hours"><div className="bonus-analysis-section-head"><h3>Distribución por hora</h3><span>Neto y participación</span></div><div className="bonus-hour-bars">{hourlyBonusRows.map((row) => <div className={`bonus-hour-row ${row.value < 0 ? "negative" : ""}`} key={row.hour}><span>{String(row.hour).padStart(2, "0")}h</span><i><b style={{ width: `${Math.max(0, Math.abs(row.value) / maxHourlyBonus * 100)}%` }} /></i><strong>{money(row.value)}</strong><small>{formatPercentage(row.percentage)}</small></div>)}</div></section>
+        <section className="bonus-analysis-table-wrap"><div className="bonus-analysis-section-head"><h3>Resultado por día</h3><span>Porcentaje sobre el total filtrado</span></div><div className="bonus-analysis-table-scroll"><table className="bonus-analysis-table"><thead><tr><th>Día</th>{shiftOptions.map((shift) => <th key={shift}>{shift}</th>)}<th>Total</th><th>%</th></tr></thead><tbody>{dailyBonusRows.map((row) => <tr key={row.dateKey}><th>{formatBonusDate(row.date)} <small>{weekdayOptions[row.weekday]}</small></th>{shiftOptions.map((shift) => <td key={shift}>{formatBonusMetric(bonusMetricValue(row[shift]))}</td>)}<td><b>{formatBonusMetric(bonusMetricValue(row.total))}</b></td><td><b>{formatPercentage(bonusPercentageFor(bonusMetricValue(row.total)))}</b></td></tr>)}{dailyBonusRows.length === 0 && <tr><td colSpan="6" className="bonus-analysis-empty">No hay bonos para los filtros seleccionados.</td></tr>}</tbody></table></div></section>
+        <section className="bonus-analysis-hours"><div className="bonus-analysis-section-head"><h3>Distribución por hora</h3><span>{bonusMetricLabel} y participación</span></div><div className="bonus-hour-bars">{hourlyDisplayRows.map((row, index) => row.type === "shift" ? <div className="bonus-hour-shift-total" key={`shift-${row.shift}`}><span>Total {row.shift}</span><strong>{formatBonusMetric(row.value)}</strong><small>{formatPercentage(row.percentage)}</small></div> : <div className={`bonus-hour-row ${row.value < 0 ? "negative" : ""}`} key={`hour-${row.hour}-${index}`}><span>{String(row.hour).padStart(2, "0")}h</span><i><b style={{ width: `${Math.max(0, Math.abs(row.value) / maxHourlyBonus * 100)}%` }} /></i><strong>{formatBonusMetric(row.value)}</strong><small>{formatPercentage(row.percentage)}</small></div>)}</div></section>
       </div>
     </section>
     </main>
