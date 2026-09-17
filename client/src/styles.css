@@ -700,8 +700,8 @@ main {
   width: 3px;
   height: 16px;
   border-radius: 3px;
-  background: #d9c5ff;
-  box-shadow: 0 0 7px rgba(217, 197, 255, 0.72);
+  background: var(--box-accent, #d9c5ff);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--box-accent, #d9c5ff) 72%, transparent);
   transform: translate(-50%, -50%);
   pointer-events: auto;
   z-index: 2;
