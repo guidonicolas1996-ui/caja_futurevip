@@ -1699,10 +1699,10 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
 
  y confirmá el bono.</p>
             <div className="bonus-editor-fields">
-              {recoveredMode && <label className="bonus-editor-withdrawal">
+              <label className={`bonus-editor-withdrawal ${recoveredMode ? "visible" : "placeholder"}`} aria-hidden={!recoveredMode}>
                 <span>Monto a retirar</span>
                 <AmountInput value={editorWithdrawal} onChange={setEditorWithdrawal} />
-              </label>}
+              </label>
               <label>
                 <span>Valor</span>
                 <AmountInput value={editorAmount} onChange={setEditorAmount} />

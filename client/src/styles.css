@@ -2229,6 +2229,10 @@ select:focus {
 .bonus-editor-fields .bonus-editor-withdrawal {
   grid-column: 1 / -1;
 }
+.bonus-editor-fields .bonus-editor-withdrawal.placeholder {
+  visibility: hidden;
+  pointer-events: none;
+}
 .bonus-editor-fields .amount-input,
 .percent-input {
   height: 32px;
