@@ -1729,15 +1729,14 @@ function BonusesSection({ caja, update, viewRequest, editorRequest }) {
               ))}
             </div>
             <div className="bonus-editor-preview">
-              {recoveredMode
-                ? <>
-                  <div className="bonus-editor-complete"><span>Retiro completo</span><b>{money(number(editorWithdrawal) - calculatedBonusAmount)}</b></div>
-                  <div className="bonus-editor-preview-row"><span>Bono a recuperar</span><b>{money(calculatedBonusAmount)}</b></div>
-                </>
-                : <>
-                  {number(editorPercent) > 0 && number(editorPercent) !== 100 && <div className="bonus-editor-complete"><span>Carga completa</span><b>{money(number(editorAmount) + calculatedBonusAmount)}</b></div>}
-                  <div className="bonus-editor-preview-row"><span>Bono a agregar</span><b>{money(calculatedBonusAmount)}</b></div>
-                </>}
+              <div className={`bonus-editor-complete ${!recoveredMode && (number(editorPercent) === 0 || number(editorPercent) === 100) ? "placeholder" : ""}`}>
+                <span>{recoveredMode ? "Retiro completo" : "Carga completa"}</span>
+                <b>{recoveredMode ? money(number(editorWithdrawal) - calculatedBonusAmount) : money(number(editorAmount) + calculatedBonusAmount)}</b>
+              </div>
+              <div className="bonus-editor-preview-row">
+                <span>{recoveredMode ? "Bono a recuperar" : "Bono a agregar"}</span>
+                <b>{money(calculatedBonusAmount)}</b>
+              </div>
             </div>
             <div className="modal-actions">
               <button className="ghost-button" onClick={() => setEditorOpen(false)}>Cancelar</button>

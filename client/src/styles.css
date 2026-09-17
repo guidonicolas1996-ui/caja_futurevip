@@ -2317,6 +2317,9 @@ select:focus {
   margin-bottom: 9px;
   color: #d8e7e4;
 }
+.bonus-editor-complete.placeholder {
+  visibility: hidden;
+}
 .bonus-editor-complete b {
   color: var(--cyan);
 }
