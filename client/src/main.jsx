@@ -764,17 +764,25 @@ function getBonusProgressAccentState(percent, fallback) {
   return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
 }
 
-function MonthlyGoalProgress({ config, boxColor }) {
+function elapsedMonthPercentage(dateValue) {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return 0;
+  const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  return ((date.getDate() - 1) / daysInMonth) * 100;
+}
+
+function MonthlyGoalProgress({ config, boxColor, date }) {
   const goal = config.monthlyGoal || {};
   const finalGoal = Math.max(0, number(goal.final));
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
+  const targetPercentage = elapsedMonthPercentage(date);
   const colors = boxColorStyle(boxColor);
   const state = getProgressAccentState(percentage, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
   return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line }}>
     <div className="goal-bar-header"><span>Objetivo de Depósitos General</span></div>
     <div className="goal-bar-body">
-      <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div>
+      <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div><i className="monthly-goal-target-marker" style={{ left: `${targetPercentage}%` }} title={`Objetivo del día: ${Math.round(targetPercentage)}%`} aria-label={`Objetivo del día: ${Math.round(targetPercentage)}%`} /></div>
       <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(finalGoal)}</span></div>
     </div>
   </section>;
@@ -831,20 +839,21 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const currentShiftTarget = dailyTarget * (currentPercent / 100);
   const currentShiftAchieved = shiftBonusNet(currentShift);
   const colors = boxColorStyle(boxColor);
-  const renderBar = (label, value, target, percent) => {
+  const renderBar = (label, value, target, percent, showTargetMarker = false) => {
     const state = getBonusProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+    const targetPercentage = elapsedMonthPercentage(caja.date);
     return (
       <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
         <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
         <div className="bonus-goal-main">
-          <div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>
+          <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>{showTargetMarker && <i className="monthly-goal-target-marker" style={{ left: `${targetPercentage}%` }} title={`Objetivo del día: ${Math.round(targetPercentage)}%`} aria-label={`Objetivo del día: ${Math.round(targetPercentage)}%`} />}</div>
           <div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div>
         </div>
       </div>
     );
   };
   return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos" style={{ "--bonus-soft": colors["--box-soft"], "--bonus-line": colors["--box-line"], "--bonus-glow": colors["--box-glow"], "--bonus-accent": colors["--box-accent"] }}>
-    {renderBar("Obj. Bonos Mes", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0)}
+    {renderBar("Obj. Bonos Mes", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0, true)}
     <div className="bonus-goal-lower-row">
       {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0)}
       {renderBar(`Obj. Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
@@ -3680,7 +3689,7 @@ function App() {
           </div>
           </div>
         </div>
-        <MonthlyGoalProgress config={config} boxColor={activeBox.color} />
+        <MonthlyGoalProgress config={config} boxColor={activeBox.color} date={caja.date} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard

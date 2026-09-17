@@ -685,6 +685,27 @@ main {
   border-radius: 99px;
   background: color-mix(in srgb, var(--goal-soft, #37331f) 72%, #111719);
 }
+.monthly-goal-track-wrap {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+}
+.monthly-goal-track-wrap .monthly-goal-track { width: 100%; }
+.monthly-goal-target-marker {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 16px;
+  border-radius: 3px;
+  background: #d9c5ff;
+  box-shadow: 0 0 7px rgba(217, 197, 255, 0.72);
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  z-index: 2;
+}
 .monthly-goal-track span {
   display: block;
   height: 100%;
