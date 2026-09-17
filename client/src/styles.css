@@ -1206,8 +1206,12 @@ main {
   color: var(--green);
 }
 .quick-bonus-access .quick-amount.publicity {
-  border-color: #7dd3fc;
-  color: #7dd3fc;
+  border-color: #7dd3fc !important;
+  color: #7dd3fc !important;
+}
+.quick-bonus-access .quick-amount.publicity input {
+  color: #7dd3fc !important;
+  caret-color: #7dd3fc;
 }
 .quick-bonus-access .bonus-toggle {
   width: 27px;
