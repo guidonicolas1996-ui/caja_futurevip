@@ -108,7 +108,7 @@ const formatNumberInput = (value) => {
 };
 const realDifferenceFor = (caja, config, activeBoxId) => {
   const accounts = caja.accounts
-    .flatMap((row) => Object.entries(row.values).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
+    .flatMap((row) => Object.entries(row.values).filter(([wallet]) => walletCountsInCash(row, wallet, config, activeBoxId)).map(([, value]) => value))
     .reduce((sum, value) => sum + number(value), 0);
   const bonuses = caja.bonuses.reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
   const ta = caja.ta.reduce((sum, row) => sum + number(row.amount), 0);
@@ -148,6 +148,10 @@ const walletBelongsToBox = (row, wallet, config, boxId) => {
   const setting = config.accounts.walletSettings[row.holder]?.[wallet];
   return config.accounts.availability[row.holder]?.[wallet] !== false && (setting?.category === "Normal" || !setting?.category ? true : row.walletBoxes?.[wallet] === boxId);
 };
+const walletCountsInCash = (row, wallet, config, boxId) => {
+  const setting = config.accounts.walletSettings[row.holder]?.[wallet];
+  return setting?.category !== "Ahorro" && walletBelongsToBox(row, wallet, config, boxId);
+};
 const walletModeClass = (config, wallet) => ({
   "Cobros + Retiros": "wallet-mode-all",
   "Solo Cobros": "wallet-mode-collections",
@@ -155,7 +159,7 @@ const walletModeClass = (config, wallet) => ({
 }[config.accounts.walletModes?.[wallet] || "Cobros + Retiros"]);
 const statisticsFor = (caja, config, activeBoxId) => {
   const accounts = (caja.accounts || [])
-    .flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, activeBoxId)).map(([, value]) => value))
+    .flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletCountsInCash(row, wallet, config, activeBoxId)).map(([, value]) => value))
     .reduce((sum, value) => sum + number(value), 0);
   const tips = (caja.tips || []).reduce((sum, row) => sum + number(row.amount), 0);
   const granted = (caja.bonuses || []).reduce((sum, row) => sum + number(row.granted), 0);
@@ -500,7 +504,7 @@ function AccountsConfig({ draft, boxes, updateAccounts }) {
       <WalletConfigList wallets={draft.accounts.wallets} walletEntities={draft.accounts.walletEntities} onEntitiesChange={(walletEntities) => updateAccounts({ walletEntities })} modes={walletModes} onChange={updateWallets} onModeChange={(wallet, mode) => updateAccounts({ walletModes: { ...walletModes, [wallet]: mode } })} />
     </div>
     <section className="config-card"><div className="config-list-head"><h3>Billeteras utilizables por titular</h3><span>Activá y configurá cada cuenta</span></div><div className="availability-table"><div className="availability-row availability-head" style={{ "--wallet-count": draft.accounts.wallets.length }}><b>Titular</b>{draft.accounts.wallets.map((wallet) => <span key={wallet}>{wallet}</span>)}</div>{draft.accounts.holders.map((holder, index) => <div className="availability-row" style={{ "--wallet-count": draft.accounts.wallets.length }} key={index}><b>{holder || "Sin nombre"}</b>{draft.accounts.wallets.map((wallet) => { const setting = walletSettings[holder]?.[wallet] || { category: "Normal" }; const enabled = availability[holder]?.[wallet] !== false; return <div className="account-config-cell" key={wallet}><label className="toggle-cell"><input type="checkbox" checked={enabled} onChange={() => { const nextAvailability = structuredClone(availability); nextAvailability[holder] = { ...(nextAvailability[holder] || {}), [wallet]: !enabled }; updateAccounts({ availability: nextAvailability }); }} /><span /></label><button type="button" className="account-settings-button" title={`Configurar ${holder} · ${wallet}`} onClick={() => setSettingsTarget({ holder, wallet })}><Settings2 size={14} /></button></div>; })}</div>)}</div></section>
-    {settingsTarget && <div className="modal-backdrop" onClick={() => setSettingsTarget(null)}><div className="modal account-settings-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSettingsTarget(null)} title="Cerrar"><X size={18} /></button><div className="modal-icon"><Settings2 size={21} /></div><h2>{settingsTarget.holder} · {settingsTarget.wallet}</h2><p>Datos disponibles para copiar desde la caja.</p><div className="account-settings-fields"><label><span>Alias</span><input value={targetSetting.alias || ""} onChange={(event) => updateTargetSetting({ alias: event.target.value })} /></label><label><span>CUIL</span><input value={targetSetting.cuil || ""} onChange={(event) => updateTargetSetting({ cuil: event.target.value })} /></label><label><span>Contraseña</span><input value={targetSetting.password || ""} onChange={(event) => updateTargetSetting({ password: event.target.value })} /></label><label><span>Tipo de billetera</span><select value={targetSetting.category || "Normal"} onChange={(event) => updateTargetSetting({ category: event.target.value })}><option>Normal</option><option>Depósitos</option><option>Compartidas</option></select></label><label className="account-settings-note"><span>Nota</span><textarea rows="4" value={targetSetting.note || ""} onChange={(event) => updateTargetSetting({ note: event.target.value })} /></label></div><div className="modal-actions"><button className="close-button" onClick={() => setSettingsTarget(null)}>Listo <Check size={16} /></button></div></div></div>}
+    {settingsTarget && <div className="modal-backdrop" onClick={() => setSettingsTarget(null)}><div className="modal account-settings-modal" onClick={(event) => event.stopPropagation()}><button className="modal-close" onClick={() => setSettingsTarget(null)} title="Cerrar"><X size={18} /></button><div className="modal-icon"><Settings2 size={21} /></div><h2>{settingsTarget.holder} · {settingsTarget.wallet}</h2><p>Datos disponibles para copiar desde la caja.</p><div className="account-settings-fields"><label><span>Alias</span><input value={targetSetting.alias || ""} onChange={(event) => updateTargetSetting({ alias: event.target.value })} /></label><label><span>CUIL</span><input value={targetSetting.cuil || ""} onChange={(event) => updateTargetSetting({ cuil: event.target.value })} /></label><label><span>Contraseña</span><input value={targetSetting.password || ""} onChange={(event) => updateTargetSetting({ password: event.target.value })} /></label><label><span>Tipo de billetera</span><select value={targetSetting.category || "Normal"} onChange={(event) => updateTargetSetting({ category: event.target.value })}><option>Normal</option><option>Depósitos</option><option>Compartidas</option><option>Ahorro</option></select></label><label className="account-settings-note"><span>Nota</span><textarea rows="4" value={targetSetting.note || ""} onChange={(event) => updateTargetSetting({ note: event.target.value })} /></label></div><div className="modal-actions"><button className="close-button" onClick={() => setSettingsTarget(null)}>Listo <Check size={16} /></button></div></div></div>}
   </>;
 }
 function MonthlyGoalConfig({ draft, boxes, api, update }) {
@@ -1382,7 +1386,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
   const noteVisibilityTimer = React.useRef(null);
   const wallets = config.accounts.wallets;
   const accountSections = caja.accountSections || {};
-  const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
+  const walletGroups = ["Normal", "Depósitos", "Compartidas", "Ahorro"].map((category) => ({
     category,
     rows: caja.accounts.map((row, index) => ({ row, index })).filter(({ row }) => wallets.some((wallet) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false)),
   })).filter((group) => group.rows.length);
@@ -1422,8 +1426,8 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
   };
   const totals = useMemo(
     () => ({
-      rows: walletGroups.map((group) => group.rows.map(({ row }) => wallets.reduce((sum, wallet) => sum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && walletBelongsToBox(row, wallet, config, activeBoxId) ? number(row.values[wallet]) : 0), 0))),
-      columns: wallets.map((wallet) => walletGroups.reduce((sum, group) => sum + group.rows.reduce((groupSum, { row }) => groupSum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && walletBelongsToBox(row, wallet, config, activeBoxId) ? number(row.values[wallet]) : 0), 0), 0)),
+      rows: walletGroups.map((group) => group.rows.map(({ row }) => wallets.reduce((sum, wallet) => sum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && walletCountsInCash(row, wallet, config, activeBoxId) ? number(row.values[wallet]) : 0), 0))),
+      columns: wallets.map((wallet) => walletGroups.reduce((sum, group) => sum + group.rows.reduce((groupSum, { row }) => groupSum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === group.category && walletCountsInCash(row, wallet, config, activeBoxId) ? number(row.values[wallet]) : 0), 0), 0)),
     }),
     [caja.accounts, wallets, walletGroups, config.accounts.availability, config.accounts.walletSettings, activeBoxId],
   );
@@ -1480,7 +1484,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     setActiveNoteKey(null);
     setVisibleNoteKey(null);
   };
-  const sectionKey = (category) => category === "Depósitos" ? "deposits" : "shared";
+  const sectionKey = (category) => category === "Depósitos" ? "deposits" : category === "Compartidas" ? "shared" : "savings";
   const isSectionCollapsed = (category) => category !== "Normal" && accountSections[sectionKey(category)] === true;
   const toggleSection = (category) => {
     const key = sectionKey(category);
@@ -1494,7 +1498,7 @@ function AccountsGrid({ caja, update, config, boxes, activeBoxId, onAssignWallet
     const assignedBox = boxes.find((box) => box.id === row.walletBoxes?.[wallet]);
     const cellColorStyle = assignedBox ? boxColorStyle(assignedBox.color) : { "--box-accent": "#758689", "--box-line": "#536976", "--assignment-dot": "transparent" };
     const accountSetting = config.accounts.walletSettings[row.holder]?.[wallet] || {};
-    const assignmentSelector = category !== "Normal" && <WalletAssignmentSelector showLabel={false} boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
+    const assignmentSelector = ["Depósitos", "Compartidas"].includes(category) && <WalletAssignmentSelector showLabel={false} boxes={boxes} value={row.walletBoxes?.[wallet] || ""} onChange={(boxId) => onAssignWallet(row.holder, wallet, boxId)} />;
     const checks = <div className="cell-checks"><button tabIndex={-1} className={state.collections ? "checked" : ""} onClick={() => toggle(index, wallet, "collections")} title="Cobros e ingresos"><Check size={11} /></button><button tabIndex={-1} className={state.withdrawals ? "checked" : ""} onClick={() => toggle(index, wallet, "withdrawals")} title="Retiros y egresos"><Check size={11} /></button></div>;
     const currentNoteKey = noteKey(index, wallet);
     const isEditingNote = editingNote === currentNoteKey;
@@ -2568,7 +2572,7 @@ function LegacyReportCard({ caja, calculations, snapshotRef, config, boxes, acti
     const expense = kind === "expenses" && config.expenses.find((item) => item.name === row.category);
     return sum + number(row.amount) * (expense?.inverted ? -1 : 1);
   }, 0);
-  const accountGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => {
+  const accountGroups = ["Normal", "Depósitos", "Compartidas", "Ahorro"].map((category) => {
     const categoryWallets = wallets.filter((wallet) => caja.accounts.some((row) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false && number(row.values[wallet]) !== 0));
     const rows = caja.accounts.filter((row) => categoryWallets.some((wallet) => number(row.values[wallet]) !== 0));
     return { category, wallets: categoryWallets, rows };
@@ -2643,7 +2647,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
   const candidates = accounts.flatMap((row) => config.accounts.wallets.filter((wallet) => config.accounts.availability[row.holder]?.[wallet] !== false).map((wallet) => {
     const setting = config.accounts.walletSettings[row.holder]?.[wallet] || { category: "Normal" };
     const mode = config.accounts.walletModes?.[wallet] || "Cobros + Retiros";
-    return { key: keyFor(row.holder, wallet), holder: row.holder, wallet, category: setting.category === "Compartidas" ? "Compartidas" : mode === "Solo Depósito" ? "Depósitos" : setting.category || "Normal", mode, row };
+    return { key: keyFor(row.holder, wallet), holder: row.holder, wallet, category: setting.category || (mode === "Solo Depósito" ? "Depósitos" : "Normal"), mode, row };
   }));
   const included = candidates.filter((item) => ["Cobros + Retiros", "Solo Cobros"].includes(item.mode) || logistics.added.includes(item.key));
   const orderIndex = (key) => logistics.order.indexOf(key);
@@ -2652,7 +2656,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
     const secondOrder = orderIndex(second.key);
     return (firstOrder < 0 ? Number.MAX_SAFE_INTEGER : firstOrder) - (secondOrder < 0 ? Number.MAX_SAFE_INTEGER : secondOrder);
   });
-  const grouped = ["Normal", "Depósitos", "Compartidas"].map((category) => ({ category, rows: ordered.filter((item) => item.category === category && !logistics.hidden.includes(item.key)) })).filter((group) => group.rows.length);
+  const grouped = ["Normal", "Depósitos", "Compartidas", "Ahorro"].map((category) => ({ category, rows: ordered.filter((item) => item.category === category && !logistics.hidden.includes(item.key)) })).filter((group) => group.rows.length);
   const hiddenItems = ordered.filter((item) => logistics.hidden.includes(item.key));
   const hidden = (key) => logistics.hidden.includes(key);
   const saveLogistics = (patch) => onConfigChange({ ...config, logistics: { ...logistics, ...patch } });
@@ -2716,7 +2720,7 @@ function LogisticsPage({ caja, config, boxes, activeBoxId, onUpdateAccounts, onA
       <SectionHead icon={<WalletCards size={18} />} title="Ruta de Cuentas" action={<select className="logistics-add" onChange={addWallet} value=""><option value="">Agregar billetera...</option>{addable.map((item) => <option key={item.key} value={item.key}>{item.holder} · {item.wallet}</option>)}</select>} />
       <div className="logistics-board">
       <div className="logistics-head"><span>En uso</span><span>Pagos</span><span>Cuenta</span><span>Billetera</span><span>Aclaración</span><span>Último R. Uso</span><span>Último R. Retiros</span><span>Último R. Caja</span><span>Último Reinicio</span><span /></div>
-      {grouped.map((group) => <React.Fragment key={group.category}><div className="logistics-group">Billeteras {group.category}</div>{group.rows.map((item) => { const state = stateFor(item.row, item.wallet); const box = boxes.find((candidate) => candidate.id === item.row.walletBoxes?.[item.wallet]); const restart = restartFor(item); const tone = restartTone(restart); return <div className={`logistics-row ${state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : ""} ${tone}`} key={item.key} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", item.key)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => reorder(group.category, event.dataTransfer.getData("text/plain"), item.key)}>{item.category === "Depósitos" ? <><span className="logistics-check-empty" /><span className="logistics-check-empty" /></> : <><label className="logistics-check"><input type="checkbox" checked={Boolean(state.collections)} onChange={() => updateState(item, "collections")} /><span /></label><label className="logistics-check"><input type="checkbox" checked={Boolean(state.withdrawals)} onChange={() => updateState(item, "withdrawals")} /><span /></label></>}<b>{item.holder}</b><strong>{item.wallet}</strong><span>{item.category === "Depósitos" ? "Únicamente enviar como depósito" : item.category === "Compartidas" ? "Máximo 500k · (Depósitos o Pagos Grandes)" : `Máximo 250k · ${item.mode === "Solo Cobros" ? "Cobros" : "Pagos"}`}</span><time>{formatRestart(state.lastCollectionsAt)}</time><time>{formatRestart(state.lastWithdrawalsAt)}</time><div className="logistics-box-selector">{item.category === "Depósitos" || item.category === "Compartidas" ? <WalletAssignmentSelector boxes={boxes} value={item.row.walletBoxes?.[item.wallet] || ""} onChange={(boxId) => onAssignWallet(item.holder, item.wallet, boxId)} /> : <span className="logistics-box-placeholder">-</span>}</div><input type="datetime-local" className="logistics-restart-input" value={restartInputValue(restart)} onChange={(event) => updateRestart(item, event.target.value)} aria-label={`Último reinicio de ${item.holder} ${item.wallet}`} /><button className="logistics-hide" title={hidden(item.key) ? "Mostrar billetera" : "Ocultar billetera"} onClick={() => toggleHidden(item.key)}><Eye size={14} /></button></div>; })}</React.Fragment>)}
+      {grouped.map((group) => <React.Fragment key={group.category}><div className="logistics-group">Billeteras {group.category}</div>{group.rows.map((item) => { const state = stateFor(item.row, item.wallet); const box = boxes.find((candidate) => candidate.id === item.row.walletBoxes?.[item.wallet]); const restart = restartFor(item); const tone = restartTone(restart); const hasChecks = ["Normal", "Compartidas"].includes(item.category); return <div className={`logistics-row ${state.collections && state.withdrawals ? "both" : state.collections ? "collections" : state.withdrawals ? "withdrawals" : ""} ${tone}`} key={item.key} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", item.key)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => reorder(group.category, event.dataTransfer.getData("text/plain"), item.key)}>{hasChecks ? <><label className="logistics-check"><input type="checkbox" checked={Boolean(state.collections)} onChange={() => updateState(item, "collections")} /><span /></label><label className="logistics-check"><input type="checkbox" checked={Boolean(state.withdrawals)} onChange={() => updateState(item, "withdrawals")} /><span /></label></> : <><span className="logistics-check-empty" /><span className="logistics-check-empty" /></>}<b>{item.holder}</b><strong>{item.wallet}</strong><span>{item.category === "Depósitos" ? "Únicamente enviar como depósito" : item.category === "Compartidas" ? "Máximo 500k · (Depósitos o Pagos Grandes)" : item.category === "Ahorro" ? "No contabiliza en caja" : `Máximo 250k · ${item.mode === "Solo Cobros" ? "Cobros" : "Pagos"}`}</span><time>{formatRestart(state.lastCollectionsAt)}</time><time>{formatRestart(state.lastWithdrawalsAt)}</time><div className="logistics-box-selector">{item.category === "Depósitos" || item.category === "Compartidas" ? <WalletAssignmentSelector boxes={boxes} value={item.row.walletBoxes?.[item.wallet] || ""} onChange={(boxId) => onAssignWallet(item.holder, item.wallet, boxId)} /> : <span className="logistics-box-placeholder">-</span>}</div><input type="datetime-local" className="logistics-restart-input" value={restartInputValue(restart)} onChange={(event) => updateRestart(item, event.target.value)} aria-label={`Último reinicio de ${item.holder} ${item.wallet}`} /><button className="logistics-hide" title={hidden(item.key) ? "Mostrar billetera" : "Ocultar billetera"} onClick={() => toggleHidden(item.key)}><Eye size={14} /></button></div>; })}</React.Fragment>)}
       {hiddenItems.length > 0 && <div className="logistics-hidden"><span>Ocultas</span>{hiddenItems.map((item) => <button key={item.key} onClick={() => toggleHidden(item.key)}>{item.holder} · {item.wallet}</button>)}</div>}
     </div>
     </section>
@@ -3145,7 +3149,7 @@ function BonusesPage({ config, activeBoxId, api, onNotify, onWrite, onVersionCha
 
 function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, activeBox }) {
   const wallets = config.accounts.wallets;
-  const walletGroups = ["Normal", "Depósitos", "Compartidas"].map((category) => ({
+  const walletGroups = ["Normal", "Depósitos", "Compartidas", "Ahorro"].map((category) => ({
     category,
     rows: caja.accounts.filter((row) => wallets.some((wallet) => (config.accounts.walletSettings[row.holder]?.[wallet]?.category || "Normal") === category && config.accounts.availability[row.holder]?.[wallet] !== false)),
   })).filter((group) => group.rows.length);
@@ -3172,7 +3176,7 @@ function LegacySnapshotView({ caja, calculations, snapshotRef, config, boxes, ac
   };
   const isWalletAvailable = (row, wallet) => config.accounts.availability[row.holder]?.[wallet] !== false;
   const rowWalletTotal = (row, category) => wallets.reduce((sum, wallet) => sum + (config.accounts.walletSettings[row.holder]?.[wallet]?.category === category && walletBelongsToBox(row, wallet, config, activeBox?.id) ? number(row.values[wallet]) : 0), 0);
-  const walletTotal = (wallet) => caja.accounts.reduce((sum, row) => sum + (walletBelongsToBox(row, wallet, config, activeBox?.id) ? number(row.values[wallet]) : 0), 0);
+  const walletTotal = (wallet) => caja.accounts.reduce((sum, row) => sum + (walletCountsInCash(row, wallet, config, activeBox?.id) ? number(row.values[wallet]) : 0), 0);
   return (
     <div ref={snapshotRef} className="snapshot-export" style={boxColorStyle(activeBox?.color)}>
       <div className="snapshot-title">
@@ -3585,7 +3589,7 @@ function App() {
   const calculations = useMemo(() => {
     if (!caja || !config) return {};
     const accounts = caja.accounts
-      .flatMap((r) => Object.entries(r.values).filter(([wallet]) => walletBelongsToBox(r, wallet, config, activeBoxId)).map(([, value]) => value))
+      .flatMap((r) => Object.entries(r.values).filter(([wallet]) => walletCountsInCash(r, wallet, config, activeBoxId)).map(([, value]) => value))
       .reduce((s, x) => s + number(x), 0);
     const bonuses = caja.bonuses.reduce(
       (s, x) => s + number(x.granted) - number(x.recovered),

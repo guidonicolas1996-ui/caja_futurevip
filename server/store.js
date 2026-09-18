@@ -12,7 +12,7 @@ const titulares = ['Fede Acuña', 'Pablo Totaro', 'Mateo Ferrer', 'Ever Lombardo
 const billeteras = ['Ualá', 'Mercado Pago', 'Personal Pay', 'Naranja X', 'Brubank', 'Prex', 'Astro Pay', 'Belo', 'Lemon'];
 const plataformas = ['Ganamos', 'Zeus', 'Apostamos'];
 const colors = ['teal', 'blue', 'green', 'orange', 'pink', 'red', 'yellow', 'violet', 'slate'];
-const walletCategories = ['Normal', 'Depósitos', 'Compartidas'];
+const walletCategories = ['Normal', 'Depósitos', 'Compartidas', 'Ahorro'];
 let bonusOperationQueue = Promise.resolve();
 let spacesReadPromise = null;
 const withBonusOperationLock = (operation) => {
@@ -409,11 +409,11 @@ export async function updateCurrent(patch, boxId, clientUpdatedAt = null) {
     currentPatch.accounts.forEach((account) => {
       Object.entries(account.values || {}).forEach(([wallet, value]) => {
         const setting = space.config?.accounts?.walletSettings?.[account.holder]?.[wallet];
-        if (!['Depósitos', 'Compartidas'].includes(setting?.category)) return;
+        if (!['Depósitos', 'Compartidas', 'Ahorro'].includes(setting?.category)) return;
         spaces.forEach((targetSpace) => {
           const targetAccount = targetSpace.cajas.at(-1).accounts.find((item) => item.holder === account.holder);
           const targetSetting = targetSpace.config?.accounts?.walletSettings?.[account.holder]?.[wallet];
-          if (targetAccount && ['Depósitos', 'Compartidas'].includes(targetSetting?.category)) {
+          if (targetAccount && ['Depósitos', 'Compartidas', 'Ahorro'].includes(targetSetting?.category)) {
             targetAccount.values[wallet] = value;
             targetAccount.verified = { ...(targetAccount.verified || {}), [wallet]: account.verified?.[wallet] };
             targetAccount.notes = { ...(targetAccount.notes || {}), [wallet]: account.notes?.[wallet] };
@@ -587,7 +587,7 @@ export async function updateConfig(config, boxId, clientUpdatedAt = null) {
 }
 function walletBelongsToBox(row, wallet, config, boxId) {
   const setting = config.accounts.walletSettings?.[row.holder]?.[wallet];
-  return config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
+  return setting?.category !== 'Ahorro' && config.accounts.availability?.[row.holder]?.[wallet] !== false && (!setting?.category || setting.category === 'Normal' || row.walletBoxes?.[wallet] === boxId);
 }
 export async function closeCurrent(patch = {}, boxId, clientUpdatedAt = null) { const { updatedAt: _ignoredUpdatedAt, ...closePatch } = patch || {}; const spaces = await readSpaces(); const space = spaces.find((item) => item.id === boxId) || spaces[0]; const config = normalizeConfig(space.config); const source = closePatch.accounts || space.cajas.at(-1).accounts; const accountsTotal = source.flatMap((row) => Object.entries(row.values || {}).filter(([wallet]) => walletBelongsToBox(row, wallet, config, space.id)).map(([, value]) => value)).reduce((sum, value) => sum + (Number(value) || 0), 0); const current = { ...space.cajas.at(-1), ...closePatch, cashFinal: accountsTotal }; if (current.status === 'CERRADA') throw new Error('La caja ya está cerrada'); current.status = 'CERRADA'; current.closedAt = new Date().toISOString(); space.cajas[space.cajas.length - 1] = current; const nextCaja = blankCaja(current.id + 1, current, space.config); space.cajas.push(nextCaja); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { ...nextCaja, updatedAt }; }
 export { billeteras, titulares, plataformas };
