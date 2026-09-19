@@ -2103,8 +2103,12 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     const next = (index + 1) % items.length;
     return inUseIndexes.includes(previous) && !inUseIndexes.includes(next);
   }) ?? inUseIndexes[0];
-  const route = [0, 1, 2].map((offset) => items[(currentIndex + offset) % items.length]);
   const currentItem = items[currentIndex];
+  const previous = items
+    .filter((item) => item.key !== currentItem.key)
+    .sort((first, second) => dateValue(second.restart) - dateValue(first.restart))
+    .slice(0, 2);
+  const route = [0, 1, 2].map((offset) => items[(currentIndex + offset) % items.length]);
   const hasPaymentBalance = items.some((item) => item.paymentWallet && item.balance > 0);
   const recommendationPool = hasPaymentBalance ? items : items.filter((item) => item.paymentWallet);
   const recommended = recommendationPool.filter((item) => item.key !== currentItem.key).sort((first, second) => dateValue(first.restart) - dateValue(second.restart))[0] || recommendationPool[0] || currentItem;
@@ -2136,7 +2140,7 @@ function WalletRoute({ caja, config, onUpdateAccounts }) {
     <div className="wallet-route-title"><h2><WalletCards size={16} /> Logística</h2></div>
     <div className="wallet-recommendation"><span><WalletCards size={15} /> Billetera recomendada</span><strong>{recommended.holder} · {recommended.wallet}</strong><small>{recommendationReason} · {formatRestart(recommended.restart)}</small></div>
     <div className="wallet-route-head"><h2><WalletCards size={16} /> Próximas Billeteras</h2><span>Ruta normal</span><div className="wallet-route-actions"><button type="button" title="Billetera anterior" onClick={() => moveRoute(-1)}><ArrowLeft size={13} /> Anterior</button><button type="button" title="Próxima billetera" onClick={() => moveRoute(1)}>Próxima <ArrowRight size={13} /></button><button type="button" title="Usar billetera recomendada" onClick={() => requestInUse(recommended)}><WalletCards size={13} /> Recomendada</button></div></div>
-    <div className="wallet-route-list">{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : "clickable"}`} key={`${item.key}-${index}`} onClick={() => index > 0 && requestInUse(item)} role={index > 0 ? "button" : undefined} tabIndex={index > 0 ? 0 : undefined} onKeyDown={(event) => { if (index > 0 && (event.key === "Enter" || event.key === " ")) requestInUse(item); }}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
+    <div className="wallet-route-list">{previous.map((item, index) => <div className="wallet-route-item history" key={`previous-${item.key}`}><span className="wallet-route-index">-{index + 1}</span><strong>{item.holder} · {item.wallet}</strong></div>)}{route.map((item, index) => <div className={`wallet-route-item ${index === 0 ? "current" : "clickable"}`} key={`${item.key}-${index}`} onClick={() => index > 0 && requestInUse(item)} role={index > 0 ? "button" : undefined} tabIndex={index > 0 ? 0 : undefined} onKeyDown={(event) => { if (index > 0 && (event.key === "Enter" || event.key === " ")) requestInUse(item); }}><span className="wallet-route-index">{index === 0 ? "En uso" : `+${index}`}</span><strong>{item.holder} · {item.wallet}</strong>{item.key === recommended.key && <small>Recomendada</small>}</div>)}</div>
     {pendingWallet && <ConfirmDialog dialog={{ message: `¿Desea colocar en uso la billetera ${pendingWallet.holder} · ${pendingWallet.wallet}?`, onConfirm: () => { markInUse(pendingWallet); setPendingWallet(null); } }} onClose={() => setPendingWallet(null)} />}
   </section>;
 }
