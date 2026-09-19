@@ -166,6 +166,7 @@ const statisticsFor = (caja, config, activeBoxId) => {
   const recovered = (caja.bonuses || []).reduce((sum, row) => sum + number(row.recovered), 0);
   const ta = (caja.ta || []).reduce((sum, row) => sum + number(row.amount), 0);
   const found = (caja.foundMoney || []).reduce((sum, row) => sum + number(row.amount), 0);
+  const savings = (caja.savingsMovements || []).reduce((sum, row) => sum + number(row.amount), 0);
   const rounding = number(caja.found);
   const expensesByCategory = config.expenses.reduce((result, category) => {
     result[category.name] = (caja.expenses || []).filter((row) => row.category === category.name).reduce((sum, row) => sum + number(row.amount), 0);
@@ -177,14 +178,14 @@ const statisticsFor = (caja, config, activeBoxId) => {
   const expenses = Object.values(expensesByCategory).reduce((sum, value) => sum + value, 0);
   const balance = (caja.chips || []).reduce((sum, row) => sum + number(row.initial) - number(row.final), 0);
   const cashInitial = number(caja.cashInitial);
-  const cashFinal = accounts;
+  const cashFinal = accounts - savings;
   const preDifference = expenses + ta + cashFinal + granted - recovered;
   const difference = preDifference - cashInitial;
   const cashDifference = cashFinal - cashInitial;
   const transfers = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
   const realDifference = difference - (granted - recovered) + transfers;
   const realProfit = realDifference * 0.77;
-  return { tips, found, rounding, granted, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, realProfit, transfers, bonusesNet: granted - recovered };
+  return { tips, found, rounding, savings, granted, recovered, ta, expenses, expensesByCategory, balance, cashInitial, cashFinal, preDifference, difference, cashDifference, realDifference, realProfit, transfers, bonusesNet: granted - recovered };
 };
 const api = (url, options) =>
   fetch(`${import.meta.env.VITE_API_URL || ""}${url}`, {
