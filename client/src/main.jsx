@@ -2467,7 +2467,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
 
 function SummaryCard({ caja, calculations, update }) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const metric = (label, value, className = "", valueClass = "") => (
+  const metric = (label, value, className = "", valueClass = value > 0 ? "positive" : value < 0 ? "negative" : "neutral") => (
     <div className={className}>
       <span>{label}</span>
       <b className={valueClass}>{money(value)}</b>
@@ -2495,13 +2495,10 @@ function SummaryCard({ caja, calculations, update }) {
         </strong>
       </div>
       <div className="metric-list">
-        <div className="editable-summary-metric">
-          <span>Caja inicial</span>
-          <span className="readonly-amount">{money(caja.cashInitial)}</span>
-        </div>
+        {metric("Caja inicial", calculations.cashInitial)}
         {metric("Caja final", calculations.cashFinal)}
-        {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
-        {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
+        {metric("Diferencia caja", calculations.cashDifference)}
+        {metric("Diferencia real", calculations.realDifference)}
       </div>
       <div className="found-money">
         <label>Redondeo</label>
@@ -2520,17 +2517,15 @@ function SummaryCard({ caja, calculations, update }) {
             <p>Detalle completo de los valores calculados para este turno.</p>
             <div className="advanced-summary-list">
               {metric("Sobrante / Faltante", calculations.shortage, "highlight")}
-
-              {metric("Caja inicial", money(caja.cashInitial))}
-
+              {metric("Caja inicial", calculations.cashInitial)}
               {metric("Caja final", calculations.cashFinal)}
               {metric("Pre diferencia", calculations.preDifference)}
               {metric("Diferencia", calculations.difference)}
               {metric("Saldo", calculations.balance)}
               {metric("Redondeo", caja.found)}
-              {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
-              {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
-              {metric("Ganancia Real", calculations.realProfit, "", calculations.realProfit >= 0 ? "positive" : "negative")}
+              {metric("Diferencia caja", calculations.cashDifference)}
+              {metric("Diferencia real", calculations.realDifference)}
+              {metric("Ganancia Real", calculations.realProfit)}
             </div>
           </div>
         </div>
