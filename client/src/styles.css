@@ -590,6 +590,21 @@ button {
   background: var(--orange);
   box-shadow: 0 0 9px var(--orange);
 }
+.save-state.error,
+.save-state.offline {
+  color: var(--danger, #ff8888);
+}
+.save-state.error .dot,
+.save-state.offline .dot {
+  background: var(--danger, #ff8888);
+  box-shadow: 0 0 9px var(--danger, #ff8888);
+}
+.save-confirmed {
+  color: var(--muted);
+  font-family: "DM Mono";
+  font-size: 9px;
+  white-space: nowrap;
+}
 .app-toast {
   position: fixed;
   right: 18px;

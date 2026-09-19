@@ -1076,6 +1076,9 @@ function SummaryHeader({
   config,
   onClose,
   saving,
+  saveError,
+  offline,
+  lastSavedAt,
   onPrevious,
   onNext,
   readOnly,
@@ -1131,10 +1134,11 @@ function SummaryHeader({
       </div>
       <div className="top-actions">
         <BoxSelector boxes={boxes} activeBoxId={activeBoxId} onChange={onBoxChange} />
-        <span className={`save-state ${saving ? "saving" : ""}`}>
+        <span className={`save-state ${saving ? "saving" : ""} ${saveError ? "error" : ""} ${offline ? "offline" : ""}`} title={lastSavedAt ? `Último guardado confirmado: ${lastSavedAt}` : "Todavía no hay un guardado confirmado"}>
           <span className="dot" />{" "}
-          {readOnly ? "Consulta" : saving ? "Guardando..." : "Guardado"}
+          {readOnly ? "Consulta" : offline ? "Sin conexión" : saveError ? "Error al guardar" : saving ? "Guardando..." : "Guardado"}
         </span>
+        {!readOnly && <span className="save-confirmed">Último guardado confirmado: {lastSavedAt || "--:--"}</span>}
         <button
           className="icon-button snapshot-button"
           title="Descargar caja como PNG"
@@ -3300,6 +3304,10 @@ function App() {
   const [history, setHistory] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [offline, setOffline] = useState(() => !navigator.onLine);
+  const [lastSavedAt, setLastSavedAt] = useState("");
+  const [saveStartedAt, setSaveStartedAt] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [closeWarning, setCloseWarning] = useState(false);
   const [createPreviousOpen, setCreatePreviousOpen] = useState(false);
@@ -3403,6 +3411,23 @@ function App() {
     window.toastTimer = setTimeout(() => setToast(""), 3000);
   };
   useEffect(() => {
+    const handleOffline = () => setOffline(true);
+    const handleOnline = () => setOffline(false);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+  useEffect(() => {
+    if (!saving || !saveStartedAt) return undefined;
+    const timer = window.setTimeout(() => {
+      setSaveError("El guardado lleva demasiado tiempo sin confirmación.");
+    }, 30 * 1000);
+    return () => window.clearTimeout(timer);
+  }, [saving, saveStartedAt]);
+  useEffect(() => {
     if (!activeBox) return undefined;
     const colors = boxColorStyle(activeBox.color);
     Object.entries(colors).forEach(([name, value]) => document.documentElement.style.setProperty(name, value));
@@ -3419,6 +3444,7 @@ function App() {
         setHistory(past);
         setBoxHistories({ [boxId]: past });
         setConfig(settings);
+        setLastSavedAt(current.updatedAt || settings.updatedAt ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(current.updatedAt || settings.updatedAt)) : "");
         rememberUpdatedAt(current.updatedAt || settings.updatedAt);
       },
       );
@@ -3479,6 +3505,8 @@ function App() {
       const result = await enqueueWrite((version) => api("/api/caja/asignacion-billetera", { method: "PUT", body: JSON.stringify({ holder, wallet, boxId, updatedAt: version }) }));
       if (result.error) return;
       rememberUpdatedAt(result.updatedAt);
+      setSaveError("");
+      setLastSavedAt(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       setCaja((current) => result.currents?.[activeBoxId] || current || result.currents?.[boxId] || optimisticCaja || current);
     } catch (error) {
       if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
@@ -3511,6 +3539,9 @@ function App() {
         body: JSON.stringify({ ...queuedSave.patch, updatedAt: version }),
       }));
       rememberUpdatedAt(savedCaja.updatedAt);
+      setSaveError("");
+      setOffline(false);
+      setLastSavedAt(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       if (!pendingSaveRef.current) setCaja(savedCaja);
     } catch (error) {
       if (error.status === 409 || error.code === "OUTDATED_STATE") {
@@ -3520,7 +3551,12 @@ function App() {
           : queuedSave;
         await syncAfterConflict();
       }
-      else notify(error.message);
+      else {
+        const networkError = error?.name === "TypeError" || error?.name === "AbortError" || !navigator.onLine;
+        setOffline(networkError);
+        setSaveError(error.message || "No se pudo confirmar el guardado.");
+        notify(error.message);
+      }
     } finally {
       saveInFlightRef.current = false;
       if (pendingSaveRef.current) {
@@ -3529,11 +3565,14 @@ function App() {
         flushSave();
       } else {
         setSaving(false);
+        setSaveStartedAt(null);
       }
     }
   };
   const update = (patch, immediate = false) => {
     setCaja((current) => ({ ...current, ...patch }));
+    setSaveError("");
+    setSaveStartedAt((current) => current || Date.now());
     pendingSaveRef.current = {
       patch: { ...(pendingSaveRef.current?.patch || {}), ...patch },
       boxId: activeBoxId,
@@ -3714,6 +3753,8 @@ function App() {
       body: JSON.stringify({ ...closingCaja, updatedAt: version }),
     })).then((next) => {
       rememberUpdatedAt(next.updatedAt);
+      setSaveError("");
+      setLastSavedAt(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
       setCaja(next);
       setHistory((currentHistory) => [next, ...currentHistory.filter((item) => String(item.id) !== String(next.id))]);
       setSelectedIndex(0);
@@ -3783,6 +3824,9 @@ function App() {
         caja={caja}
         config={config}
         saving={saving}
+        saveError={saveError}
+        offline={offline}
+        lastSavedAt={lastSavedAt}
         readOnly={readOnly}
         onPrevious={() => navigate(1)}
         onNext={() => navigate(-1)}
