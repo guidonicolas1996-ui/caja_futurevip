@@ -2500,10 +2500,8 @@ function SummaryCard({ caja, calculations, update }) {
           <span className="readonly-amount">{money(caja.cashInitial)}</span>
         </div>
         {metric("Caja final", calculations.cashFinal)}
-        {metric("Saldo", calculations.balance, "", calculations.balance >= 0 ? "positive" : "negative")}
         {metric("Diferencia caja", calculations.cashDifference, "", calculations.cashDifference >= 0 ? "positive" : "negative")}
         {metric("Diferencia real", calculations.realDifference, "", calculations.realDifference >= 0 ? "positive" : "negative")}
-        {metric("Ganancia Real", calculations.realProfit, "", calculations.realProfit >= 0 ? "positive" : "negative")}
       </div>
       <div className="found-money">
         <label>Redondeo</label>
@@ -2522,10 +2520,9 @@ function SummaryCard({ caja, calculations, update }) {
             <p>Detalle completo de los valores calculados para este turno.</p>
             <div className="advanced-summary-list">
               {metric("Sobrante / Faltante", calculations.shortage, "highlight")}
-              <div className="editable-summary-metric">
-                <span>Caja inicial</span>
-                <span className="readonly-amount">{money(caja.cashInitial)}</span>
-              </div>
+
+              {metric("Caja inicial", money(caja.cashInitial))}
+
               {metric("Caja final", calculations.cashFinal)}
               {metric("Pre diferencia", calculations.preDifference)}
               {metric("Diferencia", calculations.difference)}
