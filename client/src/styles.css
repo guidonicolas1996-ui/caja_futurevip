@@ -2190,7 +2190,8 @@ select:focus {
   box-shadow: 0 20px 80px #0008;
 }
 
-.transfer-modal { width: 75vw; }
+.transfer-modal { width: 50vw; }
+.transfer-edit-modal { width: 40vw; }
 
 .modal-close {
   position: absolute;
