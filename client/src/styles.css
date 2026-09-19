@@ -2133,7 +2133,7 @@ select:focus {
 .transfer-invert { width: 30px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 5px; background: #293638; color: #dbe5e4; display: grid; place-items: center; }
 .transfer-invert:hover { background: #35504f; color: var(--box-accent, var(--cyan)); }
 .transfer-fields > label { display: grid; gap: 5px; min-width: 0; color: var(--muted); font-size: 9px; }
-.savings-movement-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr) minmax(76px, 1fr) minmax(0, 1.2fr) 30px; gap: 6px; padding: 0 12px 10px; box-sizing: border-box; }
+.savings-movement-fields { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr) minmax(76px, 1fr) minmax(0, 1.2fr) 30px; gap: 6px; }
 .transfer-fields input, .transfer-fields select { width: 100%; min-width: 0; height: 32px; padding-top: 6px; padding-bottom: 6px; }
 .transfer-fields .amount-input { width: 100%; height: 32px; min-width: 0; box-sizing: border-box; }
 .transfer-fields .transfer-send { width: 100%; height: 32px; margin-top: 0; box-sizing: border-box; }
