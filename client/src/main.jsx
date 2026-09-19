@@ -370,7 +370,16 @@ function TransferSection({ caja, config, boxes, activeBoxId, transfers, savingsM
   };
   const submit = async () => {
     setError("");
-    try { await onCreate({ fromBoxId, toBoxId, amount: parseNumberInput(amount), note }); setAmount(""); setNote(""); }
+    try {
+      if (savingsMode) {
+        if (!holder || !wallet) throw new Error("Seleccioná un titular y una billetera de ahorro");
+        await onCreateSavings({ id: crypto.randomUUID(), holder, wallet, amount: parseNumberInput(amount), note: note.trim(), createdAt: new Date().toISOString() });
+      } else {
+        await onCreate({ fromBoxId, toBoxId, amount: parseNumberInput(amount), note });
+      }
+      setAmount("");
+      setNote("");
+    }
     catch (requestError) { setError(requestError.message); }
   };
   const saveTransfer = async () => {
@@ -380,14 +389,20 @@ function TransferSection({ caja, config, boxes, activeBoxId, transfers, savingsM
   return (
     <section className="transfer-panel">
       <div className="transfer-form">
-        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><div className="transfer-form-title-line"><h3>Movimiento entre cajas</h3><span>{transfers.length} registros</span></div></div></div><button className="icon-button" title="Ver y editar traspasos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div>
-        <div className="transfer-fields">
+        <div className="transfer-form-head"><div className="transfer-form-title"><ArrowLeftRight size={18} /><div><div className="transfer-form-title-line"><h3>Movimientos</h3><span>{records.length} registros</span></div></div></div><div className="transfer-form-actions"><label className="movement-mode-toggle" title="Activar movimientos de ahorro"><span>Movimientos de ahorro</span><input type="checkbox" checked={savingsMode} onChange={toggleMode} /><i /></label><button className="icon-button" title="Ver y editar movimientos" onClick={() => setEditorOpen(true)}><Eye size={16} /></button></div></div>
+        {savingsMode ? <div className="transfer-fields savings-movement-fields">
+          <label><span>Titular</span><select value={holder} onChange={(event) => { setHolder(event.target.value); setWallet(""); }}><option value="">Seleccionar titular</option>{savingsHolders.map((name) => <option value={name} key={name}>{name}</option>)}</select></label>
+          <label><span>Billetera</span><select value={wallet} disabled={!holder} onChange={(event) => setWallet(event.target.value)}><option value="">Seleccionar billetera</option>{savingsWalletsFor(holder).map((item) => <option value={item} key={item}>{item}</option>)}</select></label>
+          <label><span>Monto</span><AmountInput value={amount} onChange={(value) => setAmount(value)} /></label>
+          <label><span>Nota</span><input value={note} placeholder="Nota" onChange={(event) => setNote(event.target.value)} /></label>
+          <button type="button" className="send-button transfer-send" title="Agregar movimiento de ahorro" aria-label="Agregar movimiento de ahorro" onClick={submit}><Send size={15} /></button>
+        </div> : <div className="transfer-fields">
           <TransferBoxPicker label="Desde" boxes={boxes} value={fromBoxId} onChange={changeFromBox} />
           <button type="button" className="transfer-invert" title="Invertir selección" aria-label="Invertir selección" onClick={invertSelection}><ArrowLeftRight size={16} /></button>
           <TransferBoxPicker label="Hasta" boxes={boxes} value={toBoxId} excludeId={fromBoxId} onChange={setToBoxId} />
           <label><span>Monto</span><AmountInput value={amount} onChange={(value) => setAmount(value)} /></label>
           <button type="button" className="send-button transfer-send" title="Enviar traspaso" aria-label="Enviar traspaso" onClick={submit} disabled={boxes.length < 2}><Send size={15} /></button>
-        </div>
+        </div>}
         {error && <small className="transfer-error">{error}</small>}
       </div>
       <div className="transfer-history"><div className="recent-movements"><span>Últimos traspasos</span>{transfers.slice().reverse().map((transfer) => { const outgoing = transfer.fromBoxId === activeBoxId; const otherBox = boxes.find((box) => box.id === (outgoing ? transfer.toBoxId : transfer.fromBoxId)); return <div className="recent-movement transfer-row" key={transfer.id}><span>{outgoing ? "Salida a" : "Entrada de"} {otherBox?.title || "otra caja"}{transfer.note ? ` · ${transfer.note}` : ""}</span><b className={outgoing ? "transfer-out" : "transfer-in"}>{outgoing ? "-" : "+"}{money(transfer.amount)}</b></div>; })}{transfers.length === 0 && <small>Sin traspasos todavía</small>}</div></div>
