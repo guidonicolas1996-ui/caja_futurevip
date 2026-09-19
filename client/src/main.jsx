@@ -3444,6 +3444,19 @@ function App() {
     };
   }, [activeBoxId, saving, selectedIndex]);
   useEffect(() => {
+    if (!activeBoxId) return undefined;
+    let cancelled = false;
+    const refreshHistory = async () => {
+      const past = await api(`/api/caja/historial?boxId=${activeBoxId}`);
+      if (!cancelled) setHistory(past);
+    };
+    const interval = window.setInterval(refreshHistory, 20 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [activeBoxId]);
+  useEffect(() => {
     if (!statisticsOpen || !boxes?.length) return undefined;
     let cancelled = false;
     Promise.all(boxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))).then((histories) => {
