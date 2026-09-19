@@ -162,7 +162,7 @@
 }
 .operations-grid > .movement-section,
 .operations-grid > .found-money-section {
-  height: 320px;
+  height: 270px;
   align-self: start;
 }
 @media (max-width: 1050px) {
