@@ -1138,7 +1138,6 @@ function SummaryHeader({
           <span className="dot" />{" "}
           {readOnly ? "Consulta" : offline ? "Sin conexión" : saveError ? "Error al guardar" : saving ? "Guardando..." : "Guardado"}
         </span>
-        {!readOnly && <span className="save-confirmed">Último guardado confirmado: {lastSavedAt || "--:--"}</span>}
         <button
           className="icon-button snapshot-button"
           title="Descargar caja como PNG"
@@ -3841,6 +3840,7 @@ function App() {
       <main>
         <div className="page-title">
           <div className="current-shift-heading">
+            {!readOnly && <span className="save-confirmed">Último guardado confirmado: {lastSavedAt || "--:--"}</span>}
             <h1>Turno {caja.shift} <em>/</em> {caja.shift === "Noche" ? "00:00 - 08:00" : caja.shift === "Mañana" ? "08:00 - 16:00" : "16:00 - 00:00"}
                {isShiftOutOfTime(caja.shift) && <span style={{ color: "rgb(255, 0, 0)", marginLeft: "0.5em", fontSize: "0.8em" }}>CAJA FUERA DE TURNO</span>}
             </h1>

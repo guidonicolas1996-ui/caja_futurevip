@@ -605,6 +605,10 @@ button {
   font-size: 9px;
   white-space: nowrap;
 }
+.current-shift-heading > .save-confirmed {
+  display: block;
+  margin-bottom: 5px;
+}
 .app-toast {
   position: fixed;
   right: 18px;
