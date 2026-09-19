@@ -324,20 +324,43 @@ function TransferBoxPicker({ label, boxes, value, excludeId, onChange }) {
   </div>;
 }
 
-function TransferSection({ boxes, activeBoxId, transfers, onCreate, onUpdateTransfer, onDeleteTransfer }) {
+function TransferSection({ caja, config, boxes, activeBoxId, transfers, savingsMovements = [], onCreate, onUpdateTransfer, onDeleteTransfer, onCreateSavings, onUpdateSavings, onDeleteSavings }) {
   const [fromBoxId, setFromBoxId] = useState(activeBoxId);
   const [toBoxId, setToBoxId] = useState(boxes.find((box) => box.id !== activeBoxId)?.id || "");
+  const [savingsMode, setSavingsMode] = useState(false);
+  const [holder, setHolder] = useState("");
+  const [wallet, setWallet] = useState("");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editingTransfer, setEditingTransfer] = useState(null);
-  const [deleteTransferId, setDeleteTransferId] = useState(null);
+  const [editingMovement, setEditingMovement] = useState(null);
+  const [deleteMovementId, setDeleteMovementId] = useState(null);
+  const accountFor = (name) => (caja.accounts || []).find((account) => account.holder === name);
+  const savingsWalletsFor = (name) => config.accounts.wallets.filter((item) => config.accounts.walletSettings[name]?.[item]?.category === "Ahorro" && config.accounts.availability[name]?.[item] !== false && item in (accountFor(name)?.values || {}));
+  const savingsHolders = config.accounts.holders.filter((name) => savingsWalletsFor(name).length > 0);
+  const records = savingsMode ? savingsMovements : transfers;
   useEffect(() => {
     setFromBoxId(activeBoxId);
     setToBoxId(boxes.find((box) => box.id !== activeBoxId)?.id || "");
   }, [activeBoxId, boxes]);
-      const changeFromBox = (boxId) => {
+  useEffect(() => {
+    if (!savingsHolders.includes(holder)) {
+      setHolder("");
+      setWallet("");
+    } else if (!savingsWalletsFor(holder).includes(wallet)) {
+      setWallet("");
+    }
+  }, [config, caja.accounts, holder, wallet]);
+  const toggleMode = () => {
+    setSavingsMode((current) => !current);
+    setHolder("");
+    setWallet("");
+    setAmount("");
+    setNote("");
+    setError("");
+  };
+  const changeFromBox = (boxId) => {
     setFromBoxId(boxId);
     if (boxId && boxId === toBoxId) setToBoxId("");
   };
@@ -3822,9 +3845,12 @@ function App() {
               </div>
             </section>
               <TransferSection
+                caja={caja}
+                config={config}
                 boxes={boxes}
                 activeBoxId={activeBoxId}
                 transfers={caja.transfers || []}
+                savingsMovements={caja.savingsMovements || []}
                 onCreate={async (transfer) => {
                   let result;
                   try { result = await enqueueWrite((version) => api("/api/traspasos", { method: "POST", body: JSON.stringify({ ...transfer, updatedAt: version }) })); }
@@ -3849,6 +3875,9 @@ function App() {
                   rememberUpdatedAt(result.updatedAt);
                   setCaja(result.currents[activeBoxId]);
                 }}
+                onCreateSavings={async (movement) => update({ savingsMovements: [...(caja.savingsMovements || []), movement] })}
+                onUpdateSavings={async (movement) => update({ savingsMovements: (caja.savingsMovements || []).map((item) => item.id === movement.id ? movement : item) })}
+                onDeleteSavings={async (movementId) => update({ savingsMovements: (caja.savingsMovements || []).filter((item) => item.id !== movementId) })}
               />
               <ChipsSection caja={caja} update={update} config={config} />
             </div>
