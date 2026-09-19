@@ -2718,8 +2718,8 @@ select:focus {
 .wallet-route-title { display: flex; align-items: flex-start; min-height: 18px; margin-bottom: 18px; color: var(--text-primary); }
 .wallet-route-title h2 { display: flex; align-items: center; gap: 6px; margin: 0; color: #f0f8f6; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; line-height: 18px; }
 .wallet-route-title h2 svg { color: var(--cyan); flex: 0 0 auto; margin-top: 1px; }
-.mini-users-panel { display: flex; flex-direction: column; height: 330px; }
-.mini-bonuses-panel { display: flex; flex-direction: column; height: 330px; }
+.mini-users-panel { display: flex; flex-direction: column; height: 400px; }
+.mini-bonuses-panel { display: flex; flex-direction: column; height: 400px; }
 .mini-bonuses-head { flex: 0 0 auto; }
 .mini-bonuses-head { position: relative; }
 .mini-bonuses-filter-toggle { flex: 0 0 30px; }
