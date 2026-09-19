@@ -116,7 +116,8 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
     const category = config.expenses.find((item) => item.name === row.category);
     return sum + number(row.amount) * (category?.inverted ? -1 : 1);
   }, 0);
-  const cashDifference = expenses + ta + accounts - number(caja.cashInitial);
+  const savings = (caja.savingsMovements || []).reduce((sum, row) => sum + number(row.amount), 0);
+  const cashDifference = expenses + ta + accounts - savings - number(caja.cashInitial);
   const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
   return cashDifference - bonuses + transferAdjustment;
 };
@@ -3646,7 +3647,8 @@ function App() {
       0,
     );
     const cashInitial = number(caja.cashInitial);
-    const cashFinal = accounts;
+    const savings = (caja.savingsMovements || []).reduce((s, x) => s + number(x.amount), 0);
+    const cashFinal = accounts - savings;
     const preDifference = expenses + ta + cashFinal + bonuses;
     const difference = preDifference - cashInitial;
     const cashDifference = cashFinal - cashInitial;
@@ -3659,6 +3661,7 @@ function App() {
       accounts,
       cashInitial,
       cashFinal,
+      savings,
       bonuses,
       ta,
       tips,
