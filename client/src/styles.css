@@ -2372,6 +2372,15 @@ select:focus {
 .advanced-summary-list .highlight b {
   color: #d8e7e4;
 }
+.advanced-summary-list b.positive {
+  color: var(--green);
+}
+.advanced-summary-list b.negative {
+  color: var(--red);
+}
+.advanced-summary-list b.neutral {
+  color: #d8e7e4;
+}
 .modal-actions {
   display: flex;
   justify-content: flex-end;
