@@ -117,7 +117,7 @@ const realDifferenceFor = (caja, config, activeBoxId) => {
     return sum + number(row.amount) * (category?.inverted ? -1 : 1);
   }, 0);
   const savings = (caja.savingsMovements || []).reduce((sum, row) => sum + number(row.amount), 0);
-  const cashDifference = expenses + ta + accounts - savings - number(caja.cashInitial);
+    const cashDifference = expenses + ta + accounts + savings - number(caja.cashInitial);
   const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
   return cashDifference - bonuses + transferAdjustment;
 };
@@ -179,8 +179,8 @@ const statisticsFor = (caja, config, activeBoxId) => {
   const expenses = Object.values(expensesByCategory).reduce((sum, value) => sum + value, 0);
   const balance = (caja.chips || []).reduce((sum, row) => sum + number(row.initial) - number(row.final), 0);
   const cashInitial = number(caja.cashInitial);
-  const cashFinal = accounts - savings;
-  const preDifference = expenses + ta + cashFinal + granted - recovered;
+  const cashFinal = accounts;
+  const preDifference = expenses + ta + cashFinal + granted - recovered + savings;
   const difference = preDifference - cashInitial;
   const cashDifference = cashFinal - cashInitial;
   const transfers = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
@@ -2568,6 +2568,7 @@ function SummaryCard({ caja, calculations, update }) {
               {metric("Sobrante / Faltante", calculations.shortage, "highlight")}
               {metric("Caja inicial", calculations.cashInitial)}
               {metric("Caja final", calculations.cashFinal)}
+              {metric("Total Ahorro", calculations.savings)}
               {metric("Pre diferencia", calculations.preDifference)}
               {metric("Diferencia", calculations.difference)}
               {metric("Saldo", calculations.balance)}
@@ -3648,8 +3649,8 @@ function App() {
     );
     const cashInitial = number(caja.cashInitial);
     const savings = (caja.savingsMovements || []).reduce((s, x) => s + number(x.amount), 0);
-    const cashFinal = accounts - savings;
-    const preDifference = expenses + ta + cashFinal + bonuses;
+    const cashFinal = accounts;
+    const preDifference = expenses + ta + cashFinal + bonuses + savings;
     const difference = preDifference - cashInitial;
     const cashDifference = cashFinal - cashInitial;
     const transferAdjustment = (caja.transfers || []).reduce((sum, transfer) => sum + (transfer.fromBoxId === activeBoxId ? number(transfer.amount) : transfer.toBoxId === activeBoxId ? -number(transfer.amount) : 0), 0);
