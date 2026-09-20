@@ -835,12 +835,13 @@ function MonthlyGoalProgress({ config, boxColor, date }) {
   const achieved = Math.max(0, number(goal.achieved));
   const percentage = finalGoal > 0 ? (achieved / finalGoal) * 100 : 0;
   const targetPercentage = elapsedMonthPercentage(date);
+  const targetAmount = finalGoal * (targetPercentage / 100);
   const colors = boxColorStyle(boxColor);
   const state = getProgressAccentState(percentage, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
   return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line }}>
     <div className="goal-bar-header"><span>Objetivo de Depósitos General</span></div>
     <div className="goal-bar-body">
-      <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div><i className="monthly-goal-target-marker" style={{ left: `${targetPercentage}%` }} title={`Objetivo del día: ${Math.round(targetPercentage)}%`} aria-label={`Objetivo del día: ${Math.round(targetPercentage)}%`} /></div>
+      <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div><i className="monthly-goal-target-marker" style={{ left: `${targetPercentage}%` }} title={`Objetivo del día: ${Math.round(targetPercentage)}% · Equivale a ${money(targetAmount)}`} aria-label={`Objetivo del día: ${Math.round(targetPercentage)}% · Equivale a ${money(targetAmount)}`} /></div>
       <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(finalGoal)}</span></div>
     </div>
   </section>;
@@ -899,11 +900,15 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   const colors = boxColorStyle(boxColor);
   const renderBar = (label, value, target, percent, targetMarkerPercentage = null, targetMarkerLabel = "Objetivo del día") => {
     const state = getBonusProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+    const targetMarkerAmount = target * (targetMarkerPercentage / 100);
+    const targetMarkerTitle = targetMarkerPercentage === null
+      ? ""
+      : `${targetMarkerLabel}: ${Math.round(targetMarkerPercentage)}% · Equivale a ${money(targetMarkerAmount)}`;
     return (
       <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
         <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
         <div className="bonus-goal-main">
-          <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>{targetMarkerPercentage !== null && targetMarkerPercentage < 100 && <i className="monthly-goal-target-marker" style={{ left: `${targetMarkerPercentage}%` }} title={`${targetMarkerLabel}: ${Math.round(targetMarkerPercentage)}%`} aria-label={`${targetMarkerLabel}: ${Math.round(targetMarkerPercentage)}%`} />}</div>
+          <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>{targetMarkerPercentage !== null && targetMarkerPercentage < 100 && <i className="monthly-goal-target-marker" style={{ left: `${targetMarkerPercentage}%` }} title={targetMarkerTitle} aria-label={targetMarkerTitle} />}</div>
           <div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div>
         </div>
       </div>
