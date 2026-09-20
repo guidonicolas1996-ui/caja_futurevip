@@ -957,12 +957,14 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   </div>;
 }
 
-function SavingsMonthlyGoalProgress({ config, caja, history, boxColor }) {
+function SavingsMonthlyGoalProgress({ config, caja, history, boxHistories, activeBoxId, boxColor }) {
   if (!config || !caja) return null;
   const goal = config.savingsGoal || { total: 0, shifts: { Noche: 0, Mañana: 0, Tarde: 0 } };
-  const monthItems = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
+  const allBoxItems = Object.entries(boxHistories || {}).flatMap(([boxId, items]) => (Array.isArray(items) ? items : []).map((item) => ({ ...item, _boxId: boxId })));
+  const monthItems = [...allBoxItems, ...(Array.isArray(history) ? history : []).map((item) => ({ ...item, _boxId: activeBoxId })), { ...caja, _boxId: activeBoxId }].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate._boxId) === String(item._boxId) && String(candidate.id) === String(item.id)) === index);
   const currentDate = new Date(caja.date);
-  const sameDateItems = monthItems.filter((item) => {
+  const activeBoxItems = monthItems.filter((item) => String(item._boxId) === String(activeBoxId));
+  const sameDateItems = activeBoxItems.filter((item) => {
     const itemDate = new Date(item.date);
     return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth() && itemDate.getDate() === currentDate.getDate();
   });
@@ -3563,14 +3565,14 @@ function App() {
     };
   }, [activeBoxId]);
   useEffect(() => {
-    if (!statisticsOpen || !boxes?.length) return undefined;
+    if (!boxes?.length) return undefined;
     let cancelled = false;
     Promise.all(boxes.map((box) => api(`/api/caja/historial?boxId=${box.id}`))).then((histories) => {
       if (cancelled) return;
       setBoxHistories(Object.fromEntries(boxes.map((box, index) => [box.id, histories[index]])));
     }).catch((error) => { if (!cancelled) notify(error.message); });
     return () => { cancelled = true; };
-  }, [statisticsOpen, boxes]);
+  }, [boxes]);
   const assignWallet = async (holder, wallet, boxId) => {
     const optimisticCaja = caja && {
       ...caja,
@@ -3942,8 +3944,8 @@ function App() {
           </div>
         </div>
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} date={caja.date} />
+        <SavingsMonthlyGoalProgress config={config} caja={caja} history={history} boxHistories={boxHistories} activeBoxId={activeBoxId} boxColor={activeBox.color} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
-        <SavingsMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} cajaDate={caja.date} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
           caja={caja}
