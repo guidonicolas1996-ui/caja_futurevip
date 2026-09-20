@@ -751,7 +751,7 @@ main {
   background: color-mix(in srgb, var(--goal-soft, #37331f) 82%, #111719);
   box-shadow: 0 8px 18px rgba(0, 0, 0, .28), 0 0 10px color-mix(in srgb, var(--goal-glow, var(--box-glow, #244344)) 55%, transparent);
   color: var(--goal-accent, var(--box-accent, #d9c5ff));
-  font: 700 10px "DM Mono";
+  font: 700 16px "DM Mono";
   line-height: 1;
   white-space: nowrap;
   opacity: 0;
@@ -803,7 +803,6 @@ main {
 .monthly-goal-values i { color: #7f806b; font-style: normal; }
 .monthly-goal-values .monthly-goal-achieved { color: #c5c39f; }
 .monthly-goal-values .monthly-goal-final { color: #f0edc2; font-size: 12px; font-weight: 700; }
-.bonus-goal-row .monthly-goal-values strong { font-size: 32px; }
 @keyframes monthly-goal-electric {
   from { background-position: 100% 0; }
   to { background-position: -120% 0; }
