@@ -701,7 +701,7 @@ function MonthlyGoalConfig({ draft, boxes, api, date, update }) {
   
   return <>
     <section className="config-card monthly-goal-card">
-      <div className="config-list-head"><h3>Objetivo de Depósitos General</h3><span>Se actualiza manualmente</span></div>
+      <div className="config-list-head"><h3>Obj. de Depósitos General</h3><span>Se actualiza manualmente</span></div>
       <div className="monthly-goal-fields">
         <label><span>Objetivo final</span><AmountInput value={monthlyGoal.final} onChange={(value) => updateValue("final", value)} /></label>
         <label><span>Objetivo alcanzado</span><div style={{ display: "flex", gap: "8px", alignItems: "center" }}><AmountInput value={monthlyGoal.achieved} onChange={(value) => updateValue("achieved", value)} /><button type="button" className="icon-button" title="Importar depósitos por plataforma" onClick={handleOpenDepositModal} style={{ width: "32px", height: "32px", minWidth: "32px", padding: "4px" }}><Download size={16} /></button></div></label>
@@ -866,7 +866,7 @@ function MonthlyGoalProgress({ config, boxColor, date }) {
   const colors = boxColorStyle(boxColor);
   const state = getProgressAccentState(percentage, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
   return <section className="monthly-goal-progress" aria-label="Progreso del objetivo de depósitos general" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line }}>
-    <div className="goal-bar-header"><span>Objetivo de Depósitos General</span></div>
+    <div className="goal-bar-header"><span>Obj. de Depósitos General</span></div>
     <div className="goal-bar-body">
       <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percentage)}%` }} /></div><i className="monthly-goal-target-marker" style={{ left: `${targetPercentage}%` }} tabIndex={0} aria-label={`${Math.round(targetPercentage)}% - ${money(targetAmount)}`}><span className="monthly-goal-target-tooltip">{Math.round(targetPercentage)}% - {money(targetAmount)}</span></i></div>
       <div className="monthly-goal-values"><strong>{Math.round(percentage)}%</strong><span className="monthly-goal-achieved">{money(achieved)}</span><i>/</i><span className="monthly-goal-final">{money(finalGoal)}</span></div>
