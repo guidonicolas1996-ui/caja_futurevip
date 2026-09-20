@@ -3436,6 +3436,7 @@ function App() {
   const writeQueueRef = React.useRef(Promise.resolve());
   const [notesEnabled, setNotesEnabled] = useState(true);
   const activeBox = boxes?.find((box) => box.id === activeBoxId) || boxes?.[0];
+  const activeBoxColors = activeBox ? boxColorStyle(activeBox.color) : {};
   const rememberUpdatedAt = (value) => {
     if (!value) return;
     updatedAtRef.current = value;
@@ -3960,9 +3961,9 @@ function App() {
           </div>
           </div>
         </div>
-        <section className={`goals-overview ${goalsCollapsed ? "is-collapsed" : ""}`}>
+        <section className={`goals-overview ${goalsCollapsed ? "is-collapsed" : ""}`} style={{ ...activeBoxColors, "--goal-line": activeBoxColors["--box-line"], "--goal-soft": activeBoxColors["--box-soft"] }}>
           <div className="goals-overview-header">
-            <span>Objetivos</span>
+            <span>Objetivos Avanzados</span>
             <button type="button" className="goals-overview-toggle" title={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-label={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-expanded={!goalsCollapsed} onClick={() => setGoalsCollapsed((collapsed) => !collapsed)}>
               <ChevronDown size={17} />
             </button>
