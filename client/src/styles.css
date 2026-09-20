@@ -766,6 +766,15 @@ main {
   visibility: visible;
   transform: translate(-50%, 0);
 }
+.bonus-goal-panel .monthly-goal-target-tooltip {
+  top: auto;
+  bottom: calc(100% + 9px);
+  transform: translate(-50%, 3px);
+}
+.bonus-goal-panel .monthly-goal-target-marker:hover .monthly-goal-target-tooltip,
+.bonus-goal-panel .monthly-goal-target-marker:focus-visible .monthly-goal-target-tooltip {
+  transform: translate(-50%, 0);
+}
 .monthly-goal-track span {
   display: block;
   height: 100%;
@@ -794,6 +803,7 @@ main {
 .monthly-goal-values i { color: #7f806b; font-style: normal; }
 .monthly-goal-values .monthly-goal-achieved { color: #c5c39f; }
 .monthly-goal-values .monthly-goal-final { color: #f0edc2; font-size: 12px; font-weight: 700; }
+.bonus-goal-row .monthly-goal-values strong { font-size: 32px; }
 @keyframes monthly-goal-electric {
   from { background-position: 100% 0; }
   to { background-position: -120% 0; }
@@ -813,7 +823,7 @@ main {
   grid-template-columns: 1fr;
   gap: 0;
   margin: -11px 0 20px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--bonus-line, rgba(198, 180, 255, 0.15));
   border-radius: 9px;
   background: linear-gradient(105deg, color-mix(in srgb, var(--bonus-soft, #1d302f) 88%, rgba(12, 17, 18, 0.88)), rgba(17, 23, 25, 0.82));
