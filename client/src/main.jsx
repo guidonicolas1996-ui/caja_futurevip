@@ -906,7 +906,7 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
       : `${Math.round(targetMarkerPercentage)}% - ${money(targetMarkerAmount)}`;
     return (
       <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
-        <div className="bonus-goal-label"><span>{label}</span><strong>{money(target)}</strong></div>
+        <div className="bonus-goal-label"><span>{label}</span></div>
         <div className="bonus-goal-main">
           <div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>{targetMarkerPercentage !== null && targetMarkerPercentage < 100 && <i className="monthly-goal-target-marker" style={{ left: `${targetMarkerPercentage}%` }} tabIndex={0} aria-label={targetMarkerText}><span className="monthly-goal-target-tooltip">{targetMarkerText}</span></i>}</div>
           <div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div>
