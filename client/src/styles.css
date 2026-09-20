@@ -877,7 +877,7 @@ main {
 .bonus-goal-lower-row .bonus-goal-row:first-child { border-bottom-left-radius: 8px; }
 .bonus-goal-lower-row .bonus-goal-row:last-child { border-bottom-right-radius: 8px; }
 .bonus-goal-label { display: flex; flex-direction: column; justify-content: center; gap: 0; min-width: 0; }
-.bonus-goal-label span { color: var(--muted); font-family: "DM Mono"; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+.bonus-goal-label span { display: block; color: #f0ebff; font-size: 13px; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; }
 .bonus-goal-label strong { color: #f0ebff; font-size: 16px; font-weight: 700; letter-spacing: -0.03em; }
 .bonus-goal-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .bonus-goal-main .monthly-goal-track { flex: 1; }
