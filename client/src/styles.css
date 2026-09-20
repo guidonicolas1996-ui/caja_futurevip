@@ -766,6 +766,9 @@ main {
   visibility: visible;
   transform: translate(-50%, 0);
 }
+.bonus-goal-lower-row .bonus-goal-row:first-child .monthly-goal-target-tooltip {
+  top: calc(100% + 54px);
+}
 .bonus-goal-panel .monthly-goal-target-tooltip {
   top: calc(100% + 9px);
   bottom: auto;
