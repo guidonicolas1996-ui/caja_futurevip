@@ -851,6 +851,7 @@ main {
   background: var(--goal-row-bg, rgba(36, 30, 44, 0.76));
 }
 .bonus-goal-row:first-child {
+  z-index: 3;
   border-bottom: 1px solid var(--goal-row-border, rgba(198, 180, 255, 0.09));
 }
 .bonus-goal-lower-row {
