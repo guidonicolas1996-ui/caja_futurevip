@@ -832,6 +832,16 @@ function getBonusProgressAccentState(percent, fallback) {
   return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
 }
 
+function getSavingsProgressAccentState(percent, fallback) {
+  if (percent >= 100) {
+    return { accent: "#70d88b", glow: "rgba(112, 216, 139, 0.58)", line: "rgba(112, 216, 139, 0.46)" };
+  }
+  if (percent >= 85) {
+    return { accent: "#c8d65a", glow: "rgba(200, 214, 90, 0.62)", line: "rgba(200, 214, 90, 0.5)" };
+  }
+  return { accent: fallback.accent, glow: fallback.glow, line: fallback.line };
+}
+
 function elapsedMonthPercentage(dateValue) {
   const date = new Date(dateValue);
   if (Number.isNaN(date.getTime())) return 0;
@@ -983,7 +993,7 @@ function SavingsMonthlyGoalProgress({ config, caja, history, boxHistories, activ
   const colors = boxColorStyle(boxColor);
   const renderBar = (label, value, target) => {
     const percent = target > 0 ? (value / target) * 100 : 0;
-    const state = getBonusProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+    const state = getSavingsProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
     return <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
       <div className="bonus-goal-label"><span>{label}</span></div>
       <div className="bonus-goal-main"><div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div></div><div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div></div>
