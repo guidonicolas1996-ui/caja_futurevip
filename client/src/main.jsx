@@ -881,6 +881,23 @@ function BonusMonthlyGoalConfig({ draft, update }) {
   </section>;
 }
 
+function SavingsGoalConfig({ draft, update }) {
+  const savingsGoal = draft.savingsGoal || { total: 0, shifts: { Noche: 0, Mañana: 0, Tarde: 0 } };
+  const updateValue = (name, value) => update({ savingsGoal: { ...savingsGoal, [name]: number(value) } });
+  const updateShift = (shift, value) => update({ savingsGoal: { ...savingsGoal, shifts: { ...(savingsGoal.shifts || {}), [shift]: Math.max(0, number(value)) } } });
+  return <section className="config-card monthly-goal-card bonus-goal-card savings-goal-card">
+    <div className="config-list-head"><h3>Objetivo de Ahorro</h3><span>Se calcula con Total Ahorro</span></div>
+    <div className="monthly-goal-fields bonus-goal-fields">
+      <label><span>Objetivo total</span><AmountInput value={savingsGoal.total} onChange={(value) => updateValue("total", value)} /></label>
+      <div className="bonus-goal-percentages">
+        {Object.keys(savingsGoal.shifts || {}).map((shift) => (
+          <label key={shift}><span>{shift}</span><AmountInput value={savingsGoal.shifts?.[shift] ?? 0} onChange={(value) => updateShift(shift, value)} /></label>
+        ))}
+      </div>
+    </div>
+  </section>;
+}
+
 function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   if (!config || !caja) return null;
   const goal = config.bonusGoal || { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } };
@@ -936,6 +953,45 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
     <div className="bonus-goal-lower-row">
       {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0, cumulativeShiftPercentage(goal.percentages, currentShift))}
       {renderBar(`Obj. Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
+    </div>
+  </div>;
+}
+
+function SavingsMonthlyGoalProgress({ config, caja, history, boxColor }) {
+  if (!config || !caja) return null;
+  const goal = config.savingsGoal || { total: 0, shifts: { Noche: 0, Mañana: 0, Tarde: 0 } };
+  const monthItems = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
+  const currentDate = new Date(caja.date);
+  const sameDateItems = monthItems.filter((item) => {
+    const itemDate = new Date(item.date);
+    return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth() && itemDate.getDate() === currentDate.getDate();
+  });
+  const monthItemsInMonth = monthItems.filter((item) => {
+    const itemDate = new Date(item.date);
+    return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth();
+  });
+  const savingsTotal = (row) => (row.savingsMovements || []).reduce((sum, movement) => sum + number(movement.amount), 0);
+  const monthTarget = Math.max(0, number(goal.total));
+  const dayTarget = ["Noche", "Mañana", "Tarde"].reduce((sum, shift) => sum + Math.max(0, number(goal.shifts?.[shift])), 0);
+  const currentShift = caja.shift;
+  const shiftTarget = Math.max(0, number(goal.shifts?.[currentShift]));
+  const monthAchieved = monthItemsInMonth.reduce((sum, item) => sum + savingsTotal(item), 0);
+  const dayAchieved = sameDateItems.reduce((sum, item) => sum + savingsTotal(item), 0);
+  const shiftAchieved = savingsTotal(caja);
+  const colors = boxColorStyle(boxColor);
+  const renderBar = (label, value, target) => {
+    const percent = target > 0 ? (value / target) * 100 : 0;
+    const state = getBonusProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+    return <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
+      <div className="bonus-goal-label"><span>{label}</span></div>
+      <div className="bonus-goal-main"><div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div></div><div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div></div>
+    </div>;
+  };
+  return <div className="bonus-goal-panel savings-goal-panel" aria-label="Progreso del objetivo de ahorro" style={{ "--bonus-soft": colors["--box-soft"], "--bonus-line": colors["--box-line"], "--bonus-glow": colors["--box-glow"], "--bonus-accent": colors["--box-accent"] }}>
+    {renderBar("Obj. Ahorro Mes", monthAchieved, monthTarget)}
+    <div className="bonus-goal-lower-row">
+      {renderBar("Obj. Ahorro Día", dayAchieved, dayTarget)}
+      {renderBar(`Obj. Ahorro · ${currentShift.toUpperCase()}`, shiftAchieved, shiftTarget)}
     </div>
   </div>;
 }
@@ -1083,7 +1139,7 @@ function ConfigurationPage({ config, boxes, activeBoxId, cajaDate, onSave, onBac
           </>}
           {tab === "expenses" && <><div className="config-intro"><span className="eyebrow">Gastos</span><h2>Categorías de gastos</h2><p>Definí las opciones del selector y si cada categoría suma o resta al resumen.</p></div><section className="config-card expense-config-list"><div className="config-list-head"><h3>Opciones del selector</h3><span>{draft.expenses.length} categorías</span></div>{draft.expenses.map((expense, index) => <div className="expense-config-row" key={index}><input value={expense.name} placeholder="Nombre del gasto" onChange={(event) => { const expenses = structuredClone(draft.expenses); expenses[index].name = event.target.value; setDraft({ ...draft, expenses }); }} /><label className="invert-toggle"><input type="checkbox" checked={expense.inverted} onChange={() => { const expenses = structuredClone(draft.expenses); expenses[index].inverted = !expenses[index].inverted; setDraft({ ...draft, expenses }); }} /><span /> Invierte el signo</label><button className="delete-button" title="Eliminar categoría" onClick={async () => { if (await confirmDelete(`¿Eliminar categoría "${expense.name}"?`)) setDraft({ ...draft, expenses: draft.expenses.filter((_, itemIndex) => itemIndex !== index) }); }}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft({ ...draft, expenses: [...draft.expenses, { name: "", inverted: false }] })}><Plus size={15} /> Agregar categoría</button></section></>}
           {tab === "platforms" && <><div className="config-intro"><span className="eyebrow">Control de fichas</span><h2>Plataformas</h2><p>Administrá las plataformas, los nombres, colores y subplataformas de cada una.</p></div><div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}><button className="config-add" type="button" onClick={async () => { if (await confirmDelete("¿Vaciar TODAS las subplataformas en TODAS las cajas? Esto no se puede deshacer.")) { setSaving(true); try { for (const box of (boxes || [])) { const boxConfig = await api(`/api/configuracion?boxId=${box.id}`).catch(() => null); if (boxConfig) { await onSaveRef.current({ ...boxConfig, platformSubPlatforms: {} }, box.id); } } if (configBoxId) { const reloadedConfig = await api(`/api/configuracion?boxId=${configBoxId}`).catch(() => null); if (reloadedConfig) setDraft(reloadedConfig); } onNotify?.("Subplataformas limpias en todas las cajas."); } catch (error) { onNotify?.(error?.message || "Error al limpiar subplataformas."); } finally { setSaving(false); } } }} style={{ background: "rgba(255, 90, 90, 0.2)", color: "#ff5a5a", borderColor: "rgba(255, 90, 90, 0.3)" }} title="Vaciar todas las subplataformas en todas las cajas" disabled={saving}><Trash2 size={15} /> Limpiar todas subplataformas</button></div><PlatformConfigList platforms={draft.platforms} platformEntities={draft.platformEntities} platformEnabled={draft.platformEnabled || {}} onEntitiesChange={(platformEntities) => setDraft((current) => ({ ...current, platformEntities }))} platformColors={draft.platformColors || {}} onPlatformsChange={(platforms) => setDraft((current) => ({ ...current, platforms }))} onEnabledChange={(platform, enabled) => setDraft((current) => ({ ...current, platformEnabled: { ...(current.platformEnabled || {}), [platform]: enabled } }))} onColorChange={(platform, color, previous) => setDraft((current) => { const platformColors = { ...(current.platformColors || {}), [platform]: color }; if (previous) { delete platformColors[previous]; return { ...current, platforms: current.platforms.map((item) => item === previous ? platform : item), platformColors }; } return { ...current, platformColors }; })} platformSubPlatforms={draft.platformSubPlatforms || {}} onSubPlatformsChange={(platformSubPlatforms) => setDraft((current) => ({ ...current, platformSubPlatforms }))} /></>}
-          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y la meta exclusiva de bonos por caja para ese mes.</p></div><MonthlyGoalConfig draft={draft} boxes={boxes} api={api} date={cajaDate} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
+          {tab === "monthly-goal" && <><div className="config-intro"><span className="eyebrow">Objetivos</span><h2>Objetivo de Depósitos General y Bonos mensuales</h2><p>Configurá el objetivo general de depósitos y las metas mensuales de bonos y ahorro.</p></div><MonthlyGoalConfig draft={draft} boxes={boxes} api={api} date={cajaDate} update={(patch) => setDraft({ ...draft, ...patch })} /><BonusMonthlyGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /><SavingsGoalConfig draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} /></>}
           {tab === "users" && <><div className="config-intro"><span className="eyebrow">Usuarios</span><h2>Conf. de usuarios y aclaraciones</h2><p>Definí las aclaraciones rápidas que se podrán asociar a cada usuario.</p></div><section className="config-card"><div className="config-list-head"><h3>Aclaraciones</h3><span>{draft.userClarifications?.length || 0} elementos</span></div>{(draft.userClarifications || []).map((clarification, index) => <div className="platform-config-row" key={clarification.id || index} style={{ display: "grid", gridTemplateColumns: "1.2fr 120px 88px auto", gap: "8px", alignItems: "center" }}><input value={clarification.text} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, text: event.target.value } : item) }))} placeholder="Texto aclaración" /><select value={clarification.color} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, color: event.target.value } : item) }))}>{Object.entries({ teal: "Turquesa", blue: "Azul", green: "Verde", orange: "Naranja", pink: "Rosa", red: "Rojo", yellow: "Amarillo", violet: "Violeta", slate: "Pizarra" }).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><input value={clarification.emoji || ""} maxLength={2} onChange={(event) => setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).map((item, itemIndex) => itemIndex === index ? { ...item, emoji: event.target.value } : item) }))} placeholder="🙂" /><button className="delete-button" title="Eliminar aclaración" onClick={async () => { if (await confirmDelete(`¿Eliminar aclaración "${clarification.text}"?`)) setDraft((current) => ({ ...current, userClarifications: (current.userClarifications || []).filter((_, itemIndex) => itemIndex !== index) })); }}><Trash2 size={15} /></button></div>)}<button className="config-add" onClick={() => setDraft((current) => ({ ...current, userClarifications: [...(current.userClarifications || []), { id: `clarification-${crypto.randomUUID()}`, text: "", color: "teal", emoji: "" }] }))}><Plus size={15} /> Agregar aclaración</button></section></>}
           </>}
         </main>
@@ -3887,6 +3943,7 @@ function App() {
         </div>
         <MonthlyGoalProgress config={config} boxColor={activeBox.color} date={caja.date} />
         <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
+        <SavingsMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} cajaDate={caja.date} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
           caja={caja}

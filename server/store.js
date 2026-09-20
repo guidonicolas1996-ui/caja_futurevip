@@ -70,6 +70,7 @@ const defaultConfig = () => ({
   statistics: { employees: 1, proportionalPercent: 100 },
   monthlyGoal: { final: 0, achieved: 0, platformDeposits: {}, months: {} },
   bonusGoal: { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } },
+  savingsGoal: { total: 0, shifts: { Noche: 0, Mañana: 0, Tarde: 0 } },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
   platformColors: Object.fromEntries(plataformas.map((platform, index) => [platform, colors[index % colors.length]])),
@@ -233,6 +234,15 @@ function normalizeConfig(config) {
       Tarde: Math.min(100, Math.max(0, Number(sourceBonusGoal.percentages?.Tarde) || 34)),
     },
   };
+  const sourceSavingsGoal = config?.savingsGoal || {};
+  const savingsGoal = {
+    total: Math.max(0, Number(sourceSavingsGoal.total) || 0),
+    shifts: {
+      Noche: Math.max(0, Number(sourceSavingsGoal.shifts?.Noche) || 0),
+      Mañana: Math.max(0, Number(sourceSavingsGoal.shifts?.Mañana) || 0),
+      Tarde: Math.max(0, Number(sourceSavingsGoal.shifts?.Tarde) || 0),
+    },
+  };
   const platforms = Array.isArray(config?.platforms) && config.platforms.length ? config.platforms : defaults.platforms;
   const platformColors = Object.fromEntries(platforms.map((platform, index) => [platform, colors.includes(config?.platformColors?.[platform]) ? config.platformColors[platform] : defaults.platformColors[platform] || colors[index % colors.length]]));
   const sourcePlatformEnabled = config?.platformEnabled || {};
@@ -276,7 +286,7 @@ function normalizeConfig(config) {
     linkedUsers: Array.isArray(user?.linkedUsers) ? user.linkedUsers.filter(Boolean).map(String) : [],
   })) : [];
   const entitiesFor = (names, source = [], prefix) => names.map((name, index) => ({ id: source.find((entity) => entity.name === name)?.id || source[index]?.id || `${prefix}-${index}`, name }));
-  return { ...defaults, ...config, branding, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformEnabled, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
+  return { ...defaults, ...config, branding, logistics, statistics, monthlyGoal, bonusGoal, savingsGoal, platformColors, platformEnabled, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
   const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || Object.keys(goal.months || {}).length > 0 || Object.keys(goal.platformDeposits || {}).length > 0);
