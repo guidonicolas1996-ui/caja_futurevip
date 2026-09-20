@@ -683,6 +683,7 @@ main {
   margin-bottom: 27px;
 }
 .goals-overview-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -697,12 +698,15 @@ main {
   font-weight: 800;
 }
 .goals-compact-summary {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   display: flex;
   align-items: center;
   gap: 26px;
   min-width: 0;
-  margin-left: auto;
-  margin-right: 10px;
+  margin: 0;
+  transform: translate(-50%, -50%);
 }
 .goals-compact-metric {
   display: grid;
@@ -715,6 +719,7 @@ main {
   white-space: nowrap;
 }
 .goals-compact-metric > span { color: #f0ebff; font-weight: 700; }
+.goals-compact-metric + .goals-compact-metric { padding-left: 26px; border-left: 1px solid color-mix(in srgb, var(--goal-line, var(--box-line)) 80%, transparent); }
 .goals-compact-metric > strong { color: var(--compact-accent); font-size: 12px; }
 .goals-compact-metric > i {
   display: block;
@@ -877,6 +882,7 @@ main {
 }
 @media (max-width: 900px) {
   .goals-compact-summary { gap: 16px; }
+  .goals-compact-metric + .goals-compact-metric { padding-left: 16px; }
   .goals-compact-metric { grid-template-columns: auto auto 96px; }
   .goals-compact-metric > i { width: 96px; }
   .goals-compact-metric > small { display: none; }

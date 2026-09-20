@@ -3997,7 +3997,7 @@ function App() {
         </div>
         <section className={`goals-overview ${goalsCollapsed ? "is-collapsed" : ""}`} style={{ ...activeBoxColors, "--goal-line": activeBoxColors["--box-line"], "--goal-soft": activeBoxColors["--box-soft"] }}>
           <div className="goals-overview-header">
-            <span>Objetivos Avanzados</span>
+            <span>Objetivos Generales</span>
             {goalsCollapsed && <AdvancedGoalsCompactSummary config={config} caja={caja} history={history} boxColor={activeBox.color} />}
             <button type="button" className="goals-overview-toggle" title={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-label={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-expanded={!goalsCollapsed} onClick={() => setGoalsCollapsed((collapsed) => !collapsed)}>
               <ChevronDown size={17} />
