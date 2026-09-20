@@ -68,7 +68,7 @@ const defaultConfig = () => ({
   accounts: { holders: titulares, wallets: billeteras, availability: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, true]))])), walletSettings: Object.fromEntries(titulares.map((holder) => [holder, Object.fromEntries(billeteras.map((wallet) => [wallet, { category: 'Normal', boxId: null }]))])), walletModes: Object.fromEntries(billeteras.map((wallet) => [wallet, 'Cobros + Retiros'])) },
   logistics: { order: [], hidden: [], added: [] },
   statistics: { employees: 1, proportionalPercent: 100 },
-  monthlyGoal: { final: 0, achieved: 0, platformDeposits: {} },
+  monthlyGoal: { final: 0, achieved: 0, platformDeposits: {}, months: {} },
   bonusGoal: { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } },
   expenses: [{ name: 'Caja chica', inverted: false }, { name: 'Servicios', inverted: false }, { name: 'Traslado', inverted: false }],
   platforms: plataformas,
@@ -218,8 +218,12 @@ function normalizeConfig(config) {
   const sourceStatistics = config?.statistics || {};
   const statistics = { employees: Math.max(1, Number(sourceStatistics.employees) || 1), proportionalPercent: sourceStatistics.proportionalPercent === undefined ? 100 : Math.min(100, Math.max(0, Number(sourceStatistics.proportionalPercent) || 0)) };
   const sourceMonthlyGoal = config?.monthlyGoal || {};
-  const platformDeposits = (sourceMonthlyGoal.platformDeposits && typeof sourceMonthlyGoal.platformDeposits === 'object') ? sourceMonthlyGoal.platformDeposits : {};
-  const monthlyGoal = { final: Math.max(0, Number(sourceMonthlyGoal.final) || 0), achieved: Math.max(0, Number(sourceMonthlyGoal.achieved) || 0), platformDeposits };
+  const normalizeMonthlyGoalEntry = (entry = {}) => ({
+    final: Math.max(0, Number(entry.final) || 0),
+    achieved: Math.max(0, Number(entry.achieved) || 0),
+    platformDeposits: entry.platformDeposits && typeof entry.platformDeposits === 'object' ? entry.platformDeposits : {},
+  });
+  const monthlyGoal = { ...normalizeMonthlyGoalEntry(sourceMonthlyGoal), months: Object.fromEntries(Object.entries(sourceMonthlyGoal.months || {}).map(([month, entry]) => [month, normalizeMonthlyGoalEntry(entry)])) };
   const sourceBonusGoal = config?.bonusGoal || {};
   const bonusGoal = {
     total: Math.max(0, Number(sourceBonusGoal.total) || 0),
@@ -275,8 +279,14 @@ function normalizeConfig(config) {
   return { ...defaults, ...config, branding, logistics, statistics, monthlyGoal, bonusGoal, platformColors, platformEnabled, platformSubPlatforms, userClarifications, userInfoOptions, users, bonusTypes, bonusConditions, bonuses, platforms, platformEntities: entitiesFor(platforms, config?.platformEntities, 'platform'), expenses: Array.isArray(config?.expenses) && config.expenses.length ? config.expenses : defaults.expenses, accounts: { holders, wallets, availability, walletSettings, walletModes, holderEntities: entitiesFor(holders, accounts.holderEntities, 'holder'), walletEntities: entitiesFor(wallets, accounts.walletEntities, 'wallet') } };
 }
 function globalMonthlyGoalFor(spaces) {
-  const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || (goal.platformDeposits && Object.keys(goal.platformDeposits).length > 0));
-  return source || { final: 0, achieved: 0, platformDeposits: {} };
+  const source = spaces.map((space) => normalizeConfig(space.config).monthlyGoal).find((goal) => goal.final > 0 || goal.achieved > 0 || Object.keys(goal.months || {}).length > 0 || Object.keys(goal.platformDeposits || {}).length > 0);
+  const goal = source || { final: 0, achieved: 0, platformDeposits: {}, months: {} };
+  if (Object.keys(goal.months || {}).length > 0) return goal;
+  const latestCaja = spaces.flatMap((space) => space.cajas || []).sort((left, right) => new Date(left.date) - new Date(right.date)).at(-1);
+  const date = new Date(latestCaja?.date);
+  if (Number.isNaN(date.getTime())) return goal;
+  const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  return { ...goal, months: { [month]: { final: goal.final, achieved: goal.achieved, platformDeposits: goal.platformDeposits || {} } } };
 }
 export async function getBoxes() { return (await readSpaces()).map(({ id, title, color }) => ({ id, title, color })); }
 export async function createBox({ title = 'Nueva caja', color = 'blue', updatedAt: clientUpdatedAt } = {}) { const spaces = await readSpaces(); const config = normalizeConfig({ ...defaultConfig(), monthlyGoal: globalMonthlyGoalFor(spaces) }); const id = `caja-${crypto.randomUUID()}`; const space = { id, title, color: colors.includes(color) ? color : 'blue', config, cajas: [blankCaja(0, null, config)] }; spaces.push(space); const updatedAt = await writeSpaces(spaces, clientUpdatedAt ?? spaces.updatedAt); return { id, title, color: space.color, updatedAt }; }
