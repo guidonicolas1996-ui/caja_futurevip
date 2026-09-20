@@ -699,14 +699,14 @@ main {
 .goals-compact-summary {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 26px;
   min-width: 0;
   margin-left: auto;
   margin-right: 10px;
 }
 .goals-compact-metric {
   display: grid;
-  grid-template-columns: auto auto minmax(54px, 90px) auto;
+  grid-template-columns: auto auto 140px auto;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -714,11 +714,11 @@ main {
   font: 9px "DM Mono";
   white-space: nowrap;
 }
-.goals-compact-metric > span { color: var(--compact-accent); font-weight: 700; }
+.goals-compact-metric > span { color: #f0ebff; font-weight: 700; }
 .goals-compact-metric > strong { color: var(--compact-accent); font-size: 12px; }
 .goals-compact-metric > i {
   display: block;
-  width: 70px;
+  width: 140px;
   height: 4px;
   overflow: hidden;
   border-radius: 99px;
@@ -731,7 +731,7 @@ main {
   background: var(--compact-accent);
   box-shadow: 0 0 7px color-mix(in srgb, var(--compact-accent) 70%, transparent);
 }
-.goals-compact-metric > small { color: #c5c39f; font: 8px "DM Mono"; }
+.goals-compact-metric > small { color: #f0ebff; font: 8px "DM Mono"; }
 .goals-overview-toggle {
   display: grid;
   place-items: center;
@@ -876,9 +876,9 @@ main {
   to { background-position: -120% 0; }
 }
 @media (max-width: 900px) {
-  .goals-compact-summary { gap: 8px; }
-  .goals-compact-metric { grid-template-columns: auto auto minmax(40px, 60px); }
-  .goals-compact-metric > i { width: 48px; }
+  .goals-compact-summary { gap: 16px; }
+  .goals-compact-metric { grid-template-columns: auto auto 96px; }
+  .goals-compact-metric > i { width: 96px; }
   .goals-compact-metric > small { display: none; }
 }
 .monthly-goal-card { max-width: 760px; }
