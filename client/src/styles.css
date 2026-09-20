@@ -3228,7 +3228,7 @@ select:focus {
 }
 .wallet-route-item.history {
   cursor: default;
-  min-height: 20px;
+  min-height: 18px;
   padding-top: 3px;
   padding-bottom: 3px;
 }
