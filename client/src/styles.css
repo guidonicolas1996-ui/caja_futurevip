@@ -740,6 +740,32 @@ main {
   pointer-events: auto;
   z-index: 2;
 }
+.monthly-goal-target-tooltip {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 50%;
+  z-index: 4;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--goal-accent, var(--box-accent, #d9c5ff)) 58%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--goal-soft, #37331f) 82%, #111719);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, .28), 0 0 10px color-mix(in srgb, var(--goal-glow, var(--box-glow, #244344)) 55%, transparent);
+  color: var(--goal-accent, var(--box-accent, #d9c5ff));
+  font: 700 10px "DM Mono";
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -3px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+  pointer-events: none;
+}
+.monthly-goal-target-marker:hover .monthly-goal-target-tooltip,
+.monthly-goal-target-marker:focus-visible .monthly-goal-target-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
 .monthly-goal-track span {
   display: block;
   height: 100%;
