@@ -987,22 +987,28 @@ function SavingsMonthlyGoalProgress({ config, caja, history, boxHistories, activ
   const dayTarget = ["Noche", "Mañana", "Tarde"].reduce((sum, shift) => sum + Math.max(0, number(goal.shifts?.[shift])), 0);
   const currentShift = caja.shift;
   const shiftTarget = Math.max(0, number(goal.shifts?.[currentShift]));
+  const shiftOrder = ["Noche", "Mañana", "Tarde"];
+  const currentShiftIndex = shiftOrder.indexOf(currentShift);
+  const dayTargetMarkerAmount = shiftOrder.slice(0, currentShiftIndex + 1).reduce((sum, shift) => sum + Math.max(0, number(goal.shifts?.[shift])), 0);
+  const dayTargetMarkerPercentage = dayTarget > 0 ? (dayTargetMarkerAmount / dayTarget) * 100 : null;
   const monthAchieved = monthItemsInMonth.reduce((sum, item) => sum + savingsTotal(item), 0);
   const dayAchieved = sameDateItems.reduce((sum, item) => sum + savingsTotal(item), 0);
   const shiftAchieved = savingsTotal(caja);
   const colors = boxColorStyle(boxColor);
-  const renderBar = (label, value, target) => {
+  const renderBar = (label, value, target, targetMarkerPercentage = null) => {
     const percent = target > 0 ? (value / target) * 100 : 0;
     const state = getSavingsProgressAccentState(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] });
+    const targetMarkerAmount = target * (targetMarkerPercentage / 100);
+    const targetMarkerText = targetMarkerPercentage === null ? "" : `${Math.round(targetMarkerPercentage)}% - ${money(targetMarkerAmount)}`;
     return <div className="bonus-goal-row" style={{ "--goal-accent": state.accent, "--goal-soft": colors["--box-soft"], "--goal-glow": state.glow, "--goal-line": state.line, "--goal-row-bg": `color-mix(in srgb, ${colors["--box-soft"]} 82%, rgba(15, 17, 22, 0.82))`, "--goal-row-border": state.line }}>
       <div className="bonus-goal-label"><span>{label}</span></div>
-      <div className="bonus-goal-main"><div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div></div><div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div></div>
+      <div className="bonus-goal-main"><div className="monthly-goal-track-wrap"><div className="monthly-goal-track"><span style={{ width: `${Math.min(100, percent)}%` }} /></div>{targetMarkerPercentage !== null && targetMarkerPercentage < 100 && <i className="monthly-goal-target-marker" style={{ left: `${targetMarkerPercentage}%` }} tabIndex={0} aria-label={targetMarkerText}><span className="monthly-goal-target-tooltip">{targetMarkerText}</span></i>}</div><div className="monthly-goal-values"><strong>{Math.round(percent)}%</strong><span className="monthly-goal-achieved">{money(value)}</span><i>/</i><span className="monthly-goal-final">{money(target)}</span></div></div>
     </div>;
   };
   return <div className="bonus-goal-panel savings-goal-panel" aria-label="Progreso del objetivo de ahorro" style={{ "--bonus-soft": colors["--box-soft"], "--bonus-line": colors["--box-line"], "--bonus-glow": colors["--box-glow"], "--bonus-accent": colors["--box-accent"] }}>
-    {renderBar("Obj. Ahorro Mes", monthAchieved, monthTarget)}
+    {renderBar("Obj. Ahorro Mes", monthAchieved, monthTarget, elapsedMonthPercentage(caja.date))}
     <div className="bonus-goal-lower-row">
-      {renderBar("Obj. Ahorro Día", dayAchieved, dayTarget)}
+      {renderBar("Obj. Ahorro Día", dayAchieved, dayTarget, dayTargetMarkerPercentage)}
       {renderBar(`Obj. Ahorro · ${currentShift.toUpperCase()}`, shiftAchieved, shiftTarget)}
     </div>
   </div>;
