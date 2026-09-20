@@ -696,6 +696,42 @@ main {
   font-size: 12px;
   font-weight: 800;
 }
+.goals-compact-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  margin-left: auto;
+  margin-right: 10px;
+}
+.goals-compact-metric {
+  display: grid;
+  grid-template-columns: auto auto minmax(54px, 90px) auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+  font: 9px "DM Mono";
+  white-space: nowrap;
+}
+.goals-compact-metric > span { color: var(--compact-accent); font-weight: 700; }
+.goals-compact-metric > strong { color: var(--compact-accent); font-size: 12px; }
+.goals-compact-metric > i {
+  display: block;
+  width: 70px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--compact-accent) 18%, #111719);
+}
+.goals-compact-metric > i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--compact-accent);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--compact-accent) 70%, transparent);
+}
+.goals-compact-metric > small { color: #c5c39f; font: 8px "DM Mono"; }
 .goals-overview-toggle {
   display: grid;
   place-items: center;
@@ -838,6 +874,12 @@ main {
 @keyframes monthly-goal-electric {
   from { background-position: 100% 0; }
   to { background-position: -120% 0; }
+}
+@media (max-width: 900px) {
+  .goals-compact-summary { gap: 8px; }
+  .goals-compact-metric { grid-template-columns: auto auto minmax(40px, 60px); }
+  .goals-compact-metric > i { width: 48px; }
+  .goals-compact-metric > small { display: none; }
 }
 .monthly-goal-card { max-width: 760px; }
 .monthly-goal-fields { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 14px; }

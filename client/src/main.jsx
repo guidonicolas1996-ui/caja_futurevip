@@ -1014,6 +1014,40 @@ function SavingsMonthlyGoalProgress({ config, caja, history, boxHistories, activ
   </div>;
 }
 
+function AdvancedGoalsCompactSummary({ config, caja, history, boxColor }) {
+  const savingsGoal = config.savingsGoal || { shifts: { Noche: 0, Mañana: 0, Tarde: 0 } };
+  const bonusGoal = config.bonusGoal || { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } };
+  const currentDate = new Date(caja.date);
+  const monthItems = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
+  const monthItemsInMonth = monthItems.filter((item) => {
+    const itemDate = new Date(item.date);
+    return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth();
+  });
+  const savingsTotal = (row) => (row.savingsMovements || []).reduce((sum, movement) => sum + number(movement.amount), 0);
+  const bonusTotal = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
+  const currentShift = caja.shift;
+  const savingsTarget = Math.max(0, number(savingsGoal.shifts?.[currentShift]));
+  const savingsAchieved = savingsTotal(caja);
+  const bonusTargetTotal = Math.max(0, number(bonusGoal.total));
+  const bonusAchievedMonth = monthItemsInMonth.reduce((sum, item) => sum + bonusTotal(item), 0);
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const remainingDays = Math.max(1, daysInMonth - currentDate.getDate() + 1);
+  const bonusDailyTarget = Math.max(0, bonusTargetTotal - bonusAchievedMonth) / remainingDays;
+  const bonusTarget = bonusDailyTarget * (number(bonusGoal.percentages?.[currentShift]) / 100);
+  const bonusAchieved = bonusTotal(caja);
+  const colors = boxColorStyle(boxColor);
+  const metric = (label, achieved, target, state) => {
+    const percent = target > 0 ? (achieved / target) * 100 : 0;
+    return <div className="goals-compact-metric" style={{ "--compact-accent": state(percent, { accent: colors["--box-accent"], glow: colors["--box-glow"], line: colors["--box-line"] }).accent }}>
+      <span>{label}</span><strong>{Math.round(percent)}%</strong><i><b style={{ width: `${Math.min(100, percent)}%` }} /></i><small>{money(achieved)} / {money(target)}</small>
+    </div>;
+  };
+  return <div className="goals-compact-summary" aria-label={`Objetivos del turno ${currentShift}`}>
+    {metric("Ahorro turno", savingsAchieved, savingsTarget, getSavingsProgressAccentState)}
+    {metric("Bono turno", bonusAchieved, bonusTarget, getBonusProgressAccentState)}
+  </div>;
+}
+
 function BonusConfig({ draft, setDraft }) {
   const types = draft.bonusTypes || [];
   const conditions = draft.bonusConditions || [];
@@ -3416,7 +3450,7 @@ function App() {
   const [usersOpen, setUsersOpen] = useState(false);
   const [bonusesOpen, setBonusesOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
-  const [goalsCollapsed, setGoalsCollapsed] = useState(false);
+  const [goalsCollapsed, setGoalsCollapsed] = useState(true);
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
   const [toast, setToast] = useState("");
@@ -3964,6 +3998,7 @@ function App() {
         <section className={`goals-overview ${goalsCollapsed ? "is-collapsed" : ""}`} style={{ ...activeBoxColors, "--goal-line": activeBoxColors["--box-line"], "--goal-soft": activeBoxColors["--box-soft"] }}>
           <div className="goals-overview-header">
             <span>Objetivos Avanzados</span>
+            {goalsCollapsed && <AdvancedGoalsCompactSummary config={config} caja={caja} history={history} boxColor={activeBox.color} />}
             <button type="button" className="goals-overview-toggle" title={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-label={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-expanded={!goalsCollapsed} onClick={() => setGoalsCollapsed((collapsed) => !collapsed)}>
               <ChevronDown size={17} />
             </button>
