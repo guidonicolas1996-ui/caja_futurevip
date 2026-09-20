@@ -682,6 +682,36 @@ main {
   align-items: end;
   margin-bottom: 27px;
 }
+.goals-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  margin: -11px 0 20px;
+  padding: 4px 8px 4px 11px;
+  border: 1px solid var(--goal-line, rgba(232, 212, 119, .28));
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--goal-soft, #37331f) 72%, rgba(17, 23, 25, .92));
+  color: #f0ebff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.goals-overview-toggle {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 1px solid var(--goal-line, rgba(232, 212, 119, .28));
+  border-radius: 5px;
+  background: transparent;
+  color: var(--box-accent, #d9c5ff);
+  cursor: pointer;
+}
+.goals-overview-toggle:hover { background: var(--goal-soft, rgba(55, 51, 31, .72)); }
+.goals-overview-toggle svg { transition: transform 160ms ease; }
+.goals-overview.is-collapsed .goals-overview-toggle svg { transform: rotate(-90deg); }
+.goals-overview-content > :first-child { margin-top: 0; }
 .monthly-goal-progress {
   position: relative;
   z-index: 4;

@@ -3416,6 +3416,7 @@ function App() {
   const [usersOpen, setUsersOpen] = useState(false);
   const [bonusesOpen, setBonusesOpen] = useState(false);
   const [configurationOpen, setConfigurationOpen] = useState(false);
+  const [goalsCollapsed, setGoalsCollapsed] = useState(false);
   const [bonusViewRequest, setBonusViewRequest] = useState(0);
   const [bonusEditorRequest, setBonusEditorRequest] = useState(0);
   const [toast, setToast] = useState("");
@@ -3959,9 +3960,19 @@ function App() {
           </div>
           </div>
         </div>
-        <MonthlyGoalProgress config={config} boxColor={activeBox.color} date={caja.date} />
-        <SavingsMonthlyGoalProgress config={config} caja={caja} history={history} boxHistories={boxHistories} activeBoxId={activeBoxId} boxColor={activeBox.color} />
-        <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
+        <section className={`goals-overview ${goalsCollapsed ? "is-collapsed" : ""}`}>
+          <div className="goals-overview-header">
+            <span>Objetivos</span>
+            <button type="button" className="goals-overview-toggle" title={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-label={goalsCollapsed ? "Expandir objetivos" : "Minimizar objetivos"} aria-expanded={!goalsCollapsed} onClick={() => setGoalsCollapsed((collapsed) => !collapsed)}>
+              <ChevronDown size={17} />
+            </button>
+          </div>
+          {!goalsCollapsed && <div className="goals-overview-content">
+            <MonthlyGoalProgress config={config} boxColor={activeBox.color} date={caja.date} />
+            <SavingsMonthlyGoalProgress config={config} caja={caja} history={history} boxHistories={boxHistories} activeBoxId={activeBoxId} boxColor={activeBox.color} />
+            <BonusMonthlyGoalProgress config={config} caja={caja} history={history} boxColor={activeBox.color} />
+          </div>}
+        </section>
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
         {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} cajaDate={caja.date} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
           caja={caja}
