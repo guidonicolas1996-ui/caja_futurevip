@@ -855,6 +855,8 @@ main {
 }
 .bonus-goal-row:first-child {
   z-index: 10;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
   border-bottom: 1px solid var(--goal-row-border, rgba(198, 180, 255, 0.09));
 }
 .bonus-goal-lower-row {
@@ -872,6 +874,8 @@ main {
 .bonus-goal-lower-row .bonus-goal-row + .bonus-goal-row {
   border-left: 1px solid rgba(198, 180, 255, 0.09);
 }
+.bonus-goal-lower-row .bonus-goal-row:first-child { border-bottom-left-radius: 8px; }
+.bonus-goal-lower-row .bonus-goal-row:last-child { border-bottom-right-radius: 8px; }
 .bonus-goal-label { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
 .bonus-goal-label span { color: var(--muted); font-family: "DM Mono"; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
 .bonus-goal-label strong { color: #f0ebff; font-size: 16px; font-weight: 700; letter-spacing: -0.03em; }
