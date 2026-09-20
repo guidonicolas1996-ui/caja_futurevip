@@ -3344,6 +3344,9 @@ function App() {
     updatedAtRef.current = value;
     setUpdatedAt(value);
   };
+  const rememberBoxSavedAt = (value) => {
+    setLastSavedAt(value ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "");
+  };
   const enqueueWrite = (operation) => {
     const queuedWrite = writeQueueRef.current.catch(() => undefined).then(() => operation(updatedAtRef.current));
     writeQueueRef.current = queuedWrite.catch(() => undefined);
@@ -3443,7 +3446,7 @@ function App() {
         setHistory(past);
         setBoxHistories({ [boxId]: past });
         setConfig(settings);
-        setLastSavedAt(current.updatedAt || settings.updatedAt ? new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date(current.updatedAt || settings.updatedAt)) : "");
+        rememberBoxSavedAt(current.lastSavedAt || settings.lastSavedAt);
         rememberUpdatedAt(current.updatedAt || settings.updatedAt);
       },
       );
@@ -3451,7 +3454,7 @@ function App() {
   }, []);
   const changeBox = (boxId) => {
     setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setCaja(null); setConfig(null);
-    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setBoxHistories({ [boxId]: past }); setConfig(settings); rememberUpdatedAt(current.updatedAt || settings.updatedAt); });
+    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setBoxHistories({ [boxId]: past }); setConfig(settings); rememberBoxSavedAt(current.lastSavedAt || settings.lastSavedAt); rememberUpdatedAt(current.updatedAt || settings.updatedAt); });
   };
   useEffect(() => {
     if (!activeBoxId || saving) return undefined;
@@ -3505,7 +3508,7 @@ function App() {
       if (result.error) return;
       rememberUpdatedAt(result.updatedAt);
       setSaveError("");
-      setLastSavedAt(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
+      rememberBoxSavedAt(result.lastSavedAt);
       setCaja((current) => result.currents?.[activeBoxId] || current || result.currents?.[boxId] || optimisticCaja || current);
     } catch (error) {
       if (error.status === 409 || error.code === "OUTDATED_STATE") await syncAfterConflict();
@@ -3540,7 +3543,7 @@ function App() {
       rememberUpdatedAt(savedCaja.updatedAt);
       setSaveError("");
       setOffline(false);
-      setLastSavedAt(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
+      rememberBoxSavedAt(savedCaja.lastSavedAt);
       if (!pendingSaveRef.current) setCaja(savedCaja);
     } catch (error) {
       if (error.status === 409 || error.code === "OUTDATED_STATE") {
@@ -3753,7 +3756,7 @@ function App() {
     })).then((next) => {
       rememberUpdatedAt(next.updatedAt);
       setSaveError("");
-      setLastSavedAt(new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(new Date()));
+      rememberBoxSavedAt(next.lastSavedAt);
       setCaja(next);
       setHistory((currentHistory) => [next, ...currentHistory.filter((item) => String(item.id) !== String(next.id))]);
       setSelectedIndex(0);
