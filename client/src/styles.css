@@ -767,9 +767,9 @@ main {
   transform: translate(-50%, 0);
 }
 .bonus-goal-panel .monthly-goal-target-tooltip {
-  top: auto;
-  bottom: calc(100% + 9px);
-  transform: translate(-50%, 3px);
+  top: calc(100% + 9px);
+  bottom: auto;
+  transform: translate(-50%, -3px);
 }
 .bonus-goal-panel .monthly-goal-target-marker:hover .monthly-goal-target-tooltip,
 .bonus-goal-panel .monthly-goal-target-marker:focus-visible .monthly-goal-target-tooltip {
