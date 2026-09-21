@@ -887,6 +887,34 @@ main {
   .goals-compact-metric > i { width: 96px; }
   .goals-compact-metric > small { display: none; }
 }
+@media (max-width: 700px) {
+  .goals-overview.is-collapsed .goals-overview-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 9px;
+    align-items: center;
+  }
+  .goals-overview.is-collapsed .goals-compact-summary {
+    position: static;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    width: 100%;
+    gap: 8px;
+    transform: none;
+  }
+  .goals-overview.is-collapsed .goals-compact-metric {
+    grid-template-columns: minmax(82px, auto) 32px minmax(0, 1fr);
+    width: 100%;
+  }
+  .goals-overview.is-collapsed .goals-compact-metric + .goals-compact-metric {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .goals-overview.is-collapsed .goals-compact-metric > i {
+    width: auto;
+  }
+}
 .monthly-goal-card { max-width: 760px; }
 .monthly-goal-fields { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 14px; }
 .monthly-goal-fields label { display: grid; gap: 7px; color: var(--muted); font-size: 10px; }
