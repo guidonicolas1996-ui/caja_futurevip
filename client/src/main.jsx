@@ -3576,7 +3576,7 @@ function App() {
       ([current, past, settings]) => {
         setCaja(current);
         setHistory(past);
-        setBoxHistories({ [boxId]: past });
+        setBoxHistories((previous) => ({ ...previous, [boxId]: past }));
         setConfig(settings);
         rememberBoxSavedAt(current.lastSavedAt || settings.lastSavedAt);
         rememberUpdatedAt(current.updatedAt || settings.updatedAt);
@@ -3586,7 +3586,7 @@ function App() {
   }, []);
   const changeBox = (boxId) => {
     setBonusViewRequest(0); setBonusEditorRequest(0); setActiveBoxId(boxId); setSelectedIndex(0); setConfigurationOpen(false); setStatisticsOpen(false); setLogisticsOpen(false); setCaja(null); setConfig(null);
-    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setBoxHistories({ [boxId]: past }); setConfig(settings); rememberBoxSavedAt(current.lastSavedAt || settings.lastSavedAt); rememberUpdatedAt(current.updatedAt || settings.updatedAt); });
+    Promise.all([api(`/api/caja/actual?boxId=${boxId}`), api(`/api/caja/historial?boxId=${boxId}`), api(`/api/configuracion?boxId=${boxId}`)]).then(([current, past, settings]) => { setCaja(current); setHistory(past); setBoxHistories((previous) => ({ ...previous, [boxId]: past })); setConfig(settings); rememberBoxSavedAt(current.lastSavedAt || settings.lastSavedAt); rememberUpdatedAt(current.updatedAt || settings.updatedAt); });
   };
   useEffect(() => {
     if (!activeBoxId || saving) return undefined;
@@ -3608,7 +3608,10 @@ function App() {
     let cancelled = false;
     const refreshHistory = async () => {
       const past = await api(`/api/caja/historial?boxId=${activeBoxId}`);
-      if (!cancelled) setHistory(past);
+      if (!cancelled) {
+        setHistory(past);
+        setBoxHistories((previous) => ({ ...previous, [activeBoxId]: past }));
+      }
     };
     const interval = window.setInterval(refreshHistory, 20 * 60 * 1000);
     return () => {
