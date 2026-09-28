@@ -2372,7 +2372,7 @@ function MiniBonusesPanel({ config, activeBoxId, api }) {
   </section>;
 }
 
-function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onConfigChange }) {
+function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onConfigChange, onNotify }) {
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -2430,8 +2430,11 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
   const toggleBonusFilter = (values, setValues, value) => setValues((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value]);
   const bonusRecords = selectedHistories.flatMap(({ rows }) => filterRows(rows).flatMap((caja) => (caja.bonuses || []).map((bonus) => {
     const date = new Date(bonus.createdAt);
-    return { date, dateKey: dateKey(date), weekday: date.getDay(), hour: date.getHours(), shift: caja.shift, net: number(bonus.granted) - number(bonus.recovered) };
-  }))).filter((record) => !Number.isNaN(record.date.getTime()) && record.date >= new Date(startDate) && record.date <= new Date(endDate) && bonusWeekdays.includes(record.weekday) && bonusShifts.includes(record.shift) && record.hour >= bonusFromHour && record.hour <= bonusToHour && (bonusResultMode === "all" || bonusResultMode === "positive" && record.net > 0 || bonusResultMode === "negative" && record.net < 0));
+    const recovered = number(bonus.recovered);
+    const publicity = recovered === 0 && bonus.publicity ? number(bonus.granted) : 0;
+    const granted = recovered === 0 && !bonus.publicity ? number(bonus.granted) : 0;
+    return { date, dateKey: dateKey(date), weekday: date.getDay(), hour: date.getHours(), shift: caja.shift, granted, recovered, publicity, net: number(bonus.granted) - recovered };
+  }))).filter((record) => !Number.isNaN(record.date.getTime()) && record.date >= new Date(startDate) && record.date <= new Date(endDate) && bonusWeekdays.includes(record.weekday) && bonusShifts.includes(record.shift) && record.hour >= bonusFromHour && record.hour <= bonusToHour && (bonusResultMode === "all" || bonusResultMode === "positive" && record.net > 0 || bonusResultMode === "negative" && record.net < 0)).sort((first, second) => first.date - second.date);
   const bonusMetricValue = (records) => bonusMetric === "count" ? records.length : records.reduce((sum, record) => sum + record.net, 0);
   const bonusNetTotal = bonusMetricValue(bonusRecords);
   const bonusPercentageFor = (value) => bonusNetTotal ? (value / bonusNetTotal) * 100 : 0;
@@ -2444,6 +2447,44 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
     result.set(record.dateKey, current);
     return result;
   }, new Map()).values()].sort((first, second) => first.date - second.date);
+  const exportBonusCsv = () => {
+    const escapeCsv = (value) => `"${String(value).replace(/"/g, '""')}"`;
+    const rows = [
+      ["fecha hora", "otorgado", "recuperado", "publicidad"],
+      ...bonusRecords.map((record) => [
+        `${formatBonusDate(record.date)} ${new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(record.date)}`,
+        record.granted,
+        record.recovered,
+        record.publicity,
+      ]),
+    ];
+    const csv = `\uFEFF${rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n")}`;
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bonos-netos-${startDate.slice(0, 10)}-${endDate.slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  const copyDailyBonuses = async () => {
+    const rows = [
+      ["fecha", "otorgados", "recuperados", "publicidad"],
+      ...dailyBonusRows.map((row) => {
+        const totals = row.total.reduce((sum, record) => ({
+          granted: sum.granted + record.granted,
+          recovered: sum.recovered + record.recovered,
+          publicity: sum.publicity + record.publicity,
+        }), { granted: 0, recovered: 0, publicity: 0 });
+        return [formatBonusDate(row.date), totals.granted, totals.recovered, totals.publicity];
+      }),
+    ];
+    try {
+      await navigator.clipboard.writeText(rows.map((row) => row.join("\t")).join("\n"));
+      onNotify("Bonos diarios copiados al portapapeles");
+    } catch {
+      onNotify("No se pudo copiar la tabla al portapapeles");
+    }
+  };
   const shiftBonusRows = shiftOptions.map((shift) => {
     const value = bonusMetricValue(bonusRecords.filter((record) => record.shift === shift));
     return { shift, value, percentage: bonusPercentageFor(value) };
@@ -2632,6 +2673,7 @@ function StatisticsPage({ history, config, activeBoxId, boxes, boxHistories, onC
     <section className="statistics-visuals"><section className="panel statistics-chart"><div className="statistics-chart-head"><div><h2>Comparativa por turno</h2><span>Seleccioná una métrica y una barra</span></div><select value={chartMetric} onChange={(event) => { setChartMetric(event.target.value); setSelectedBar(null); }}>{metricOptions.map((metric) => <option value={metric.key} key={metric.key}>{metric.label}</option>)}</select></div><div className="statistics-bars">{chartRows.map((row) => <button type="button" className={selectedBar === row.label ? "selected" : ""} key={row.label} onClick={() => setSelectedBar(row.label)}><span className="statistics-bar-value">{money(row.value)}</span><i style={{ height: `${Math.max(4, row.value / maxChart * 150)}px` }} /><small>{row.label}</small></button>)}</div>{selectedBar && <p className="statistics-chart-detail">{selectedBar}: <b>{money(chartRows.find((row) => row.label === selectedBar)?.value)}</b></p>}</section><section className="panel statistics-tips"><div className="statistics-chart-head"><div><h2>Totalizador de propinas</h2><span>Valores guardados en configuración</span></div><Coins size={18} /></div><div className="statistics-tip-total"><span>Total de propinas</span><strong>{money(total.tips)}</strong></div><div className="statistics-tip-fields"><label>Empleados<input type="number" min="1" step="1" value={statistics.employees ?? 1} onChange={(event) => updateStatistics({ employees: Math.max(1, number(event.target.value)) })} /></label><label>Propinas c/u<strong>{money(total.tips / employees)}</strong></label><label>% proporcional<input type="number" min="0" max="100" step="1" value={statistics.proportionalPercent ?? 100} onChange={(event) => updateStatistics({ proportionalPercent: Math.min(100, Math.max(0, number(event.target.value))) })} /></label><label>Proporcional c/u<strong>{money(total.tips / employees * percent / 100)}</strong></label></div></section></section>
     <section className="panel bonus-analysis-panel">
       <div className="bonus-analysis-head"><div><h2><Gift size={18} /> Análisis de bonos netos</h2><span>{bonusRecords.length} movimientos · {dailyBonusRows.length} días · período y cajas tomados de arriba</span></div><strong>{money(bonusNetTotal)}</strong></div>
+      <div className="bonus-analysis-actions"><button type="button" onClick={exportBonusCsv}><Download size={15} /> Exportar a CSV</button><button type="button" onClick={copyDailyBonuses}><Copy size={15} /> Copiar tabla diaria</button></div>
       <div className="bonus-analysis-filters">
         <div className="bonus-analysis-filter-group"><span>Días de la semana</span><div>{weekdayOptions.map((weekday, index) => <label key={weekday}><input type="checkbox" checked={bonusWeekdays.includes(index)} onChange={() => toggleBonusFilter(bonusWeekdays, setBonusWeekdays, index)} />{weekday.slice(0, 3)}</label>)}</div></div>
         <div className="bonus-analysis-filter-group"><span>Turnos</span><div>{shiftOptions.map((shift) => <label key={shift}><input type="checkbox" checked={bonusShifts.includes(shift)} onChange={() => toggleBonusFilter(bonusShifts, setBonusShifts, shift)} />{shift}</label>)}</div></div>
@@ -4013,7 +4055,7 @@ function App() {
           </div>}
         </section>
         <div className={`box-content ${readOnly ? "read-only" : ""}`} onClickCapture={(event) => { if (readOnly && !isReadOnlyAction(event.target)) { event.preventDefault(); event.stopPropagation(); } }}>
-        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} cajaDate={caja.date} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
+        {configurationOpen ? <ConfigurationPage config={config} boxes={boxes} activeBoxId={activeBoxId} cajaDate={caja.date} onSave={saveConfig} onBack={() => setConfigurationOpen(false)} onBoxesChanged={manageBoxes} onNotify={notify} api={api} embedded /> : statisticsOpen ? <StatisticsPage history={history} config={config} activeBoxId={activeBoxId} boxes={boxes} boxHistories={boxHistories} onConfigChange={updateStatisticsConfig} onNotify={notify} /> : logisticsOpen ? <LogisticsPage caja={caja} config={config} boxes={boxes} activeBoxId={activeBoxId} onUpdateAccounts={updateAccountsFromLogistics} onAssignWallet={assignWallet} onConfigChange={updateLogisticsConfig} /> : usersOpen ? <UsersPage config={config} boxes={boxes} activeBoxId={activeBoxId} onConfigChange={updateConfigState} onNotify={notify} api={api} /> : bonusesOpen ? <BonusesPage config={config} activeBoxId={activeBoxId} api={api} onNotify={notify} onWrite={enqueueWrite} onVersionChange={rememberUpdatedAt} onConflict={syncAfterConflict} /> : <><SummaryCard
           caja={caja}
           calculations={calculations}
           update={update}

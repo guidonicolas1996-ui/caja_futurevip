@@ -3886,6 +3886,29 @@ select:focus {
   font: 700 22px "DM Mono";
   white-space: nowrap;
 }
+.bonus-analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bonus-analysis-actions button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: #dce9e6;
+  background: #172324;
+  font-size: 11px;
+  cursor: pointer;
+}
+.bonus-analysis-actions button:hover {
+  border-color: var(--cyan);
+  background: rgba(42, 83, 79, 0.55);
+}
 .bonus-analysis-filters {
   display: flex;
   flex-wrap: wrap;
