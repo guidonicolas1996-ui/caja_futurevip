@@ -965,7 +965,7 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
   };
   return <div className="bonus-goal-panel has-publicity-filter" aria-label="Progreso del objetivo de bonos" style={{ "--bonus-soft": colors["--box-soft"], "--bonus-line": colors["--box-line"], "--bonus-glow": colors["--box-glow"], "--bonus-accent": colors["--box-accent"] }}>
     <label className="bonus-publicity-filter" title="Excluir bonos de publicidad">
-      <span>cidad</span>
+      <span>Publi</span>
       <input type="checkbox" checked={excludePublicity} onChange={(event) => setExcludePublicity(event.target.checked)} aria-label="Excluir bonos de publicidad de los objetivos" />
       <i aria-hidden="true" />
     </label>
