@@ -909,6 +909,7 @@ function SavingsGoalConfig({ draft, update }) {
 }
 
 function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
+  const [excludePublicity, setExcludePublicity] = useState(false);
   if (!config || !caja) return null;
   const goal = config.bonusGoal || { total: 0, percentages: { Noche: 33, Mañana: 33, Tarde: 34 } };
   const monthItems = [...(Array.isArray(history) ? history : []), caja].filter((item, index, list) => item && list.findIndex((candidate) => String(candidate.id) === String(item.id)) === index);
@@ -921,9 +922,13 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
     const itemDate = new Date(item.date);
     return itemDate.getFullYear() === currentDate.getFullYear() && itemDate.getMonth() === currentDate.getMonth();
   });
-  const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => sum + number(bonus.granted) - number(bonus.recovered), 0);
+  const monthBonusNet = (row) => (row.bonuses || []).reduce((sum, bonus) => {
+    if (excludePublicity && bonus.publicity) return sum;
+    return sum + number(bonus.granted) - number(bonus.recovered);
+  }, 0);
   const dayBonusNet = sameDateItems.reduce((sum, item) => sum + monthBonusNet(item), 0);
   const shiftBonusNet = (shift) => (caja.bonuses || []).reduce((sum, bonus) => {
+    if (excludePublicity && bonus.publicity) return sum;
     const hour = new Date(bonus.createdAt).getHours();
     const bonusShift = hour >= 0 && hour < 8 ? "Noche" : hour < 16 ? "Mañana" : "Tarde";
     return sum + (bonusShift === shift ? number(bonus.granted) - number(bonus.recovered) : 0);
@@ -958,11 +963,18 @@ function BonusMonthlyGoalProgress({ config, caja, history, boxColor }) {
       </div>
     );
   };
-  return <div className="bonus-goal-panel" aria-label="Progreso del objetivo de bonos" style={{ "--bonus-soft": colors["--box-soft"], "--bonus-line": colors["--box-line"], "--bonus-glow": colors["--box-glow"], "--bonus-accent": colors["--box-accent"] }}>
-    {renderBar("Obj. Bonos Mes", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0, elapsedMonthPercentage(caja.date))}
-    <div className="bonus-goal-lower-row">
-      {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0, cumulativeShiftPercentage(goal.percentages, currentShift))}
-      {renderBar(`Obj. Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
+  return <div className="bonus-goal-panel has-publicity-filter" aria-label="Progreso del objetivo de bonos" style={{ "--bonus-soft": colors["--box-soft"], "--bonus-line": colors["--box-line"], "--bonus-glow": colors["--box-glow"], "--bonus-accent": colors["--box-accent"] }}>
+    <label className="bonus-publicity-filter" title="Excluir bonos de publicidad">
+      <span>Sin publicidad</span>
+      <input type="checkbox" checked={excludePublicity} onChange={(event) => setExcludePublicity(event.target.checked)} aria-label="Excluir bonos de publicidad de los objetivos" />
+      <i aria-hidden="true" />
+    </label>
+    <div className="bonus-goal-content">
+      {renderBar("Obj. Bonos Mes", monthAchieved, monthTarget, monthTarget > 0 ? (monthAchieved / monthTarget) * 100 : 0, elapsedMonthPercentage(caja.date))}
+      <div className="bonus-goal-lower-row">
+        {renderBar("Obj. Bonos Día", dayBonusNet, dailyTarget, dailyTarget > 0 ? (dayBonusNet / dailyTarget) * 100 : 0, cumulativeShiftPercentage(goal.percentages, currentShift))}
+        {renderBar(`Obj. Turno · ${currentShift.toUpperCase()}`, currentShiftAchieved, currentShiftTarget, currentShiftTarget > 0 ? (currentShiftAchieved / currentShiftTarget) * 100 : 0)}
+      </div>
     </div>
   </div>;
 }

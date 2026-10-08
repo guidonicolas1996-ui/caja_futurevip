@@ -938,6 +938,7 @@ main {
   box-shadow: inset 0 0 0 1px rgba(191, 176, 255, 0.04);
 }
 .savings-goal-panel { z-index: 3; }
+.bonus-goal-panel.has-publicity-filter { grid-template-columns: 38px minmax(0, 1fr); }
 .bonus-goal-panel::before {
   content: "";
   position: absolute;
@@ -948,6 +949,70 @@ main {
   filter: blur(24px);
   pointer-events: none;
   z-index: 0;
+}
+.bonus-publicity-filter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 0;
+  border-right: 1px solid rgba(198, 180, 255, 0.12);
+  color: #c7b5ed;
+  cursor: pointer;
+}
+.bonus-publicity-filter span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.bonus-publicity-filter input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.bonus-publicity-filter i {
+  position: relative;
+  width: 16px;
+  height: 29px;
+  border: 1px solid rgba(198, 180, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(22, 19, 31, 0.8);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.bonus-publicity-filter i::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #a99abf;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 160ms ease, background 160ms ease;
+}
+.bonus-publicity-filter input:checked + i {
+  border-color: var(--bonus-accent, #cbb6ff);
+  background: color-mix(in srgb, var(--bonus-accent, #cbb6ff) 28%, rgba(22, 19, 31, 0.8));
+}
+.bonus-publicity-filter input:checked + i::after {
+  transform: translateY(-13px);
+  background: #e5d6ff;
+}
+.bonus-publicity-filter input:focus-visible + i {
+  outline: 2px solid var(--bonus-accent, #cbb6ff);
+  outline-offset: 2px;
+}
+.bonus-goal-content {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
 }
 .bonus-goal-row {
   position: relative;
@@ -1138,7 +1203,7 @@ main {
   .monthly-goal-values { justify-content: space-between; gap: 7px; }
   .monthly-goal-values span { font-size: 9px; }
   .monthly-goal-fields { grid-template-columns: 1fr; }
-  .bonus-goal-panel { grid-template-columns: 1fr; }
+  .bonus-goal-panel.has-publicity-filter { grid-template-columns: 38px minmax(0, 1fr); }
   .bonus-goal-lower-row { grid-template-columns: 1fr; }
   .bonus-goal-lower-row .bonus-goal-row + .bonus-goal-row { border-left: 0; border-top: 1px solid rgba(198, 180, 255, 0.09); }
   .bonus-goal-row { grid-template-columns: 1fr; }
